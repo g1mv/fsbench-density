@@ -23,14 +23,12 @@
 ///////////////////////////
 // DEFINITIONS
 ///////////////////////////
-
 #define PROGNAME "fsbench"
 #define PROGVERSION "0.14"
 
 ///////////////////////////
 // INCLUDES
 ///////////////////////////
-
 
 #include "benchmark.hpp"
 #include "tools.hpp"
@@ -82,7 +80,7 @@ void usage()
     cerr << "  -wX: warmup iterations(default = " << DEFAULT_WARMUP_ITERS << ")\n";
     cerr << endl;
     cerr << "Available codecs:\n";
-    vector < string > codecs_list = pretty_list_of_codecs();
+    vector<string> codecs_list = pretty_list_of_codecs();
     for (vector<string>::iterator it = codecs_list.begin(); it != codecs_list.end(); ++it)
         cerr << "  " << *it << endl;
     cerr << endl;
@@ -94,6 +92,28 @@ void usage()
     cerr << "  " PROGNAME " fastlz lzf,ultra -t2 -b131072 -m4096 -i10 file.tar\n";
 }
 
+/**
+ * Checks if the given codec has both encoder and decoder
+ * @note It prints error to cerr. 
+ * @return true if yes, false otherwise 
+ */
+bool check_codec(const Codec &codec)
+{
+    if (codec.encoder == 0)
+    {
+        cerr << "ERROR: " << codec.name << " is just a decoder.\n";
+        cerr << "Combine it with some encoder to test it.\n";
+        return false;
+    }
+    else if (codec.decoder == 0)
+    {
+        cerr << "ERROR: " << codec.name << " is just an encoder.\n";
+        cerr << "Combine it with some decoder to test it.\n";
+        cerr << "If you don't want one, combine it with nop.\n";
+        return false;
+    }
+    return true;
+}
 ///////////////////////////
 // MAIN
 ///////////////////////////
@@ -108,11 +128,11 @@ int main(int argc, char** argv)
     bool verify = false;
     int threads = DEFAULT_THREADS_NO;
     int warmup_iters = DEFAULT_WARMUP_ITERS;
-    bool csv = false;// should the output be written as csv or human readably?
+    bool csv = false; // should the output be written as csv or human readably?
     unsigned small_iters = 0;
-    size_t job_size = 262144;// when compressing small blocks, each work item will contain multiple of them, so the size is no smaller than this
+    size_t job_size = 262144; // when compressing small blocks, each work item will contain multiple of them, so the size is no smaller than this
 
-    list < CodecWithParams > codecs;
+    list<CodecWithParams> codecs;
 
     //debug code
     /*char*a[] = {"fsbench", "gipfeli", "-w0", "-s1", "-i1", "..\\nbbs.tar"};
@@ -211,8 +231,7 @@ int main(int argc, char** argv)
         else
         {
             // it may be "codec" or "codec,params" or "pseudocodec".
-            // I'll check the first option and if it's not the case,
-            // try splitting
+            // pseudocodec?
             if (case_insensitive_compare(argv[1], "all") == 0)
             {
                 codecs.insert(codecs.end(), ALL_CODECS.begin(), ALL_CODECS.end());
@@ -227,6 +246,7 @@ int main(int argc, char** argv)
             }
             else
             {
+                // codec?
                 string codec = argv[1];
                 string params = "";
                 size_t position = codec.find(',');
@@ -238,7 +258,10 @@ int main(int argc, char** argv)
                 Codec* found = find_codec(codec);
                 if (found)
                 {
-                    codecs.push_back(CodecWithParams(*found, params));
+                    if(check_codec(*found))
+                    {
+                        codecs.push_back(CodecWithParams(*found, params));
+                    }
                 }
                 else
                 {
@@ -269,7 +292,7 @@ int main(int argc, char** argv)
 
     if (codecs.empty())
     {
-        cerr << "No codecs specified.\n";
+        cerr << "No valid codecs specified.\n";
         return 1;
     }
 
@@ -287,7 +310,8 @@ int main(int argc, char** argv)
                            csv,
                            job_size);
 
-    } catch (const Codec::InvalidParams &e)
+    }
+    catch (const Codec::InvalidParams &e)
     {
         cerr << "Invalid params!\n";
         cerr << e.what() << '\n';

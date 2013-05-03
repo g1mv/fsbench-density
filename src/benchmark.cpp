@@ -657,19 +657,6 @@ unsigned test(list<CodecWithParams>& codecs,
 
         codec.init(codec_init_params, threads_no, min(size, bsize));
         printCodec(codec, csv);
-        if (codec.encoder == 0)
-        {
-            cerr << "ERROR: " << codec.name << " is just a decoder.\n";
-            cerr << "Combine it with some encoder to test it.\n";
-            continue;
-        }
-        else if (codec.decoder == 0)
-        {
-            cerr << "ERROR: " << codec.name << " is just an encoder.\n";
-            cerr << "Combine it with some decoder to test it.\n";
-            cerr << "If you don't want one, combine it with nop.\n";
-            continue;
-        }
 
         uint32_t fastest_ctime = -1;
         uint32_t fastest_dtime = -1;

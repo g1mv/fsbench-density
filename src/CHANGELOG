@@ -15,6 +15,7 @@
 [~] cleanup, minor fixes and refactoring
 [~] eclipse integration
 [~] initial doxygen integration
+[~] fossil integration
 [!] updated Tornado to the latest mercurial version to fix a clang issue
 [!] numerous portability issues
 [!] memory leak in zlib and miniz handlers
