@@ -1,0 +1,213 @@
+﻿Yeah, everybody puts nonsense they consider important in a place that's hard to miss, though they know that readers are skilled in skipping them. I'll do the same.
+
+******
+About:
+******
+
+This is an application meant to easen benchmarking of compression algorithms. It's main purpose is to simulate the way filesystems use compression, but it was designed to be flexible and can be user for example as a general-purpose in-memory benchmark.
+Now it can also benchmark checksums and ciphers; it a step on the way to be able to benchmark the entire compression->encryption->checksumming pipeline or any of its parts.
+
+*****************
+How does it work:
+*****************
+
+1.  It warms the CPU up with several iterations (-w) of compression-decompression with a fast codec.
+2.  If number of small iterations (-s) is not defined, it tries to guess a good one.
+3.  If job_size (-j) is not defined, it tries to come up with a good one.
+4.  It splits the data into blocks (see -b switch).
+5.  It creates compression threads (-t). 
+6.  Each thread gets a number of blocks with a total size of at least job_size (-j). Note: Blocks are not split to smaller entities. When the entire file comes in just 1 block (which happens often with the defaults), it will be assigned to a single thread as a whole. The others won't get any work.
+7.  Each thread compresses asigned blocks and asks for another job. Repeats until everything's compressed. Block has to be reduced by a compressor by at least sector_size of bytes (-m), otherwise it's left uncompressed.
+8.  Each thread decompresses __compressed__ blocks. Please note that these may be different from different codecs. If it failed to compress some block by at least sector_size, it doesn't get to decompress it. Decompression speed takes into account only blocks that were compressed successfully.
+9.  Points 7 and 8 are repeated small_iters (-s) number of times, the runtimes are summed up. This is to prevent people from compressing too small files and getting results skewed by clock inaccuracies. It's not perfect, but well...
+10. Point 9 is repeated iters (-i) number of times, there's a minimum of runtimes taken. This is meant to reduce testing variability.
+
+****************
+Included codecs:
+****************
+
+Some codecs are in the default installation, some yout have to enable with a compile-time option. See CMakeFiles.txt if you want them.
+
+Checksums:
+name                                | author                                      | version               | default? |
+----------------------------------------------------------------------------------------------------------------------
+Blake224                            | multiple                                    | SHA3 Final, 64bit opt | yes      |
+Blake256                            | multiple                                    | SHA3 Final, 64bit opt | yes      |
+Blake384                            | multiple                                    | SHA3 Final, 64bit opt | yes      |
+Blake512                            | multiple                                    | SHA3 Final, 64bit opt | yes      |
+Blake2b                             | multiple                                    | 20121223              | yes      |
+Blake2bp                            | multiple                                    | 20121223              | yes      |
+Blake2s                             | multiple                                    | 20121223              | yes      |
+Blake2sp                            | multiple                                    | 20121223              | yes      |
+BlueMidnightWish224                 | Danilo Gligoroski                           | SHA3 rnd 2, 64bit opt | no       |
+BlueMidnightWish256                 | Danilo Gligoroski                           | SHA3 rnd 2, 64bit opt | no       |
+BlueMidnightWish384                 | Danilo Gligoroski                           | SHA3 rnd 1, 64bit opt | no       |
+BlueMidnightWish512                 | Danilo Gligoroski                           | SHA3 rnd 1, 64bit opt | no       |
+CityHash64                          | Geoff Pike, Jyrki Alakuijala                | 1.0.3                 | yes      |
+CityHash128                         | Geoff Pike, Jyrki Alakuijala                | 1.0.3                 | yes      |
+CrapWow                             | Andrew@Team5150.com                         | 2012-06-07            | no       |
+crypto++ - adler32                  | Wei Dai                                     | 5.6.1                 | yes      |
+crypto++ - crc32                    | Wei Dai                                     | 5.6.1                 | yes      |
+crypto++ - md5                      | Colin Plumb, Wei Dai                        | 5.6.1                 | yes      |
+crypto++ - sha224                   | Steve Reid, Wei Dai                         | 5.6.1                 | yes      |
+crypto++ - sha256                   | Steve Reid, Wei Dai                         | 5.6.1                 | yes      |
+crypto++ - sha384                   | Steve Reid, Wei Dai                         | 5.6.1                 | yes      |
+crypto++ - sha512                   | Steve Reid, Wei Dai                         | 5.6.1                 | yes      |
+CubeHash224                         | Daniel J. Bernstein                         | SHA3 rnd 2, 64bit opt | no       |
+CubeHash256                         | Daniel J. Bernstein                         | SHA3 rnd 2, 64bit opt | no       |
+CubeHash384                         | Daniel J. Bernstein                         | SHA3 rnd 2, 64bit opt | no       |
+CubeHash512                         | Daniel J. Bernstein                         | SHA3 rnd 2, 64bit opt | no       |
+Edon-R224                           | multiple                                    | v20                   | no       |
+Edon-R256                           | multiple                                    | v20                   | no       |
+Edon-R384                           | multiple                                    | v20                   | no       |
+Edon-R512                           | multiple                                    | v20                   | no       |
+fletcher2                           | ?? (used in ZFS)                            | 2010                  | no       |
+fletcher4                           | ?? (used in ZFS)                            | 2010                  | no       |
+FNV1a-Jesteress                     | Georgi Marinov                              | 2012-06-09            | yes      |
+FNV1a-Mantis                        | Georgi Marinov                              | 2012-06-09            | yes      |
+FNV1a-Meiyan                        | Georgi Marinov                              | 2012-06-09            | yes      |
+FNV1a-Tesla                         | Georgi Marinov                              | v2                    | yes      |
+FNV1a-Yoshimura                     | Georgi Marinov                              | 2013-03-13            | yes      |
+FNV1a-Yoshimura                     | Georgi Marinov                              | 2013-03-13            | yes      |
+Grøstl224                           | Soeren S. Thomsen, Krystian Matusiewicz     | SHA3 Final, 64bit opt | yes      |
+Grøstl256                           | Soeren S. Thomsen, Krystian Matusiewicz     | SHA3 Final, 64bit opt | yes      |
+Grøstl384                           | Soeren S. Thomsen, Krystian Matusiewicz     | SHA3 Final, 64bit opt | yes      |
+Grøstl512                           | Soeren S. Thomsen, Krystian Matusiewicz     | SHA3 Final, 64bit opt | yes      |
+JH224                               | Hongjun Wu                                  | SHA3 Final, 64bit opt | yes      |
+JH256                               | Hongjun Wu                                  | SHA3 Final, 64bit opt | yes      |
+JH384                               | Hongjun Wu                                  | SHA3 Final, 64bit opt | yes      |
+JH512                               | Hongjun Wu                                  | SHA3 Final, 64bit opt | yes      |
+Keccak224                           | multiple                                    | SHA3 Final, 64bit opt | yes      |
+Keccak256                           | multiple                                    | SHA3 Final, 64bit opt | yes      |
+Keccak384                           | multiple                                    | SHA3 Final, 64bit opt | yes      |
+Keccak512                           | multiple                                    | SHA3 Final, 64bit opt | yes      |
+murmur3_x86_32                      | Austin Appleby                              | 2012-02-29            | yes      |
+murmur3_x86_128                     | Austin Appleby                              | 2012-02-29            | yes      |
+murmur3_x64_128                     | Austin Appleby                              | 2012-02-29            | yes      |
+SipHash                             | Jean-Philippe Aumasson, Daniel J. Bernstein | SHA3 Final, 64bit opt | yes      |
+Skein224                            | Doug Whiting                                | SHA3 Final, 64bit opt | yes      |
+Skein256                            | Doug Whiting                                | SHA3 Final, 64bit opt | yes      |
+Skein384                            | Doug Whiting                                | SHA3 Final, 64bit opt | yes      |
+Skein512                            | Doug Whiting                                | SHA3 Final, 64bit opt | yes      |
+Skein1024                           | Doug Whiting                                | SHA3 Final, 64bit opt | yes      |
+SpookyHash                          | Bob Jenkins                                 | 2012-03-30            | yes      |
+SWIFFTX224                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
+SWIFFTX256                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
+SWIFFTX384                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
+SWIFFTX512                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
+xxhash                              | Yann Collet                                 | r6                    | yes      |
+xxhash256                           | Yann Collet, m^2                            | 1                     | yes      |
+
+
+Ciphers:
+name                                | author                                  | version    | default? |
+-------------------------------------------------------------------------------------------------------
+AES128                              | Daniel J. Bernstein                     | little-4   | yes      |
+AES256                              | Hongjun Wu                              | v1         | yes      |
+ChaCha                              | Daniel J. Bernstein                     | 20080118   | yes      |
+HC-128                              | ??                                      | 2007-01b   | yes      |
+HC-256                              | ??                                      | 2007-01    | yes      |
+LEX                                 | Alex Biryukov                           | v2         | yes      |
+Rabbit                              | ??                                      | opt2       | yes      |
+RC4                                 | Christophe De Cannière                  | 2005-08-21 | yes      |
+Salsa20/8                           | Daniel J. Bernstein                     | merged     | yes      |
+Salsa20/12                          | Daniel J. Bernstein                     | merged     | yes      |
+Salsa20                             | Daniel J. Bernstein                     | merged     | yes      |
+Snow 2.0                            | Patrik Ekdahl and Thomas Johansson      | fast       | yes      |
+Sosemanuk                           | Thomas Pornin                           | 2005-04-26 | yes      |
+Trivium                             | Christophe De Cannière                  | 2006-02-23 | yes      |
+
+Compressors:
+name                                | author                                  | version    | default? |
+-------------------------------------------------------------------------------------------------------
+7z - deflate                        | Igor Pavlov                             | 9.20       | yes      |
+7z - deflate64                      | Igor Pavlov                             | 9.20       | yes      |
+Basic Compression Library - huffman | Marcus Geelnard                         | 1.2.0      | no       |
+Basic Compression Library - lz      | Marcus Geelnard                         | 1.2.0      | no       |
+Basic Compression Library - lzfast  | Marcus Geelnard                         | 1.2.0      | no       |
+Basic Compression Library - rle     | Marcus Geelnard                         | 1.2.0      | no       |
+blosc                               | Francesc Alted                          | 1.1.4      | no       |
+BriefLZ                             | Joergen Ibsen                           | 1.0.5      | no       |
+bzip2                               | Julian Seward                           | 1.0.6      | yes      |
+crypto++ - deflate                  | Wei Dai                                 | 5.6.1      | yes      |
+Doboz                               | Attila T. Afra                          | 2011-03-19 | no       |
+FastLZ                              | Ariya Hidayat                           | 0.1.0      | no       |
+gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala        | 2011-10-19 | no       |
+Halibut - deflate                   | Simon Tatham                            | SVN r9550  | no       |
+lodepng - deflate                   | Lode Vandevenne                         | 20120729   | no       |
+LZ4                                 | Yann Collet                             | r85        | yes      |
+LZ4hc                               | Yann Collet                             | r85        | yes      |
+LZ4bz                               | Yann Collet, Bulat Ziganshin            | r85        | yes      |
+LZF                                 | Marc Alexander Lehmann                  | 3.6        | yes      |
+LZFX                                | Andrew Collette                         | r16        | no       |
+LZG                                 | Marcus Geelnard                         | 1.0.6      | no       |
+LZHAM                               | Richard Geldreich, Jr.                  | SVN r96    | no       |
+LZJB                                | Jeff Bonwick                            | 2010       | no       |
+mmini - lzl                         | Adam Ierymenko                          | 2010       | no       |
+LZMAT                               | Vitaly Evseenko                         | 1.1        | yes      |
+LZO                                 | Markus Franz Xaver Johannes Oberhumer   | 2.05       | yes      |
+LZSS                                | Ilia Muraviev                           | 2008-07-31 | no       |
+LZV1                                | Hermann Vogt                            | 0.5        | no       |
+LZWC                                | David Catt                              | 0.4        | no       |
+lzx_compress                        | Matthew T. Russotto                     | 2005-07-06 | no       |
+miniz                               | Richard Geldreich, Jr.                  | 1.11       | yes      |
+nrv2a                               | Markus Franz Xaver Johannes Oberhumer   | 1.03       | no       |
+nrv2b                               | Markus Franz Xaver Johannes Oberhumer   | 1.03       | no       |
+nrv2d                               | Markus Franz Xaver Johannes Oberhumer   | 1.03       | no       |
+QuickLZ                             | Lasse Mikkel Reinhold                   | 1.5.1b6    | yes      |
+QuickLZ zip                         | Lasse Mikkel Reinhold                   | 0.4        | no       |
+RLE64                               | Javier Gutiérrez Chamorro               | R3.00      | yes      |
+SCZ                                 | Carl Kindman                            | 2008-11-25 | no       |
+Shrinker                            | Fu Siyuan                               | r5         | yes      |
+Snappy                              | ???                                     | 1.0.5      | yes      |
+tinf                                | Joergen Ibsen                           | 1.00       | no       |
+Tornado                             | Joachim Henke, Bulat Ziganshin          | 0.5        | yes      |
+Yappy                               | Peter Popov                             | v2         | yes      |
+zlib - deflate                      | Mark Adler, Jean-loup Gailly            | 1.2.7      | yes      |
+zopfli - deflate                    | Lode Vandevenne, Jyrki Alakuijala       | 2013-03-01 | yes      |
+
+*************************
+Notes on included codecs:
+*************************
+
+* many of them contain minor modifications to make them work with FsBench. I will only list the important ones.
+* LZ4 x is LZ4 with MEMORY_USAGE x.
+* In Yappy I added an option not to use SSE2 to improve portability.
+* In some cases I changed int types used when I encountered or expected portability problems. Should work exactly the same on intended platforms and also work on some more.
+* In BriefLZ the porting had to adjust some constants, which assumed 32-bit pointers. Also, because pointers are twice as big on 64-bit systems, effective memory capacity is halved, which reduces strength somewhat.
+* LZHAM uses 128 KB dictionary. It can be changed in sources. I intend to make it configurable from the command line later.
+* In lzx_compress I use a non-sliding window and lazy matching. Weirdly, the lzx_compress front-end doesn't use the sliding window version correctly.
+* I use BlueMidnightWish512 and 384 from the 1st instead of 2nd round of SHA3 competition because the latter doesn't work correctly on my system. It seems to be doing some out of bounds memory accesses.
+
+*************************
+Notes on rejected codecs:
+*************************
+
+* there were several codecs that I rejected because of their focus on education and goals of clarity over efficiency. I guess that most of them are not woth my time because benchmarka are all about efficiency.
+* codecs that are not FOSS and ones that are not written in C(++) not to complicate things for myself.
+* LZRW* - really, just historic codecs, very poor nowadays. Note: at the time of rejections fsbench has been much less maintainable than it is now. I may reintroduce LZRW* if convinced that it's useful.
+* snappy-c - I would really like to use it, but it's dependence on Linux kernel headers scares me off.
+* arjz - Looks like the code is only single threaded and would take considerable effort to make usable.
+* UC2 - Looks like the code is only single threaded and would take considerable effort to make usable.
+* lha - Unix only
+* ulha - Unix only
+* arj - x86 only
+* NTFS-3G - I tried, but got crashes. Took too much time to debug, I gave up. I may retry later.
+* LZP1 - Initially looked OK, but crashed sometimes. And it wasn't good anyway.
+* LZP2 - Kept crashing when compiled with mingw (both x86 and AMD64), so I didn't even try to integrate it with fsbench.
+* flzp - My initial tests showed that it's weak and slow. I guess that's because it has been designed to be used as a preprocessor...
+* zax - It seemed very immature.
+* I got crashes with 7zip's PPMD. The code base is terribly complicated and I decided that it's better to stay away than to debug
+
+************
+Other notes:
+************
+
+* Some algorithms contain asm pieces. I never use them because that would be a big complication for me.
+
+************
+Known bugs:
+************
+
+* lzwc works only with 1 block
+* chaining codecs doesn't always work, f.e. compressor+compressor, compressor+encryption are broken

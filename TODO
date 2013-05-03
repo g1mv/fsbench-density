@@ -1,0 +1,24 @@
+small_iters problem: in-place and buffered codecs that overwrite their input (all but checksums) encode the given data only during the 1st small_iter. Possible solutions:
+* drop si; instead of N si have N copies of data stored in RAM
+* forbid si>1 for codecs where it doesn't work
+* add memcpy where it's needed (very bad for checksums because they are too fast) 
+
+make lzwc work with multiple blocks
+update lz4 (portability+minor changes)
+add mmini-lzh
+add http://code.google.com/p/variablelengthstringhashing/ 
+* with a fast PRNG (xorshift?)
+* with a fast crypto PRNG
+* with a static precomputed random sequence
+add hashes from http://www.fastcrypto.org/
+add:
+* https://github.com/zfy0701/Parallel-LZ77
+* htps://github.com/matuba/LZSS
+* https://github.com/Wuestenschiff/myLz77
+* https://github.com/m3h/lz77
+* https://github.com/Cereal84/LZ77/tree/master/source
+* https://github.com/ky1000ky2000/lz77/tree/master/lz77
+* https://github.com/stevesan/lz77
+* https://github.com/Sanguinarious/lzh-improved
+
+Allow more than 1 option passed to a codec, i.e. tor:10:ht4

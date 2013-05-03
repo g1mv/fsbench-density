@@ -1,0 +1,529 @@
+*** lz4.c	2012-12-16 20:09:31.000000000 +0100
+--- lz4bz.c	2012-12-22 10:55:20.709302813 +0100
+***************
+*** 1,5 ****
+  /*
+!    LZ4 - Fast LZ compression algorithm
+     Copyright (C) 2011-2012, Yann Collet.
+     BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+  
+--- 1,5 ----
+  /*
+!    LZ4bz - Fast LZ compression algorithm
+     Copyright (C) 2011-2012, Yann Collet.
+     BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+  
+***************
+*** 131,137 ****
+  //**************************************
+  #include <stdlib.h>   // for malloc
+  #include <string.h>   // for memset
+! #include "lz4.h"
+  
+  
+  //**************************************
+--- 131,137 ----
+  //**************************************
+  #include <stdlib.h>   // for malloc
+  #include <string.h>   // for memset
+! #include "lz4bz.h"
+  
+  
+  //**************************************
+***************
+*** 313,331 ****
+  
+  #endif
+  
+  
+  
+  //******************************
+  // Compression functions
+  //******************************
+  
+! // LZ4_compressCtx :
+  // -----------------
+  // Compress 'isize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
+  // If it cannot achieve it, compression will stop, and result of the function will be zero.
+  // return : the number of bytes written in buffer 'dest', or 0 if the compression fails
+  
+! static inline int LZ4_compressCtx(void** ctx,
+                   const char* source,
+                   char* dest,
+                   int isize,
+--- 313,366 ----
+  
+  #endif
+  
++ static inline BYTE* LZ4_EncodeLength(size_t length, BYTE *op)
++ {
++     for(; unlikely(length > 127); length /= 128) 
++         *op++ = 128 | (BYTE)length % 128;
++     *op++ = (BYTE)length;
++     return op;
++ }
++ 
++ static inline size_t LZ4_SafeDecodeLength(const BYTE **pip, const BYTE *iend)
++ {
++     // FIXME: when iend <= pip, it reads 1 byte too far
++     size_t length = 0;
++     int shift = 0;
++     int s;
++     do {
++         s=*(*pip)++;
++         length |= (s & 127) << shift;
++         shift += 7;
++     } while ((s>127) && unlikely(*pip<iend));
++     return length;
++ }
++ 
++ static inline size_t LZ4_DecodeLength(const BYTE **pip)
++ {
++     size_t length = 0;
++     int shift = 0;
++     int s;
++     do {
++         s=*(*pip)++;
++         length |= (s & 127) << shift;
++         shift += 7;
++     } while (s>127);
++     return length;
++ }
++ 
+  
+  
+  //******************************
+  // Compression functions
+  //******************************
+  
+! // LZ4bz_compressCtx :
+  // -----------------
+  // Compress 'isize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
+  // If it cannot achieve it, compression will stop, and result of the function will be zero.
+  // return : the number of bytes written in buffer 'dest', or 0 if the compression fails
+  
+! static inline int LZ4bz_compressCtx(void** ctx,
+                   const char* source,
+                   char* dest,
+                   int isize,
+***************
+*** 420,426 ****
+          }
+          else *token = (length<<ML_BITS);
+  #else
+!         if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *op++ = 255; *op++ = (BYTE)len; }
+          else *token = (length<<ML_BITS);
+  #endif
+  
+--- 455,461 ----
+          }
+          else *token = (length<<ML_BITS);
+  #else
+!         if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); op=LZ4_EncodeLength(length-RUN_MASK, op); }
+          else *token = (length<<ML_BITS);
+  #endif
+  
+***************
+*** 449,455 ****
+          // Encode MatchLength
+          len = (int)(ip - anchor);
+          if unlikely(op + (1 + LASTLITERALS) + (len>>8) > oend) return 0; 		// Check output limit
+!         if (len>=(int)ML_MASK) { *token+=ML_MASK; len-=ML_MASK; for(; len > 509 ; len-=510) { *op++ = 255; *op++ = 255; } if (len > 254) { len-=255; *op++ = 255; } *op++ = (BYTE)len; }
+          else *token += len;
+  
+          // Test end of chunk
+--- 484,490 ----
+          // Encode MatchLength
+          len = (int)(ip - anchor);
+          if unlikely(op + (1 + LASTLITERALS) + (len>>8) > oend) return 0; 		// Check output limit
+!         if (len>=(int)ML_MASK) { *token+=ML_MASK; op=LZ4_EncodeLength(len-RUN_MASK, op); }
+          else *token += len;
+  
+          // Test end of chunk
+***************
+*** 473,479 ****
+      {
+          int lastRun = (int)(iend - anchor);
+          if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize) return 0;
+!         if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
+          else *op++ = (lastRun<<ML_BITS);
+          memcpy(op, anchor, iend - anchor);
+          op += iend-anchor;
+--- 508,514 ----
+      {
+          int lastRun = (int)(iend - anchor);
+          if (((char*)op - dest) + lastRun + 1 + ((lastRun+255-RUN_MASK)/255) > (U32)maxOutputSize) return 0;
+!         if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); op=LZ4_EncodeLength(lastRun-RUN_MASK, op); }
+          else *op++ = (lastRun<<ML_BITS);
+          memcpy(op, anchor, iend - anchor);
+          op += iend-anchor;
+***************
+*** 491,497 ****
+  #define HASH64KTABLESIZE (1U<<HASHLOG64K)
+  #define LZ4_HASH64K_FUNCTION(i)	(((i) * 2654435761U) >> ((MINMATCH*8)-HASHLOG64K))
+  #define LZ4_HASH64K_VALUE(p)	LZ4_HASH64K_FUNCTION(A32(p))
+! static inline int LZ4_compress64kCtx(void** ctx,
+                   const char* source,
+                   char* dest,
+                   int isize,
+--- 526,532 ----
+  #define HASH64KTABLESIZE (1U<<HASHLOG64K)
+  #define LZ4_HASH64K_FUNCTION(i)	(((i) * 2654435761U) >> ((MINMATCH*8)-HASHLOG64K))
+  #define LZ4_HASH64K_VALUE(p)	LZ4_HASH64K_FUNCTION(A32(p))
+! static inline int LZ4bz_compress64kCtx(void** ctx,
+                   const char* source,
+                   char* dest,
+                   int isize,
+***************
+*** 585,591 ****
+          }
+          else *token = (length<<ML_BITS);
+  #else
+!         if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *op++ = 255; *op++ = (BYTE)len; }
+          else *token = (length<<ML_BITS);
+  #endif
+  
+--- 620,626 ----
+          }
+          else *token = (length<<ML_BITS);
+  #else
+!         if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); op=LZ4_EncodeLength(length-RUN_MASK, op); }
+          else *token = (length<<ML_BITS);
+  #endif
+  
+***************
+*** 614,620 ****
+          // Encode MatchLength
+          len = (int)(ip - anchor);
+          if unlikely(op + (1 + LASTLITERALS) + (len>>8) > oend) return 0; 		// Check output limit
+!         if (len>=(int)ML_MASK) { *token+=ML_MASK; len-=ML_MASK; for(; len > 509 ; len-=510) { *op++ = 255; *op++ = 255; } if (len > 254) { len-=255; *op++ = 255; } *op++ = (BYTE)len; }
+          else *token += len;
+  
+          // Test end of chunk
+--- 649,655 ----
+          // Encode MatchLength
+          len = (int)(ip - anchor);
+          if unlikely(op + (1 + LASTLITERALS) + (len>>8) > oend) return 0; 		// Check output limit
+!         if (len>=(int)ML_MASK) { *token+=ML_MASK; op=LZ4_EncodeLength(len-RUN_MASK, op); }
+          else *token += len;
+  
+          // Test end of chunk
+***************
+*** 638,644 ****
+      {
+          int lastRun = (int)(iend - anchor);
+          if (op + lastRun + 1 + (lastRun-RUN_MASK+255)/255 > oend) return 0;
+!         if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
+          else *op++ = (lastRun<<ML_BITS);
+          memcpy(op, anchor, iend - anchor);
+          op += iend-anchor;
+--- 673,679 ----
+      {
+          int lastRun = (int)(iend - anchor);
+          if (op + lastRun + 1 + (lastRun-RUN_MASK+255)/255 > oend) return 0;
+!         if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); op=LZ4_EncodeLength(lastRun-RUN_MASK, op); }
+          else *op++ = (lastRun<<ML_BITS);
+          memcpy(op, anchor, iend - anchor);
+          op += iend-anchor;
+***************
+*** 649,655 ****
+  }
+  
+  
+! int LZ4_compress_limitedOutput(const char* source, 
+                                 char* dest, 
+                                 int isize, 
+                                 int maxOutputSize)
+--- 684,690 ----
+  }
+  
+  
+! int LZ4bz_compress_limitedOutput(const char* source, 
+                                 char* dest, 
+                                 int isize, 
+                                 int maxOutputSize)
+***************
+*** 663,679 ****
+      free(ctx);
+      return result;
+  #else
+!     if (isize < (int)LZ4_64KLIMIT) return LZ4_compress64kCtx(NULL, source, dest, isize, maxOutputSize);
+!     return LZ4_compressCtx(NULL, source, dest, isize, maxOutputSize);
+  #endif
+  }
+  
+  
+! int LZ4_compress(const char* source,
+                   char* dest,
+                   int isize)
+  {
+!     return LZ4_compress_limitedOutput(source, dest, isize, LZ4_compressBound(isize));
+  }
+  
+  
+--- 698,714 ----
+      free(ctx);
+      return result;
+  #else
+!     if (isize < (int)LZ4_64KLIMIT) return LZ4bz_compress64kCtx(NULL, source, dest, isize, maxOutputSize);
+!     return LZ4bz_compressCtx(NULL, source, dest, isize, maxOutputSize);
+  #endif
+  }
+  
+  
+! int LZ4bz_compress(const char* source,
+                   char* dest,
+                   int isize)
+  {
+!     return LZ4bz_compress_limitedOutput(source, dest, isize, LZ4bz_compressBound(isize));
+  }
+  
+  
+***************
+*** 683,695 ****
+  // Decompression functions
+  //****************************
+  
+! // Note : The decoding functions LZ4_uncompress() and LZ4_uncompress_unknownOutputSize()
+  //		are safe against "buffer overflow" attack type.
+  //		They will never write nor read outside of the provided output buffers.
+! //      LZ4_uncompress_unknownOutputSize() also insures that it will never read outside of the input buffer.
+  //		A corrupted input will produce an error result, a negative int, indicating the position of the error within input stream.
+  
+! int LZ4_uncompress(const char* source,
+                   char* dest,
+                   int osize)
+  {
+--- 718,730 ----
+  // Decompression functions
+  //****************************
+  
+! // Note : The decoding functions LZ4bz_uncompress() and LZ4bz_uncompress_unknownOutputSize()
+  //		are safe against "buffer overflow" attack type.
+  //		They will never write nor read outside of the provided output buffers.
+! //      LZ4bz_uncompress_unknownOutputSize() also insures that it will never read outside of the input buffer.
+  //		A corrupted input will produce an error result, a negative int, indicating the position of the error within input stream.
+  
+! int LZ4bz_uncompress(const char* source,
+                   char* dest,
+                   int osize)
+  {
+***************
+*** 715,721 ****
+      {
+          // get runlength
+          token = *ip++;
+!         if ((length=(token>>ML_BITS)) == RUN_MASK)  { size_t len; for (;(len=*ip++)==255;length+=255){} length += len; }
+  
+          // copy literals
+          cpy = op+length;
+--- 750,757 ----
+      {
+          // get runlength
+          token = *ip++;
+!         if ((length=(token>>ML_BITS)) == RUN_MASK)
+!             length += LZ4_DecodeLength(&ip);
+  
+          // copy literals
+          cpy = op+length;
+***************
+*** 733,739 ****
+          if unlikely(ref < (BYTE* const)dest) goto _output_error;   // Error : offset create reference outside destination buffer
+  
+          // get matchlength
+!         if ((length=(token&ML_MASK)) == ML_MASK) { for (;*ip==255;length+=255) {ip++;} length += *ip++; }
+  
+          // copy repeated sequence
+          if unlikely((op-ref)<STEPSIZE)
+--- 769,776 ----
+          if unlikely(ref < (BYTE* const)dest) goto _output_error;   // Error : offset create reference outside destination buffer
+  
+          // get matchlength
+!         if ((length=(token&ML_MASK)) == ML_MASK)
+!             length += LZ4_DecodeLength(&ip);
+  
+          // copy repeated sequence
+          if unlikely((op-ref)<STEPSIZE)
+***************
+*** 774,780 ****
+  }
+  
+  
+! int LZ4_uncompress_unknownOutputSize(
+                  const char* source,
+                  char* dest,
+                  int isize,
+--- 811,817 ----
+  }
+  
+  
+! int LZ4bz_uncompress_unknownOutputSize(
+                  const char* source,
+                  char* dest,
+                  int isize,
+***************
+*** 803,809 ****
+  
+          // get runlength
+          token = *ip++;
+!         if ((length=(token>>ML_BITS)) == RUN_MASK) { int s=255; while ((ip<iend) && (s==255)) { s=*ip++; length += s; } }
+  
+          // copy literals
+          cpy = op+length;
+--- 840,847 ----
+  
+          // get runlength
+          token = *ip++;
+!         if ((length=(token>>ML_BITS)) == RUN_MASK)
+!             length += LZ4_SafeDecodeLength(&ip, iend);
+  
+          // copy literals
+          cpy = op+length;
+***************
+*** 822,828 ****
+          if (ref < (BYTE* const)dest) goto _output_error;   // Error : offset creates reference outside of destination buffer
+  
+          // get matchlength
+!         if ((length=(token&ML_MASK)) == ML_MASK) { while (ip<iend) { int s = *ip++; length +=s; if (s==255) continue; break; } }
+  
+          // copy repeated sequence
+          if unlikely(op-ref<STEPSIZE)
+--- 860,867 ----
+          if (ref < (BYTE* const)dest) goto _output_error;   // Error : offset creates reference outside of destination buffer
+  
+          // get matchlength
+!         if ((length=(token&ML_MASK)) == ML_MASK)
+!             length += LZ4_SafeDecodeLength(&ip, iend);
+  
+          // copy repeated sequence
+          if unlikely(op-ref<STEPSIZE)
+*** lz4.h	2012-12-16 20:09:36.000000000 +0100
+--- lz4bz.h	2012-12-22 09:49:21.880270258 +0100
+***************
+*** 1,5 ****
+  /*
+!    LZ4 - Fast LZ compression algorithm
+     Header File
+     Copyright (C) 2011-2012, Yann Collet.
+     BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+--- 1,5 ----
+  /*
+!    LZ4bz - Fast LZ compression algorithm
+     Header File
+     Copyright (C) 2011-2012, Yann Collet.
+     BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+***************
+*** 50,60 ****
+  // Simple Functions
+  //****************************
+  
+! int LZ4_compress   (const char* source, char* dest, int isize);
+! int LZ4_uncompress (const char* source, char* dest, int osize);
+  
+  /*
+! LZ4_compress() :
+      Compresses 'isize' bytes from 'source' into 'dest'.
+      Destination buffer must be already allocated,
+      and must be sized to handle worst cases situations (input data not compressible)
+--- 50,60 ----
+  // Simple Functions
+  //****************************
+  
+! int LZ4bz_compress   (const char* source, char* dest, int isize);
+! int LZ4bz_uncompress (const char* source, char* dest, int osize);
+  
+  /*
+! LZ4bz_compress() :
+      Compresses 'isize' bytes from 'source' into 'dest'.
+      Destination buffer must be already allocated,
+      and must be sized to handle worst cases situations (input data not compressible)
+***************
+*** 64,70 ****
+      return : the number of bytes written in buffer dest
+  
+  
+! LZ4_uncompress() :
+      osize  : is the output size, therefore the original size
+      return : the number of bytes read in the source buffer
+               If the source stream is malformed, the function will stop decoding and return a negative result, indicating the byte position of the faulty instruction
+--- 64,70 ----
+      return : the number of bytes written in buffer dest
+  
+  
+! LZ4bz_uncompress() :
+      osize  : is the output size, therefore the original size
+      return : the number of bytes read in the source buffer
+               If the source stream is malformed, the function will stop decoding and return a negative result, indicating the byte position of the faulty instruction
+***************
+*** 77,88 ****
+  //****************************
+  // Advanced Functions
+  //****************************
+! 
+! static inline int LZ4_compressBound(int isize)   { return ((isize) + ((isize)/255) + 16); }
+! #define           LZ4_COMPRESSBOUND(    isize)            ((isize) + ((isize)/255) + 16)
+  
+  /*
+! LZ4_compressBound() :
+      Provides the maximum size that LZ4 may output in a "worst case" scenario (input data not compressible)
+      primarily useful for memory allocation of output buffer.
+  	inline function is recommended for the general case,
+--- 77,88 ----
+  //****************************
+  // Advanced Functions
+  //****************************
+! // FIXME: the bound is not as simple as that...
+! static inline int LZ4bz_compressBound(int isize)   { return ((isize) + ((isize)/255) + 16); }
+! #define           LZ4bz_COMPRESSBOUND(    isize)            ((isize) + ((isize)/255) + 16)
+  
+  /*
+! LZ4bz_compressBound() :
+      Provides the maximum size that LZ4 may output in a "worst case" scenario (input data not compressible)
+      primarily useful for memory allocation of output buffer.
+  	inline function is recommended for the general case,
+***************
+*** 94,103 ****
+  */
+  
+  
+! int LZ4_compress_limitedOutput   (const char* source, char* dest, int isize, int maxOutputSize);
+  
+  /*
+! LZ4_compress_limitedOutput() :
+      Compress 'isize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
+      If it cannot achieve it, compression will stop, and result of the function will be zero.
+      This function never writes outside of provided output buffer.
+--- 94,103 ----
+  */
+  
+  
+! int LZ4bz_compress_limitedOutput   (const char* source, char* dest, int isize, int maxOutputSize);
+  
+  /*
+! LZ4bz_compress_limitedOutput() :
+      Compress 'isize' bytes from 'source' into an output buffer 'dest' of maximum size 'maxOutputSize'.
+      If it cannot achieve it, compression will stop, and result of the function will be zero.
+      This function never writes outside of provided output buffer.
+***************
+*** 109,118 ****
+  */
+  
+  
+! int LZ4_uncompress_unknownOutputSize (const char* source, char* dest, int isize, int maxOutputSize);
+  
+  /*
+! LZ4_uncompress_unknownOutputSize() :
+      isize  : is the input size, therefore the compressed size
+      maxOutputSize : is the size of the destination buffer (which must be already allocated)
+      return : the number of bytes decoded in the destination buffer (necessarily <= maxOutputSize)
+--- 109,118 ----
+  */
+  
+  
+! int LZ4bz_uncompress_unknownOutputSize (const char* source, char* dest, int isize, int maxOutputSize);
+  
+  /*
+! LZ4bz_uncompress_unknownOutputSize() :
+      isize  : is the input size, therefore the compressed size
+      maxOutputSize : is the size of the destination buffer (which must be already allocated)
+      return : the number of bytes decoded in the destination buffer (necessarily <= maxOutputSize)
