@@ -289,8 +289,8 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_BLAKE2
               new Checksum<64>("Blake2b", _BLAKE2_VERSION, fsbench_blake2b),
               new Checksum<64>("Blake2bp", _BLAKE2_VERSION, fsbench_blake2bp),
-              new Checksum<64>("Blake2s", _BLAKE2_VERSION, fsbench_blake2s),
-              new Checksum<64>("Blake2sp", _BLAKE2_VERSION, fsbench_blake2sp),
+              new Checksum<32>("Blake2s", _BLAKE2_VERSION, fsbench_blake2s),
+              new Checksum<32>("Blake2sp", _BLAKE2_VERSION, fsbench_blake2sp),
 #endif
 #ifdef FSBENCH_USE_CITYHASH
               new Checksum< sizeof(uint64_t)>("CityHash64", _CITYHASH_VERSION, CityHash64),

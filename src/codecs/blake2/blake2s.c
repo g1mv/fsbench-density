@@ -1,3 +1,15 @@
+/*
+   BLAKE2 reference source code package - optimized C implementations
+
+   Written in 2012 by Samuel Neves <sneves@dei.uc.pt>
+
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related and neighboring rights to this software to the public domain
+   worldwide. This software is distributed without any warranty.
+
+   You should have received a copy of the CC0 Public Domain Dedication along with
+   this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+*/
 
 #include <stdint.h>
 #include <string.h>
@@ -364,9 +376,9 @@ int blake2s( uint8_t *out, const void *in, const void *key, const uint8_t outlen
 }
 
 #if defined(SUPERCOP)
-int crypto_hash(unsigned char *out, unsigned char *in, unsigned long long inlen)
+int crypto_hash( unsigned char *out, unsigned char *in, unsigned long long inlen )
 {
-  return blake2s(out, in, NULL, BLAKE2S_OUTBYTES, inlen, 0);
+  return blake2s( out, in, NULL, BLAKE2S_OUTBYTES, inlen, 0 );
 }
 #endif
 

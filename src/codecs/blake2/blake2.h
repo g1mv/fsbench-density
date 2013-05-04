@@ -1,3 +1,15 @@
+/*
+   BLAKE2 reference source code package - optimized C implementations
+
+   Written in 2012 by Samuel Neves <sneves@dei.uc.pt>
+
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related and neighboring rights to this software to the public domain
+   worldwide. This software is distributed without any warranty.
+
+   You should have received a copy of the CC0 Public Domain Dedication along with
+   this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+*/
 #pragma once
 #ifndef __BLAKE2_H__
 #define __BLAKE2_H__
@@ -45,7 +57,7 @@ extern "C" {
     uint8_t  node_depth;    // 15
     uint8_t  inner_length;  // 16
     // uint8_t  reserved[0];
-    uint8_t  salt[BLAKE2B_SALTBYTES]; // 24
+    uint8_t  salt[BLAKE2S_SALTBYTES]; // 24
     uint8_t  personal[BLAKE2S_PERSONALBYTES];  // 32
   } blake2s_param;
 

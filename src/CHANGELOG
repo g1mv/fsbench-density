@@ -1,5 +1,7 @@
 0.14
 [~] minor cleanup and refactoring
+[~] updated Blake2 to 20130131
+[!] blake2s, blake2sp have 256-bit digests
 
 0.13
 [+] support for pipelining compression->encryption->checksumming (and other pipelines too)

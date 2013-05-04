@@ -35,10 +35,10 @@ Blake224                            | multiple                                  
 Blake256                            | multiple                                    | SHA3 Final, 64bit opt | yes      |
 Blake384                            | multiple                                    | SHA3 Final, 64bit opt | yes      |
 Blake512                            | multiple                                    | SHA3 Final, 64bit opt | yes      |
-Blake2b                             | multiple                                    | 20121223              | yes      |
-Blake2bp                            | multiple                                    | 20121223              | yes      |
-Blake2s                             | multiple                                    | 20121223              | yes      |
-Blake2sp                            | multiple                                    | 20121223              | yes      |
+Blake2b                             | multiple                                    | 20130131              | yes      |
+Blake2bp                            | multiple                                    | 20130131              | yes      |
+Blake2s                             | multiple                                    | 20130131              | yes      |
+Blake2sp                            | multiple                                    | 20130131              | yes      |
 BlueMidnightWish224                 | Danilo Gligoroski                           | SHA3 rnd 2, 64bit opt | no       |
 BlueMidnightWish256                 | Danilo Gligoroski                           | SHA3 rnd 2, 64bit opt | no       |
 BlueMidnightWish384                 | Danilo Gligoroski                           | SHA3 rnd 1, 64bit opt | no       |
