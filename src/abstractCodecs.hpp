@@ -12,6 +12,7 @@
 
 #include "codecs.hpp"
 
+#include <cstring>
 #include <string>
 
 /**

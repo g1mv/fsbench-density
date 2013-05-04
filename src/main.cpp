@@ -33,6 +33,7 @@
 #include "benchmark.hpp"
 #include "tools.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <new>

@@ -48,7 +48,7 @@ namespace Edon_R
     SHA3_FUNCTION_DECLARATION(512)
 }
 #endif
-#ifdef FSBENCH_USE_SHA3_RND3
+#ifdef FSBENCH_USE_SHA3_RND3_GROESTL
 namespace Groestl
 {
     SHA3_FUNCTION_DECLARATION(224)

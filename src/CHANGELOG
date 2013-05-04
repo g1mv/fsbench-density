@@ -1,3 +1,6 @@
+0.14
+[~] minor cleanup and refactoring
+
 0.13
 [+] support for pipelining compression->encryption->checksumming (and other pipelines too)
 [+] added a couple of SHA3 candidate hashes

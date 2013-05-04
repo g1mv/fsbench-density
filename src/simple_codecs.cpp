@@ -36,15 +36,15 @@ extern "C"
 {
 #include "blake2/blake2.h"
 }
-#define BLAKE2_FUNC(name)                                  \
+#define BLAKE2_FUNC_DEFINITION(name)                       \
 void fsbench_ ## name (char* in, size_t isize, char* out)  \
 {                                                          \
     name((uint8_t*)out, (const void*)in, 0, 64, isize, 0); \
 }
-BLAKE2_FUNC(blake2s)
-BLAKE2_FUNC(blake2b)
-BLAKE2_FUNC(blake2sp)
-BLAKE2_FUNC(blake2bp)
+BLAKE2_FUNC_DEFINITION(blake2s)
+BLAKE2_FUNC_DEFINITION(blake2b)
+BLAKE2_FUNC_DEFINITION(blake2sp)
+BLAKE2_FUNC_DEFINITION(blake2bp)
 #endif//FSBENCH_USE_BLAKE2
 #ifdef FSBENCH_USE_BLOSC
 extern "C"

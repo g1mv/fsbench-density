@@ -10,6 +10,7 @@
 #define TOOLS_HPP_BhjgkfG8
 
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <typeinfo>
 

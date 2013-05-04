@@ -4,64 +4,60 @@
 
 # Codecs
 # You can enable or disable compilation of individual codecs here
-set(USE_7Z           1)
-set(USE_BCL          0) # inefficient
-set(USE_BLAKE2       1)
-set(USE_BLOSC        0) # inefficient
-set(USE_BLZ          0) # inefficient
-set(USE_BZ2          0) # there are barely any competitors for it
-set(USE_CITYHASH     1)
-set(USE_CRAPWOW      0) # weak and while fast, there are much faster ones
-set(USE_CRYPTOPP     0) # doesn't link on my FreeBSD
-set(USE_DOBOZ        0) # inefficient
-set(USE_ECRYPT       1)
-set(USE_FASTLZ       0) # inefficient
-set(USE_GIPFELI      0) # rarely works...
-set(USE_HALIBUT      0) # inefficient
-set(USE_LODEPNG      0) # inefficient
-set(USE_LZ4          1)
-set(USE_LZF          1)
-set(USE_LZFX         0) # inefficient
-set(USE_LZG          0) # inefficient
-set(USE_LZHAM        0) # known to cause problems on some platforms
-set(USE_LZMAT        1)
-set(USE_LZO          1)
-set(USE_LZSS_IM      0) # inefficient
-set(USE_LZV1         0) # inefficient
-set(USE_LZWC         0) # inefficient
-set(USE_LZX_COMPRESS 0) # inefficient, no decompressor
-set(USE_MMINI        1)
-set(USE_MINIZ        1)
-set(USE_MURMUR       1)
-set(USE_NRV          0) # inefficient
-set(USE_QUICKLZ      1)
-set(USE_QUICKLZZIP   0) # quite good, but single-threaded. I may fix it one day.
-set(USE_RLE64        1)
-set(USE_SANMAYCE_FNV 1)
-set(USE_SCZ          0) # single threaded and far too inefficient to be worth fixing...
-set(USE_SHA3_RND1    0) # didn't make it to the final...
-set(USE_SHA3_RND2    0) # didn't make it to the final...
-set(USE_SHA3_RND3    1)
-set(USE_SHRINKER     0) # doesn't work on some platforms
-set(USE_SIPHASH      1)
-set(USE_SNAPPY       1)
-set(USE_SPOOKY       1)
-set(USE_TINF         0) # inefficient
-set(USE_TOR          0) # doesn't compile on FreeBSD
-set(USE_XXHASH       1)
-set(USE_YAPPY        1)
-set(USE_ZFS          0) # Amateurish. Seriously.
-set(USE_ZLIB         1)
-set(USE_ZOPFLI       1)
+set(USE_7Z                1)
+set(USE_BCL               0) # inefficient
+set(USE_BLAKE2            1)
+set(USE_BLOSC             0) # inefficient
+set(USE_BLZ               0) # inefficient
+set(USE_BZ2               0) # there are barely any competitors for it
+set(USE_CITYHASH          1)
+set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
+set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
+set(USE_DOBOZ             0) # inefficient
+set(USE_ECRYPT            1)
+set(USE_FASTLZ            0) # inefficient
+set(USE_GIPFELI           0) # rarely works...
+set(USE_HALIBUT           0) # inefficient
+set(USE_LODEPNG           0) # inefficient
+set(USE_LZ4               1)
+set(USE_LZF               1)
+set(USE_LZFX              0) # inefficient
+set(USE_LZG               0) # inefficient
+set(USE_LZHAM             0) # known to cause problems on some platforms
+set(USE_LZMAT             1)
+set(USE_LZO               1)
+set(USE_LZSS_IM           0) # inefficient
+set(USE_LZV1              0) # inefficient
+set(USE_LZWC              0) # inefficient
+set(USE_LZX_COMPRESS      0) # inefficient, no decompressor
+set(USE_MMINI             1)
+set(USE_MINIZ             1)
+set(USE_MURMUR            1)
+set(USE_NRV               0) # inefficient
+set(USE_QUICKLZ           1)
+set(USE_QUICKLZZIP        0) # quite good, but single-threaded. I may fix it one day.
+set(USE_RLE64             1)
+set(USE_SANMAYCE_FNV      1)
+set(USE_SCZ               0) # single threaded and far too inefficient to be worth fixing...
+set(USE_SHA3_RND1         0) # didn't make it to the final...
+set(USE_SHA3_RND2         0) # didn't make it to the final...
+set(USE_SHA3_RND3         1)
+set(USE_SHA3_RND3_GROESTL 0) # doesn't compile on some platforms
+set(USE_SHRINKER          0) # doesn't work on some platforms
+set(USE_SIPHASH           1)
+set(USE_SNAPPY            1)
+set(USE_SPOOKY            1)
+set(USE_TINF              0) # inefficient
+set(USE_TOR               0) # doesn't compile on FreeBSD
+set(USE_XXHASH            1)
+set(USE_YAPPY             1)
+set(USE_ZFS               0) # Nothing great
+set(USE_ZLIB              1)
+set(USE_ZOPFLI            1)
 
 # This script can feed certain compilers with additional optimisation flags aside from the usual -O2 or so. Other compilers use the defaults.
 # If you don't want the extra flags, set the variable below to 0
 set(OPTIMIZE_COMPILER_FLAGS 0)
-
-# Clang-Linux hack
-# It's needed on some machines. On some others it may cause troubles. 
-# If you get errors on Unix with a compiler other than gcc, commenting this out may help.
-set(CLANG_HACK 1)
 
 # Set it to 1 to enable SSE2 in codecs that support it.
 # Currently it's used only by Yappy and on my machine it hurts speed slightly
@@ -117,10 +113,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 IF(UNIX)
-    set(GCC_LINKFLAGS "-lrt") # GCC only
-    IF(CLANG_HACK)
-        set(EXE_LINKER_FLAGS "-lrt")
-    ENDIF(CLANG_HACK)
+    set(EXE_LINKER_FLAGS "-lrt -lpthread")
     add_definitions(-DFREEARC_UNIX) # tornado
 ENDIF(UNIX)
 
@@ -467,7 +460,7 @@ IF(USE_SCZ)
     set(OTHER_SRC ${OTHER_SRC} codecs/scz_compress/scz_compress_lib.c codecs/scz_compress/scz_decompress_lib.c codecs/scz_compress/scz.cpp)
     add_definitions(-DFSBENCH_USE_SCZ)
 ENDIF(USE_SCZ)
-IF(USE_SHA3_RND1 OR USE_SHA3_RND2 OR USE_SHA3_RND3)
+IF(USE_SHA3_RND1 OR USE_SHA3_RND2 OR USE_SHA3_RND3 OR USE_SHA3_RND3_GROESTL)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/SHA3) 
     set(OTHER_SRC ${OTHER_SRC} codecs/SHA3/fsbench_SHA3.cpp)
     IF(USE_SHA3_RND1)
@@ -479,7 +472,10 @@ IF(USE_SHA3_RND1 OR USE_SHA3_RND2 OR USE_SHA3_RND3)
     IF(USE_SHA3_RND3)
         add_definitions(-DFSBENCH_USE_SHA3_RND3)
     ENDIF(USE_SHA3_RND3)
-ENDIF(USE_SHA3_RND1 OR USE_SHA3_RND2 OR USE_SHA3_RND3)
+    IF(USE_SHA3_RND3_GROESTL)
+        add_definitions(-DFSBENCH_USE_SHA3_RND3_GROESTL)
+    ENDIF(USE_SHA3_RND3_GROESTL)
+ENDIF(USE_SHA3_RND1 OR USE_SHA3_RND2 OR USE_SHA3_RND3 OR USE_SHA3_RND3_GROESTL)
 IF(USE_SHRINKER)
     set(OTHER_SRC ${OTHER_SRC} codecs/Shrinker.c)
     add_definitions(-DFSBENCH_USE_SHRINKER)
@@ -532,19 +528,19 @@ set(SRC ${MAIN_SRC} ${7z_SRC} ${BCL_SRC} ${BZ2_SRC} ${CRYPTOPP_SRC} ${ECRYPT_SRC
 IF(CMAKE_COMPILER_IS_GNUCXX)
     set(CXX_FLAGS ${GXX_FLAGS})
     set(C_FLAGS   ${GCC_FLAGS})
-    set(EXE_LINKER_FLAGS ${GCC_LINKFLAGS})
+    set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${GCC_LINKFLAGS})
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 IF(CMAKE_COMPILER_IS_GNUC)
     set(CXX_FLAGS ${GXX_FLAGS})
     set(C_FLAGS   ${GCC_FLAGS})
-    set(EXE_LINKER_FLAGS ${GCC_LINKFLAGS})
+    set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${GCC_LINKFLAGS})
 ENDIF(CMAKE_COMPILER_IS_GNUC)
 
 IF(MSVC)
     set(CXX_FLAGS ${MSVC_FLAGS})
     set(C_FLAGS   ${MSVC_FLAGS})
-    set(EXE_LINKER_FLAGS ${MSVC_LINK_FLAGS})
+    set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${MSVC_LINK_FLAGS})
 ENDIF(MSVC)
 
 #-------------#

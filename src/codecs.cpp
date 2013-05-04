@@ -325,7 +325,7 @@ Codec * codecs[] =
               new Checksum<sizeof(uint64_t)>("FNV1a-Tesla3", _SANMAYCE_VERSION, fnv1_tesla3),
               new Checksum<sizeof(uint64_t)>("FNV1a-Yoshimura", _SANMAYCE_VERSION, fnv1_yoshimura),
 #endif
-#if defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3)
+#if defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3) || defined(FSBENCH_USE_SHA3_RND3_GROESTL)
 #   define QUOTE(x) #x
 #   define SHA3_CHECKSUM(name, digest_size, version)\
     new Checksum<digest_size/CHAR_BIT>(QUOTE(name##digest_size),              version,            FsBenchSHA3::name::fsbench_hash_##digest_size),
@@ -358,10 +358,6 @@ Codec * codecs[] =
               SHA3_CHECKSUM(Blake, 256, _SHA3_VERSION)
               SHA3_CHECKSUM(Blake, 384, _SHA3_VERSION)
               SHA3_CHECKSUM(Blake, 512, _SHA3_VERSION)
-              SHA3_CHECKSUM(Groestl, 224, _SHA3_VERSION)
-              SHA3_CHECKSUM(Groestl, 256, _SHA3_VERSION)
-              SHA3_CHECKSUM(Groestl, 384, _SHA3_VERSION)
-              SHA3_CHECKSUM(Groestl, 512, _SHA3_VERSION)
               SHA3_CHECKSUM(Keccak, 224, _KECCAK_VERSION)
               SHA3_CHECKSUM(Keccak, 256, _KECCAK_VERSION)
               SHA3_CHECKSUM(Keccak, 384, _KECCAK_VERSION)
@@ -375,6 +371,12 @@ Codec * codecs[] =
               SHA3_CHECKSUM(Skein, 384, _SHA3_VERSION)
               SHA3_CHECKSUM(Skein, 512, _SHA3_VERSION)
               SHA3_CHECKSUM(Skein, 1024, _SHA3_VERSION)
+#   endif
+#   ifdef FSBENCH_USE_SHA3_RND3_GROESTL
+              SHA3_CHECKSUM(Groestl, 224, _SHA3_VERSION)
+              SHA3_CHECKSUM(Groestl, 256, _SHA3_VERSION)
+              SHA3_CHECKSUM(Groestl, 384, _SHA3_VERSION)
+              SHA3_CHECKSUM(Groestl, 512, _SHA3_VERSION)
 #   endif
 #endif // defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3)
 #ifdef FSBENCH_USE_XXHASH

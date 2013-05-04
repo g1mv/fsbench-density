@@ -79,9 +79,13 @@ struct Codec
     bool can_be_skipped; //when a compressor fails to reduce size, the data can be left uncompressed and decompression can be skipped
                          //this doesn't hold for checksums, they have to be calculated even though they don't save space ;)
 
-    virtual void** eparams();                        // parmeters to be sent to compressors
-    virtual void** dparams();                        // parmeters to be sent to decompressors 
+    virtual void** eparams(); // parmeters to be sent to compressors
+    virtual void** dparams(); // parmeters to be sent to decompressors 
 
+    /**
+     * Creates a codec
+     * @throw InvalidParams Dude, something's wrong with your command line. 
+     */
     Codec(const std::string& name,
           const std::string& version,
           encoder_t encoder,
@@ -89,7 +93,7 @@ struct Codec
           max_encoded_size_t max_size = _max_compressed_size,
           transform_type encode_transform_type = moving,
           transform_type decode_transform_type = moving,
-          bool can_be_skipped = true) throw (InvalidParams);
+          bool can_be_skipped = true);
 
     // returns a help message
     virtual std::string help() const;

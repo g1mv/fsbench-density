@@ -18,8 +18,9 @@ extern "C"
 #include <stdint.h>
 }
 #endif // C++ 2011
-#include <sstream>
+#include <cstring>
 #include <iomanip>
+#include <sstream>
 
 using namespace std;
 
@@ -34,7 +35,7 @@ Codec::Codec(const std::string& name,
              max_encoded_size_t max_size,
              transform_type encode_transform_type,
              transform_type decode_transform_type,
-             bool can_be_skipped) throw (Codec::InvalidParams) :
+             bool can_be_skipped):
         name(name),
         version(version),
         encoder(encoder),
