@@ -18,6 +18,7 @@ extern "C"
 #include <stdint.h>
 }
 #endif // C++ 2011
+#include <cassert>
 #include <cstring>
 #include <iomanip>
 #include <sstream>
@@ -442,6 +443,9 @@ size_t PipelineCodec::encode(char* in, size_t isize, char* out, size_t osize, vo
         new_input = out;
         new_output = in;
     break;
+    default:
+        assert(0);
+    break;
     }
     size_t second_size = params->second_encoder->encoder(new_input,
                                                          first_size,
@@ -476,6 +480,9 @@ size_t PipelineCodec::decode(char* in, size_t isize, char* out, size_t osize, vo
     break;
     case moving:
         ret = params->first_decoder->encoder(out, ret, in, isize, &params->first_decoder);
+    break;
+    default:
+        assert(0);
     break;
     }
     return ret;

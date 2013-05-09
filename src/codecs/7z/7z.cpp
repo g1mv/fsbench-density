@@ -10,7 +10,14 @@
 #include "CPP/7zip/Compress/LzxDecoder.h"
 #endif
 
-
+#if __cplusplus >= 201103L // C++ 2011
+#include <cstdint>
+#else
+extern "C"
+{
+#include <stdint.h>
+}
+#endif
 #include <algorithm>
 #include <memory.h>
 
@@ -23,7 +30,7 @@ struct IOStream : ISequentialInStream, ISequentialOutStream
 {
     STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
     STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
-    
+
     IOStream(char* buf, size_t size):
         size(size),
         buf(buf)

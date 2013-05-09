@@ -1,7 +1,15 @@
-#include <iostream>
-
 #include "miniz.hpp"
 #include "codecs.hpp"
+
+#if __cplusplus >= 201103L // C++ 2011
+#include <cstdint>
+#else
+extern "C"
+{
+#include <stdint.h>
+}
+#endif
+#include <iostream>
 
 using namespace std;
 

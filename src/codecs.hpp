@@ -149,8 +149,10 @@ struct CodecWithParams
 
 extern std::list<Codec*> CODECS;
 extern std::list<CodecWithParams> DEFAULT_CODECS;
-extern std::list<CodecWithParams> FAST_CODECS;
-extern std::list<CodecWithParams> ALL_CODECS;
+extern std::list<CodecWithParams> FAST_COMPRESSORS;
+extern std::list<CodecWithParams> ALL_COMPRESSORS;
+extern std::list<CodecWithParams> ALL_CHECKSUMS;
+extern std::list<CodecWithParams> ALL_CIPHERS;
 
 Codec* find_codec(const std::string& name);
 

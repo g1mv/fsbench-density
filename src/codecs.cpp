@@ -426,7 +426,7 @@ pair<Codec*, string> default_codecs[] =
       make_pair(raw_find_codec("Snappy"), "") };
 MKLIST(DEFAULT_CODECS, default_codecs);
 
-pair<Codec*, string> fast_codecs[] =
+pair<Codec*, string> fast_compressors[] =
     { make_pair(raw_find_codec("bcl-rle"), ""),
       make_pair(raw_find_codec("blosc"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
@@ -438,9 +438,9 @@ pair<Codec*, string> fast_codecs[] =
       make_pair(raw_find_codec("RLE64"), ""),
       make_pair(raw_find_codec("Shrinker"), ""),
       make_pair(raw_find_codec("Snappy"), "") };
-MKLIST(FAST_CODECS, fast_codecs);
+MKLIST(FAST_COMPRESSORS, fast_compressors);
 
-pair<Codec*, string> all_codecs[] =
+pair<Codec*, string> all_compressors[] =
     { make_pair(raw_find_codec("7z-deflate"), ""),
       make_pair(raw_find_codec("7z-deflate64"), ""),
       make_pair(raw_find_codec("bcl-huffman"), ""),
@@ -468,22 +468,110 @@ pair<Codec*, string> all_codecs[] =
       make_pair(raw_find_codec("LZO"), ""),
       make_pair(raw_find_codec("LZSS-IM"), ""),
       make_pair(raw_find_codec("lzv1"), ""),
+      make_pair(raw_find_codec("lzwc"), ""),
       make_pair(find_codec("lzx_compress/nop"), ""),
       make_pair(raw_find_codec("miniz"), ""),
+      make_pair(raw_find_codec("mmini_lzl"), ""),
       make_pair(raw_find_codec("nrv2b"), ""),
       make_pair(raw_find_codec("nrv2d"), ""),
       make_pair(raw_find_codec("nrv2e"), ""),
       make_pair(raw_find_codec("QuickLZ"), ""),
-      make_pair(raw_find_codec("QuickLZ-zip/zlib"), ""),
+      make_pair(find_codec("QuickLZ-zip/zlib"), ""),
       make_pair(raw_find_codec("RLE64"), ""),
       make_pair(raw_find_codec("scz"), ""),
       make_pair(raw_find_codec("Shrinker"), ""),
-      make_pair(raw_find_codec("siphash"), ""),
       make_pair(raw_find_codec("Snappy"), ""),
       make_pair(find_codec("zlib/tinf"), ""),
       make_pair(raw_find_codec("Tornado"), ""),
       make_pair(raw_find_codec("Yappy"), ""),
-      make_pair(raw_find_codec("zlib"), "")
-//note: nop is not included
+      make_pair(raw_find_codec("zlib"), ""),
+      make_pair(find_codec("zopfli/zlib"), "")
         };
-MKLIST(ALL_CODECS, all_codecs);
+MKLIST(ALL_COMPRESSORS, all_compressors);
+
+pair<Codec*, string> all_ciphers[] =
+    { make_pair(raw_find_codec("AES128Bernstein"), ""),
+      make_pair(raw_find_codec("AES256Hongjun"), ""),
+      make_pair(raw_find_codec("ChaCha"), ""),
+      make_pair(raw_find_codec("HC128"), ""),
+      make_pair(raw_find_codec("HC256"), ""),
+      make_pair(raw_find_codec("Lex"), ""),
+      make_pair(raw_find_codec("Rabbit"), ""),
+      make_pair(raw_find_codec("RC4"), ""),
+      make_pair(raw_find_codec("Salsa20_8"), ""),
+      make_pair(raw_find_codec("Salsa20_12"), ""),
+      make_pair(raw_find_codec("Salsa20"), ""),
+      make_pair(raw_find_codec("Snow2"), ""),
+      make_pair(raw_find_codec("Sosemanuk"), ""),
+      make_pair(raw_find_codec("Trivium"), "")
+        };
+MKLIST(ALL_CIPHERS, all_ciphers);
+
+pair<Codec*, string> all_checksums[] =
+        { make_pair(raw_find_codec("Blake2b"), ""),
+          make_pair(raw_find_codec("Blake2bp"), ""),
+          make_pair(raw_find_codec("Blake2s"), ""),
+          make_pair(raw_find_codec("Blake2sp"), ""),
+          make_pair(raw_find_codec("CityHash64"), ""),
+          make_pair(raw_find_codec("CityHash128"), ""),
+          make_pair(raw_find_codec("CrapWow"), ""),
+          make_pair(raw_find_codec("cryptopp-adler32"), ""),
+          make_pair(raw_find_codec("cryptopp-crc32"), ""),
+          make_pair(raw_find_codec("cryptopp-md5"), ""),
+          make_pair(raw_find_codec("cryptopp-sha224"), ""),
+          make_pair(raw_find_codec("cryptopp-sha256"), ""),
+          make_pair(raw_find_codec("cryptopp-sha384"), ""),
+          make_pair(raw_find_codec("cryptopp-sha512"), ""),
+          make_pair(raw_find_codec("SipHash24"), ""),
+          make_pair(raw_find_codec("murmur3_x86_32"), ""),
+          make_pair(raw_find_codec("SpookyHash"), ""),
+          make_pair(raw_find_codec("FNV1a-Jesteress"), ""),
+          make_pair(raw_find_codec("FNV1a-Jesteress"), ""),
+          make_pair(raw_find_codec("FNV1a-Mantis"), ""),
+          make_pair(raw_find_codec("FNV1a-Meiyian"), ""),
+          make_pair(raw_find_codec("FNV1a-Tesla"), ""),
+          make_pair(raw_find_codec("FNV1a-Tesla3"), ""),
+          make_pair(raw_find_codec("FNV1a-Yoshimura"), ""),
+          make_pair(raw_find_codec("Edon-R224"), ""),
+          make_pair(raw_find_codec("Edon-R256"), ""),
+          make_pair(raw_find_codec("Edon-R384"), ""),
+          make_pair(raw_find_codec("Edon-R512"), ""),
+          make_pair(raw_find_codec("SWIFFTX224"), ""),
+          make_pair(raw_find_codec("SWIFFTX256"), ""),
+          make_pair(raw_find_codec("SWIFFTX384"), ""),
+          make_pair(raw_find_codec("SWIFFTX512"), ""),
+          make_pair(raw_find_codec("BlueMidnightWish224"), ""),
+          make_pair(raw_find_codec("BlueMidnightWish256"), ""),
+          make_pair(raw_find_codec("BlueMidnightWish384"), ""),
+          make_pair(raw_find_codec("BlueMidnightWish512"), ""),
+          make_pair(raw_find_codec("CubeHash224"), ""),
+          make_pair(raw_find_codec("CubeHash256"), ""),
+          make_pair(raw_find_codec("CubeHash384"), ""),
+          make_pair(raw_find_codec("CubeHash512"), ""),
+          make_pair(raw_find_codec("Blake224"), ""),
+          make_pair(raw_find_codec("Blake256"), ""),
+          make_pair(raw_find_codec("Blake384"), ""),
+          make_pair(raw_find_codec("Blake512"), ""),
+          make_pair(raw_find_codec("Keccak224"), ""),
+          make_pair(raw_find_codec("Keccak256"), ""),
+          make_pair(raw_find_codec("Keccak384"), ""),
+          make_pair(raw_find_codec("Keccak512"), ""),
+          make_pair(raw_find_codec("JH224"), ""),
+          make_pair(raw_find_codec("JH256"), ""),
+          make_pair(raw_find_codec("JH384"), ""),
+          make_pair(raw_find_codec("JHX512"), ""),
+          make_pair(raw_find_codec("Skein224"), ""),
+          make_pair(raw_find_codec("Skein256"), ""),
+          make_pair(raw_find_codec("Skein384"), ""),
+          make_pair(raw_find_codec("Skein512"), ""),
+          make_pair(raw_find_codec("Skein1024"), ""),
+          make_pair(raw_find_codec("Groestl224"), ""),
+          make_pair(raw_find_codec("Groestl256"), ""),
+          make_pair(raw_find_codec("Groestl384"), ""),
+          make_pair(raw_find_codec("Groestl512"), ""),
+          make_pair(raw_find_codec("xxhash"), ""),
+          make_pair(raw_find_codec("xxhash256"), ""),
+          make_pair(raw_find_codec("fletcher2"), ""),
+          make_pair(raw_find_codec("fletcher4"), "")
+        };
+MKLIST(ALL_CHECKSUMS, all_checksums);

@@ -22,7 +22,7 @@ class LZSSIM
      */
     int path[N][3];
 public:
-    int lzssim_encode(unsigned char* in, unsigned char* out, int size, int max);
+    int lzssim_encode(unsigned char* in, unsigned char* out, int size, bool max);
     static void lzssim_decode(unsigned char* in, unsigned char* out, int size);
 };
 #endif // __LZSS_HPP_njsaihf9H5

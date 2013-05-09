@@ -6,7 +6,7 @@
 # You can enable or disable compilation of individual codecs here
 set(USE_7Z                1)
 set(USE_BCL               0) # inefficient
-set(USE_BLAKE2            1)
+set(USE_BLAKE2            0) # doesn't compile with MSVC10
 set(USE_BLOSC             0) # inefficient
 set(USE_BLZ               0) # inefficient
 set(USE_BZ2               0) # there are barely any competitors for it
@@ -30,7 +30,7 @@ set(USE_LZSS_IM           0) # inefficient
 set(USE_LZV1              0) # inefficient
 set(USE_LZWC              0) # inefficient
 set(USE_LZX_COMPRESS      0) # inefficient, no decompressor
-set(USE_MMINI             1)
+set(USE_MMINI             0) # doesn't compile with MSVC10
 set(USE_MINIZ             1)
 set(USE_MURMUR            1)
 set(USE_NRV               0) # inefficient
@@ -42,7 +42,7 @@ set(USE_SCZ               0) # single threaded and far too inefficient to be wor
 set(USE_SHA3_RND1         0) # didn't make it to the final...
 set(USE_SHA3_RND2         0) # didn't make it to the final...
 set(USE_SHA3_RND3         1)
-set(USE_SHA3_RND3_GROESTL 0) # doesn't compile on some platforms
+set(USE_SHA3_RND3_GROESTL 0) # doesn't compile with MSVC10
 set(USE_SHRINKER          0) # doesn't work on some platforms
 set(USE_SIPHASH           1)
 set(USE_SNAPPY            1)
@@ -81,9 +81,6 @@ project (FSBENCH)
 
 include_directories (${FSBENCH_SOURCE_DIR})
 include_directories (${FSBENCH_SOURCE_DIR}/codecs)
-
-add_definitions(-DNO_VIZ)             # zlib. Lack of this definition causes troubles sometimes
-add_definitions(-D_UNICODE -DUNICODE) # tornado
  
 
 #-------------------#
@@ -336,6 +333,8 @@ IF(USE_ZLIB)
         codecs/zlib/zutil.c)
 
     add_definitions(-DFSBENCH_USE_ZLIB)
+
+    add_definitions(-DNO_VIZ) # Lack of this definition causes troubles sometimes
 ENDIF(USE_ZLIB)
 
 IF(USE_BLAKE2)
@@ -502,6 +501,7 @@ ENDIF(USE_TINF)
 IF(USE_TOR)
     set(OTHER_SRC ${OTHER_SRC} codecs/tornado/tor_test.cpp)
     add_definitions(-DFSBENCH_USE_TOR)
+    add_definitions(-D_UNICODE -DUNICODE)
 ENDIF(USE_TOR)
 IF(USE_XXHASH)
     set(OTHER_SRC ${OTHER_SRC} codecs/xxhash.c codecs/xxhash256.c)
@@ -531,11 +531,11 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${GCC_LINKFLAGS})
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-IF(CMAKE_COMPILER_IS_GNUC)
+IF(CMAKE_COMPILER_IS_GNUCC)
     set(CXX_FLAGS ${GXX_FLAGS})
     set(C_FLAGS   ${GCC_FLAGS})
     set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${GCC_LINKFLAGS})
-ENDIF(CMAKE_COMPILER_IS_GNUC)
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
 
 IF(MSVC)
     set(CXX_FLAGS ${MSVC_FLAGS})

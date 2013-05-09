@@ -95,6 +95,7 @@ void usage()
 
 /**
  * Checks if the given codec has both encoder and decoder
+ * FIXME: this shouldn't be used in main as MultiFunctioCodecs fill their encoders / decoders in init()
  * @note It prints error to cerr. 
  * @return true if yes, false otherwise 
  */
@@ -235,7 +236,9 @@ int main(int argc, char** argv)
             // pseudocodec?
             if (case_insensitive_compare(argv[1], "all") == 0)
             {
-                codecs.insert(codecs.end(), ALL_CODECS.begin(), ALL_CODECS.end());
+                codecs.insert(codecs.end(), ALL_COMPRESSORS.begin(), ALL_COMPRESSORS.end());
+                codecs.insert(codecs.end(), ALL_CHECKSUMS.begin(), ALL_CHECKSUMS.end());
+                codecs.insert(codecs.end(), ALL_CIPHERS.begin(), ALL_CIPHERS.end());
             }
             else if (case_insensitive_compare(argv[1], "default") == 0)
             {
@@ -243,7 +246,19 @@ int main(int argc, char** argv)
             }
             else if (case_insensitive_compare(argv[1], "fast") == 0)
             {
-                codecs.insert(codecs.end(), FAST_CODECS.begin(), FAST_CODECS.end());
+                codecs.insert(codecs.end(), FAST_COMPRESSORS.begin(), FAST_COMPRESSORS.end());
+            }
+            else if (case_insensitive_compare(argv[1], "compressors") == 0)
+            {
+                codecs.insert(codecs.end(), ALL_COMPRESSORS.begin(), ALL_COMPRESSORS.end());
+            }
+            else if (case_insensitive_compare(argv[1], "checksums") == 0)
+            {
+                codecs.insert(codecs.end(), ALL_CHECKSUMS.begin(), ALL_CHECKSUMS.end());
+            }
+            else if (case_insensitive_compare(argv[1], "ciphers") == 0)
+            {
+                codecs.insert(codecs.end(), ALL_CIPHERS.begin(), ALL_CIPHERS.end());
             }
             else
             {
