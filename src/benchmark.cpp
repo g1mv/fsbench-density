@@ -171,6 +171,29 @@ string efficiency_string(uint64_t saved_bytes, uint64_t msec)
     return "high :)";
 }
 
+/**
+ * Checks if the given codec has both encoder and decoder
+ * @note It prints error to cerr. 
+ * @return true if yes, false otherwise 
+ */
+bool check_codec(const Codec &codec)
+{
+    if (codec.encoder == 0)
+    {
+        cerr << "ERROR: " << codec.name << " is just a decoder.\n";
+        cerr << "Combine it with some encoder to test it.\n";
+        return false;
+    }
+    else if (codec.decoder == 0)
+    {
+        cerr << "ERROR: " << codec.name << " is just an encoder.\n";
+        cerr << "Combine it with some decoder to test it.\n";
+        cerr << "If you don't want one, combine it with nop.\n";
+        return false;
+    }
+    return true;
+}
+
 ///////////////////////////
 // OUTPUT PRINTING
 ///////////////////////////
@@ -708,6 +731,10 @@ unsigned test(list<CodecWithParams>& codecs,
         const string& codec_init_params = it->params;
 
         codec.init(codec_init_params, threads_no, min(size, bsize));
+        // note: checking can't be done earlier
+        //       because codecs are allowed to set (en|de)coders in init()
+        if (!check_codec(codec))
+            continue;
         printCodec(codec, csv);
 
         uint32_t fastest_ctime = -1;

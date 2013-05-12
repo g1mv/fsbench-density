@@ -1,4 +1,3 @@
-revert changes that moved checking of codecs not being null from test() to main(). Some codecs only update their endcode()/decode() later, so they can't be used now... 
 small_iters problem: in-place and buffered codecs that overwrite their input (all but checksums) encode the given data only during the 1st small_iter. Possible solutions:
 * drop si; instead of N si have N copies of data stored in RAM
 * forbid si>1 for codecs where it doesn't work

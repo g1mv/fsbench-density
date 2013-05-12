@@ -93,29 +93,7 @@ void usage()
     cerr << "  " PROGNAME " fastlz lzf,ultra -t2 -b131072 -m4096 -i10 file.tar\n";
 }
 
-/**
- * Checks if the given codec has both encoder and decoder
- * FIXME: this shouldn't be used in main as MultiFunctioCodecs fill their encoders / decoders in init()
- * @note It prints error to cerr. 
- * @return true if yes, false otherwise 
- */
-bool check_codec(const Codec &codec)
-{
-    if (codec.encoder == 0)
-    {
-        cerr << "ERROR: " << codec.name << " is just a decoder.\n";
-        cerr << "Combine it with some encoder to test it.\n";
-        return false;
-    }
-    else if (codec.decoder == 0)
-    {
-        cerr << "ERROR: " << codec.name << " is just an encoder.\n";
-        cerr << "Combine it with some decoder to test it.\n";
-        cerr << "If you don't want one, combine it with nop.\n";
-        return false;
-    }
-    return true;
-}
+
 ///////////////////////////
 // MAIN
 ///////////////////////////
@@ -274,10 +252,7 @@ int main(int argc, char** argv)
                 Codec* found = find_codec(codec);
                 if (found)
                 {
-                    if(check_codec(*found))
-                    {
-                        codecs.push_back(CodecWithParams(*found, params));
-                    }
+                    codecs.push_back(CodecWithParams(*found, params));
                 }
                 else
                 {
