@@ -1,5 +1,12 @@
 #include "sanmayce.h"
 
+// Functions that use SSE appear to be specific to MS compilers
+// Uncommenting the lines below will make them compile, but they are not connected to the main function,
+// so they are effectively dead code.
+//#define XMM_KAZE_SSE2
+//#define XMM_KAZE_SSE4
+//#define XMM_KAZE_AVX
+
 // "No High-Speed Limit", says Tesla.
 // 
 // As a youth, Tesla exhibited a peculiar trait that he considered the basis of all his invention.
@@ -320,4 +327,331 @@ uint32_t FNV1A_Hash_Mantis(const char *str, size_t wrdlen)
 		hash32 = (hash32 ^ *(uint16_t*)(p+3*sizeof(uint16_t))) * PRIME;
 	} // Bug Fixed!        
 	return hash32 ^ (hash32 >> 16);
+}
+
+
+// Notes, 2013-Apr-26: 
+// Wanted to see how SIMDed main loop would look like:
+// One of the main goals: to stress 128bit registers only and nothing else, for now 6 in total, in fact Intel uses the all 8.
+// Current approach: instead of rotating the 5 bits within the DWORD quadruplets I chose to do it within the entire DQWORD i.e. XMMWORD.
+// Length of the main loop: 02795 - 0270d + 6 = 142 bytes
+// CRASH CARAMBA: My CPU T7500 supports up to SSSE3 but not SSE4.1 and AVX, I need YMM (it reads 'yummy') machine.
+
+// FNV1A_YoshimitsuTRIADiiXMM revision 1+ aka FNV1A_SaberFatigue, copyleft 2013-Apr-26 Kaze.
+// Targeted purpose: x-gram table lookups for Leprechaun r17.
+// Targeted machine: assuming SSE2 is present always - no non-SSE2 counterpart.
+#if defined(XMM_KAZE_SSE2) || defined(XMM_KAZE_SSE4) || defined(XMM_KAZE_AVX)
+#ifdef XMM_KAZE_SSE2
+#include <emmintrin.h> //SSE2
+#endif
+#ifdef XMM_KAZE_SSE4
+#include <smmintrin.h> //SSE4.1
+#endif
+#ifdef XMM_KAZE_AVX
+#include <immintrin.h> //AVX
+#endif
+#define xmmload(p) _mm_load_si128((__m128i const*)(p))
+#define xmmloadu(p) _mm_loadu_si128((__m128i const*)(p))
+#define _rotl_KAZE128(x, n) _mm_or_si128(_mm_slli_si128(x, n) , _mm_srli_si128(x, 128-n))
+#define XMM_KAZE_SSE2
+uint32_t FNV1A_Hash_YoshimitsuTRIADiiXMM(const char *str, uint32_t wrdlen)
+{
+    const uint32_t PRIME = 709607;
+    uint32_t hash32 = 2166136261;
+    uint32_t hash32B = 2166136261;
+    uint32_t hash32C = 2166136261;
+    const char *p = str;
+    uint32_t Loop_Counter;
+    uint32_t Second_Line_Offset;
+
+#if defined(XMM_KAZE_SSE2) || defined(XMM_KAZE_SSE4) || defined(XMM_KAZE_AVX)
+    __m128i xmm0;
+    __m128i xmm1;
+    __m128i xmm2;
+    __m128i xmm3;
+    __m128i xmm4;
+    __m128i xmm5;
+    __m128i hash32xmm = _mm_set1_epi32(2166136261);
+    __m128i hash32Bxmm = _mm_set1_epi32(2166136261);
+    __m128i hash32Cxmm = _mm_set1_epi32(2166136261);
+    __m128i PRIMExmm = _mm_set1_epi32(709607);
+#endif
+
+#if defined(XMM_KAZE_SSE2) || defined(XMM_KAZE_SSE4) || defined(XMM_KAZE_AVX)
+if (wrdlen >= 4*24) { // Actually 4*24 is the minimum and not useful, 200++ makes more sense.
+    Loop_Counter = (wrdlen/(4*24));
+    Loop_Counter++;
+    Second_Line_Offset = wrdlen-(Loop_Counter)*(4*3*4);
+    for(; Loop_Counter; Loop_Counter--, p += 4*3*sizeof(uint32_t)) {
+    xmm0 = xmmloadu(p+0*16);
+    xmm1 = xmmloadu(p+0*16+Second_Line_Offset);
+    xmm2 = xmmloadu(p+1*16);
+    xmm3 = xmmloadu(p+1*16+Second_Line_Offset);
+    xmm4 = xmmloadu(p+2*16);
+    xmm5 = xmmloadu(p+2*16+Second_Line_Offset);
+#if defined(XMM_KAZE_SSE2)
+        hash32xmm = _mm_mullo_epi16(_mm_xor_si128(hash32xmm , _mm_xor_si128(_rotl_KAZE128(xmm0,5) , xmm1)) , PRIMExmm);       
+        hash32Bxmm = _mm_mullo_epi16(_mm_xor_si128(hash32Bxmm , _mm_xor_si128(_rotl_KAZE128(xmm3,5) , xmm2)) , PRIMExmm);        
+        hash32Cxmm = _mm_mullo_epi16(_mm_xor_si128(hash32Cxmm , _mm_xor_si128(_rotl_KAZE128(xmm4,5) , xmm5)) , PRIMExmm);      
+#else
+        hash32xmm = _mm_mullo_epi32(_mm_xor_si128(hash32xmm , _mm_xor_si128(_rotl_KAZE128(xmm0,5) , xmm1)) , PRIMExmm);       
+        hash32Bxmm = _mm_mullo_epi32(_mm_xor_si128(hash32Bxmm , _mm_xor_si128(_rotl_KAZE128(xmm3,5) , xmm2)) , PRIMExmm);        
+        hash32Cxmm = _mm_mullo_epi32(_mm_xor_si128(hash32Cxmm , _mm_xor_si128(_rotl_KAZE128(xmm4,5) , xmm5)) , PRIMExmm);      
+#endif
+    }
+#if defined(XMM_KAZE_SSE2)
+    hash32xmm = _mm_mullo_epi16(_mm_xor_si128(hash32xmm , hash32Bxmm) , PRIMExmm);       
+    hash32xmm = _mm_mullo_epi16(_mm_xor_si128(hash32xmm , hash32Cxmm) , PRIMExmm);       
+#else
+    hash32xmm = _mm_mullo_epi32(_mm_xor_si128(hash32xmm , hash32Bxmm) , PRIMExmm);       
+    hash32xmm = _mm_mullo_epi32(_mm_xor_si128(hash32xmm , hash32Cxmm) , PRIMExmm);       
+#endif
+    hash32 = (hash32 ^ hash32xmm.m128i_u32[0]) * PRIME;
+    hash32B = (hash32B ^ hash32xmm.m128i_u32[3]) * PRIME;
+    hash32 = (hash32 ^ hash32xmm.m128i_u32[1]) * PRIME;
+    hash32B = (hash32B ^ hash32xmm.m128i_u32[2]) * PRIME;
+} else if (wrdlen >= 24)
+#else
+if (wrdlen >= 24)
+#endif
+{
+    Loop_Counter = (wrdlen/24);
+    Loop_Counter++;
+    Second_Line_Offset = wrdlen-(Loop_Counter)*(3*4);
+    for(; Loop_Counter; Loop_Counter--, p += 3*sizeof(uint32_t)) {
+        hash32 = (hash32 ^ (ROL(*(uint32_t *)(p+0),5) ^ *(uint32_t *)(p+0+Second_Line_Offset))) * PRIME;        
+        hash32B = (hash32B ^ (ROL(*(uint32_t *)(p+4+Second_Line_Offset),5) ^ *(uint32_t *)(p+4))) * PRIME;        
+        hash32C = (hash32C ^ (ROL(*(uint32_t *)(p+8),5) ^ *(uint32_t *)(p+8+Second_Line_Offset))) * PRIME;        
+    }
+        hash32 = (hash32 ^ ROL(hash32C,5) ) * PRIME;
+} else {
+    // 1111=15; 10111=23
+    if (wrdlen & 4*sizeof(uint32_t)) {  
+        hash32 = (hash32 ^ (ROL(*(uint32_t *)(p+0),5) ^ *(uint32_t *)(p+4))) * PRIME;        
+        hash32B = (hash32B ^ (ROL(*(uint32_t *)(p+8),5) ^ *(uint32_t *)(p+12))) * PRIME;        
+        p += 8*sizeof(uint16_t);
+    }
+    // Cases: 0,1,2,3,4,5,6,7,...,15
+    if (wrdlen & 2*sizeof(uint32_t)) {
+        hash32 = (hash32 ^ *(uint32_t*)(p+0)) * PRIME;
+        hash32B = (hash32B ^ *(uint32_t*)(p+4)) * PRIME;
+        p += 4*sizeof(uint16_t);
+    }
+    // Cases: 0,1,2,3,4,5,6,7
+    if (wrdlen & sizeof(uint32_t)) {
+        hash32 = (hash32 ^ *(uint16_t*)(p+0)) * PRIME;
+        hash32B = (hash32B ^ *(uint16_t*)(p+2)) * PRIME;
+        p += 2*sizeof(uint16_t);
+    }
+    if (wrdlen & sizeof(uint16_t)) {
+        hash32 = (hash32 ^ *(uint16_t*)p) * PRIME;
+        p += sizeof(uint16_t);
+    }
+    if (wrdlen & 1) 
+        hash32 = (hash32 ^ *p) * PRIME;
+}
+    hash32 = (hash32 ^ ROL(hash32B,5) ) * PRIME;
+    return hash32 ^ (hash32 >> 16);
+}
+#endif // defined(XMM_KAZE_SSE2) || defined(XMM_KAZE_SSE4) || defined(XMM_KAZE_AVX)
+
+// "There it now stands for ever. Black on white.
+// I can't get away from it. Ahoy, Yorikke, ahoy, hoy, ho!
+// Go to hell now if you wish. What do I care? It's all the same now to me.
+// I am part of you now. Where you go I go, where you leave I leave, when you go to the devil I go. Married.
+// Vanished from the living. Damned and doomed. Of me there is not left a breath in all the vast world.
+// Ahoy, Yorikke! Ahoy, hoy, ho!
+// I am not buried in the sea,
+// The death ship is now part of me
+// So far from sunny New Orleans
+// So far from lovely Louisiana."
+// /An excerpt from 'THE DEATH SHIP - THE STORY OF AN AMERICAN SAILOR' by B.TRAVEN/
+// 
+// "Walking home to our good old Yorikke, I could not help thinking of this beautiful ship, with a crew on board that had faces as if they were seeing ghosts by day and by night.
+// Compared to that gilded Empress, the Yorikke was an honorable old lady with lavender sachets in her drawers.
+// Yorikke did not pretend to anything she was not. She lived up to her looks. Honest to her lowest ribs and to the leaks in her bilge.
+// Now, what is this? I find myself falling in love with that old jane.
+// All right, I cannot pass by you, Yorikke; I have to tell you I love you. Honest, baby, I love you.
+// I have six black finger-nails, and four black and green-blue nails on my toes, which you, honey, gave me when necking you.
+// Grate-bars have crushed some of my toes. And each finger-nail has its own painful story to tell.
+// My chest, my back, my arms, my legs are covered with scars of burns and scorchings.
+// Each scar, when it was being created, caused me pains which I shall surely never forget.
+// But every outcry of pain was a love-cry for you, honey.
+// You are no hypocrite. Your heart does not bleed tears when you do not feel heart-aches deeply and truly.
+// You do not dance on the water if you do not feel like being jolly and kicking chasers in the pants.
+// Your heart never lies. It is fine and clean like polished gold. Never mind the rags, honey dear.
+// When you laugh, your whole soul and all your body is laughing.
+// And when you weep, sweety, then you weep so that even the reefs you pass feel like weeping with you.
+// I never want to leave you again, honey. I mean it. Not for all the rich and elegant buckets in the world.
+// I love you, my gypsy of the sea!"
+// /An excerpt from 'THE DEATH SHIP - THE STORY OF AN AMERICAN SAILOR' by B.TRAVEN/
+uint32_t FNV1A_Hash_Yorikke(const char *str, size_t wrdlen)
+{
+    const uint32_t PRIME = 709607;
+    uint32_t hash32 = 2166136261;
+    uint32_t hash32B = 2166136261;
+    const char *p = str;
+
+    for(; wrdlen >= 2*2*sizeof(uint32_t); wrdlen -= 2*2*sizeof(uint32_t), p += 2*2*sizeof(uint32_t)) {
+        hash32 = (hash32 ^ (ROL(*(uint32_t *)(p+0),5) ^ *(uint32_t *)(p+4))) * PRIME;        
+        hash32B = (hash32B ^ (ROL(*(uint32_t *)(p+8),5) ^ *(uint32_t *)(p+12))) * PRIME;        
+    }
+
+    // Cases: 0,1,2,3,4,5,6,7,...,15
+    if (wrdlen & 2*sizeof(uint32_t)) {
+        hash32 = (hash32 ^ *(uint32_t*)(p+0)) * PRIME;
+        hash32B = (hash32B ^ *(uint32_t*)(p+4)) * PRIME;
+        p += 4*sizeof(uint16_t);
+    }
+    // Cases: 0,1,2,3,4,5,6,7
+    if (wrdlen & sizeof(uint32_t)) {
+        hash32 = (hash32 ^ *(uint16_t*)(p+0)) * PRIME;
+        hash32B = (hash32B ^ *(uint16_t*)(p+2)) * PRIME;
+        p += 2*sizeof(uint16_t);
+    }
+    if (wrdlen & sizeof(uint16_t)) {
+        hash32 = (hash32 ^ *(uint16_t*)p) * PRIME;
+        p += sizeof(uint16_t);
+    }
+    if (wrdlen & 1) 
+        hash32 = (hash32 ^ *p) * PRIME;
+
+    hash32 = (hash32 ^ ROL(hash32B,5) ) * PRIME;
+    return hash32 ^ (hash32 >> 16);
+}
+uint32_t FNV1A_Hash_YoshimitsuTRIAD(const char *str, size_t wrdlen)
+{
+    const uint32_t PRIME = 709607;
+    uint32_t hash32 = 2166136261;
+    uint32_t hash32B = 2166136261;
+    uint32_t hash32C = 2166136261;
+    //uint32_t hash32D = 2166136261;
+    const char *p = str;
+
+    for(; wrdlen >= 3*2*sizeof(uint32_t); wrdlen -= 3*2*sizeof(uint32_t), p += 3*2*sizeof(uint32_t)) {
+        hash32 = (hash32 ^ (ROL(*(uint32_t *)(p+0),5) ^ *(uint32_t *)(p+4))) * PRIME;        
+        hash32B = (hash32B ^ (ROL(*(uint32_t *)(p+8),5) ^ *(uint32_t *)(p+12))) * PRIME;        
+        hash32C = (hash32C ^ (ROL(*(uint32_t *)(p+16),5) ^ *(uint32_t *)(p+20))) * PRIME;        
+        //hash32D = (hash32D ^ (ROL(*(uint32_t *)(p+24),5) ^ *(uint32_t *)(p+28))) * PRIME;        
+
+/*
+// Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.30319.01 for 80x86 gave this:
+// 12d-0f4+2= 59 bytes, No CARAMBA anymore.
+$LL9@FNV1A_Hash@2:
+
+; 160  :        hash32 = (hash32 ^ (_rotl(*(uint32_t *)(p+0),5) ^ *(uint32_t *)(p+4))) * PRIME;        
+
+  000f4 8b 01        mov     eax, DWORD PTR [ecx]
+  000f6 c1 c0 05     rol     eax, 5
+  000f9 33 41 04     xor     eax, DWORD PTR [ecx+4]
+  000fc 83 eb 18     sub     ebx, 24            ; 00000018H
+  000ff 33 f0        xor     esi, eax
+
+; 161  :        hash32B = (hash32B ^ (_rotl(*(uint32_t *)(p+8),5) ^ *(uint32_t *)(p+12))) * PRIME;        
+
+  00101 8b 41 08     mov     eax, DWORD PTR [ecx+8]
+  00104 69 f6 e7 d3 0a
+    00       imul    esi, 709607        ; 000ad3e7H
+  0010a c1 c0 05     rol     eax, 5
+  0010d 33 41 0c     xor     eax, DWORD PTR [ecx+12]
+  00110 83 c1 18     add     ecx, 24            ; 00000018H
+  00113 33 f8        xor     edi, eax
+
+; 162  :        hash32C = (hash32C ^ (_rotl(*(uint32_t *)(p+16),5) ^ *(uint32_t *)(p+20))) * PRIME;        
+
+  00115 8b 41 f8     mov     eax, DWORD PTR [ecx-8]
+  00118 69 ff e7 d3 0a
+    00       imul    edi, 709607        ; 000ad3e7H
+  0011e c1 c0 05     rol     eax, 5
+  00121 33 41 fc     xor     eax, DWORD PTR [ecx-4]
+  00124 33 e8        xor     ebp, eax
+  00126 69 ed e7 d3 0a
+    00       imul    ebp, 709607        ; 000ad3e7H
+  0012c 4a       dec     edx
+  0012d 75 c5        jne     SHORT $LL9@FNV1A_Hash@2
+*/
+
+/*
+// Intel(R) C++ Compiler XE for applications running on IA-32, Version 12.1.1.258 Build 20111011 gave this:
+// 216a-212f+2= 61 bytes, No CARAMBA anymore.
+;;;     for(; wrdlen >= 3*2*sizeof(uint32_t); wrdlen -= 3*2*sizeof(uint32_t), p += 3*2*sizeof(uint32_t)) {
+
+  02127 83 fa 18         cmp edx, 24                            
+  0212a 72 43            jb .B4.5 ; Prob 10%                    
+                                ; LOE eax edx ecx ebx ebp esi edi
+.B4.2:                          ; Preds .B4.1
+  0212c 89 34 24         mov DWORD PTR [esp], esi               ;
+                                ; LOE eax edx ecx ebx ebp edi
+.B4.3:                          ; Preds .B4.2 .B4.3
+
+;;;         hash32 = (hash32 ^ (ROL(*(uint32_t *)(p+0),5) ^ *(uint32_t *)(p+4))) * PRIME;        
+
+  0212f 8b 31            mov esi, DWORD PTR [ecx]               
+  02131 83 c2 e8         add edx, -24                           
+  02134 c1 c6 05         rol esi, 5                             
+  02137 33 71 04         xor esi, DWORD PTR [4+ecx]             
+  0213a 33 de            xor ebx, esi                           
+
+;;;         hash32B = (hash32B ^ (ROL(*(uint32_t *)(p+8),5) ^ *(uint32_t *)(p+12))) * PRIME;        
+
+  0213c 8b 71 08         mov esi, DWORD PTR [8+ecx]             
+  0213f c1 c6 05         rol esi, 5                             
+  02142 33 71 0c         xor esi, DWORD PTR [12+ecx]            
+  02145 33 fe            xor edi, esi                           
+
+;;;         hash32C = (hash32C ^ (ROL(*(uint32_t *)(p+16),5) ^ *(uint32_t *)(p+20))) * PRIME;        
+
+  02147 8b 71 10         mov esi, DWORD PTR [16+ecx]            
+  0214a c1 c6 05         rol esi, 5                             
+  0214d 33 71 14         xor esi, DWORD PTR [20+ecx]            
+  02150 83 c1 18         add ecx, 24                            
+  02153 33 ee            xor ebp, esi                           
+  02155 69 db e7 d3 0a 
+        00               imul ebx, ebx, 709607                  
+  0215b 69 ff e7 d3 0a 
+        00               imul edi, edi, 709607                  
+  02161 69 ed e7 d3 0a 
+        00               imul ebp, ebp, 709607                  
+  02167 83 fa 18         cmp edx, 24                            
+  0216a 73 c3            jae .B4.3 ; Prob 82%                   
+                                ; LOE eax edx ecx ebx ebp edi
+.B4.4:                          ; Preds .B4.3
+  0216c 8b 34 24         mov esi, DWORD PTR [esp]               ;
+                                ; LOE eax edx ecx ebx ebp esi edi
+.B4.5:                          ; Preds .B4.1 .B4.4
+*/
+
+    }
+    if (p != str) {
+        hash32 = (hash32 ^ ROL(hash32C,5) ) * PRIME;
+        //hash32B = (hash32B ^ ROL(hash32D,5) ) * PRIME;
+    }
+
+    // 1111=15; 10111=23
+    if (wrdlen & 4*sizeof(uint32_t)) {  
+        hash32 = (hash32 ^ (ROL(*(uint32_t *)(p+0),5) ^ *(uint32_t *)(p+4))) * PRIME;        
+        hash32B = (hash32B ^ (ROL(*(uint32_t *)(p+8),5) ^ *(uint32_t *)(p+12))) * PRIME;        
+        p += 8*sizeof(uint16_t);
+    }
+    // Cases: 0,1,2,3,4,5,6,7,...,15
+    if (wrdlen & 2*sizeof(uint32_t)) {
+        hash32 = (hash32 ^ *(uint32_t*)(p+0)) * PRIME;
+        hash32B = (hash32B ^ *(uint32_t*)(p+4)) * PRIME;
+        p += 4*sizeof(uint16_t);
+    }
+    // Cases: 0,1,2,3,4,5,6,7
+    if (wrdlen & sizeof(uint32_t)) {
+        hash32 = (hash32 ^ *(uint16_t*)(p+0)) * PRIME;
+        hash32B = (hash32B ^ *(uint16_t*)(p+2)) * PRIME;
+        p += 2*sizeof(uint16_t);
+    }
+    if (wrdlen & sizeof(uint16_t)) {
+        hash32 = (hash32 ^ *(uint16_t*)p) * PRIME;
+        p += sizeof(uint16_t);
+    }
+    if (wrdlen & 1) 
+        hash32 = (hash32 ^ *p) * PRIME;
+
+    hash32 = (hash32 ^ ROL(hash32B,5) ) * PRIME;
+    return hash32 ^ (hash32 >> 16);
 }

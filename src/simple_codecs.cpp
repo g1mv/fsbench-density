@@ -456,16 +456,20 @@ extern "C"
 #include "mmini.h"
 }
 
-/*size_t mmini_c(char* in, size_t isize, char* out, size_t osize, void* buffer)
- {
- size_t ret = mmini_compress((const unsigned char*)in, isize, (unsigned char*)out, osize, buffer);
- return ret ? ret : CODING_ERROR;
- }
- size_t mmini_d(char* in, size_t isize, char* out, size_t osize, void* buffer)
- {
- size_t ret = mmini_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize, buffer);
- return ret ? ret : CODING_ERROR;
- }*/
+// TODO: Make an abstract codec for codecs with maximum block size
+//       There's also Shrinker with such properties, maybe others 
+/*
+size_t mmini_c(char* in, size_t isize, char* out, size_t osize, void* buffer)
+{
+    size_t ret = mmini_compress((const unsigned char*)in, isize, (unsigned char*)out, osize, buffer);
+    return ret ? ret : CODING_ERROR;
+}
+size_t mmini_d(char* in, size_t isize, char* out, size_t osize, void* buffer)
+{
+    size_t ret = mmini_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize, buffer);
+    return ret ? ret : CODING_ERROR;
+}
+*/
 size_t mmini_lzl_c(char* in, size_t isize, char* out, size_t osize, void* _)
 {
     size_t ret = mmini_lzl_compress((const unsigned char*)in, isize, (unsigned char*)out, osize);
@@ -476,7 +480,6 @@ size_t mmini_lzl_d(char* in, size_t isize, char* out, size_t osize, void* _)
     size_t ret = mmini_lzl_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize);
     return ret ? ret : CODING_ERROR;
 }
-#include <iostream> //FIXME: rm
 size_t mmini_huffman_c(char* in, size_t isize, char* out, size_t osize, void* buffer)
 {
     size_t ret = mmini_huffman_compress((const unsigned char*)in, isize, (unsigned char*)out, osize, *(void**)buffer);
@@ -562,6 +565,14 @@ void fnv1_tesla(char* in, size_t isize, char* out)
 void fnv1_tesla3(char* in, size_t isize, char* out)
 {
     *(uint64_t*) out = FNV1A_Hash_Tesla3(in, isize);
+}
+void fnv1_yorikke(char* in, size_t isize, char* out)
+{
+    *(uint32_t*) out = FNV1A_Hash_Yorikke(in, isize);
+}
+void fnv1_yoshimitsu_triad(char* in, size_t isize, char* out)
+{
+    *(uint32_t*) out = FNV1A_Hash_YoshimitsuTRIAD(in, isize);
 }
 void fnv1_yoshimura(char* in, size_t isize, char* out)
 {

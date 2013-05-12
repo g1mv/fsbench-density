@@ -323,6 +323,8 @@ Codec * codecs[] =
               new Checksum<sizeof(uint32_t)>("FNV1a-Meiyan", _SANMAYCE_VERSION, fnv1_meiyan),
               new Checksum<sizeof(uint64_t)>("FNV1a-Tesla", _SANMAYCE_VERSION, fnv1_tesla),
               new Checksum<sizeof(uint64_t)>("FNV1a-Tesla3", _SANMAYCE_VERSION, fnv1_tesla3),
+              new Checksum<sizeof(uint32_t)>("FNV1a-Yorikke", _SANMAYCE_VERSION, fnv1_yorikke),
+              new Checksum<sizeof(uint32_t)>("FNV1a-YoshimitsuTRIAD", _SANMAYCE_VERSION, fnv1_yoshimitsu_triad),
               new Checksum<sizeof(uint64_t)>("FNV1a-Yoshimura", _SANMAYCE_VERSION, fnv1_yoshimura),
 #endif
 #if defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3) || defined(FSBENCH_USE_SHA3_RND3_GROESTL)
@@ -471,6 +473,7 @@ pair<Codec*, string> all_compressors[] =
       make_pair(raw_find_codec("lzwc"), ""),
       make_pair(find_codec("lzx_compress/nop"), ""),
       make_pair(raw_find_codec("miniz"), ""),
+      make_pair(raw_find_codec("mmini_huffman"), ""),
       make_pair(raw_find_codec("mmini_lzl"), ""),
       make_pair(raw_find_codec("nrv2b"), ""),
       make_pair(raw_find_codec("nrv2d"), ""),
@@ -531,6 +534,8 @@ pair<Codec*, string> all_checksums[] =
           make_pair(raw_find_codec("FNV1a-Meiyian"), ""),
           make_pair(raw_find_codec("FNV1a-Tesla"), ""),
           make_pair(raw_find_codec("FNV1a-Tesla3"), ""),
+          make_pair(raw_find_codec("FNV1a-Yorikke"), ""),
+          make_pair(raw_find_codec("FNV1a-YoshimitsuTRIAD"), ""),
           make_pair(raw_find_codec("FNV1a-Yoshimura"), ""),
           make_pair(raw_find_codec("Edon-R224"), ""),
           make_pair(raw_find_codec("Edon-R256"), ""),

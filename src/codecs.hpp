@@ -193,7 +193,7 @@ Codec* find_codec(const std::string& name);
 #define _QLZ_VERSION       "1.5.1b6"
 #define _QLZZIP_VERSION    "0.4"
 #define _RLE64_VERSION     "R3.00"
-#define _SANMAYCE_VERSION  "2013-03-13"
+#define _SANMAYCE_VERSION  "2013-05-12"
 #define _SIPHASH_VERSION   "reference"
 #define _SCZ_VERSION       "2008-11-25"
 #define _SHA3_VERSION      "SHA3 Final 64bit opt"
