@@ -36,9 +36,9 @@ inline int pthread_join(THREAD_HANDLE thread, void **ignored)
 {
     return WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0;
 }
-inline MUTEX create_mutex()
+inline void create_mutex(MUTEX* mutex)
 {
-    return CreateMutex(0, 0, 0);
+    *mutex = CreateMutex(0, 0, 0);
 }
 inline void destroy_mutex(MUTEX *mutex)
 {
@@ -53,19 +53,17 @@ inline void unlock_mutex(MUTEX *mutex)
     ReleaseMutex(*mutex);
 }
 #else
-#include <stdexcept>
 #include <pthread.h>
+#include <stdexcept>
 #define THREAD_HANDLE pthread_t
 #define THREAD_RETURN_TYPE void*
 #define THREAD_RETURN NULL
 #define MUTEX pthread_mutex_t
-inline MUTEX create_mutex()
+inline void create_mutex(MUTEX *mutex)
 {
-    MUTEX mutex;
-    int ret = pthread_mutex_init(&mutex, NULL);
+    int ret = pthread_mutex_init(mutex, NULL);
     if(ret != 0)
         throw std::runtime_error("Failed to create a mutex");
-    return mutex;
 }
 
 inline void destroy_mutex(MUTEX *mutex)
@@ -77,8 +75,9 @@ inline void destroy_mutex(MUTEX *mutex)
 
 inline void lock_mutex(MUTEX *mutex)
 {
-    pthread_mutex_lock(mutex);
+    int ret = pthread_mutex_lock(mutex);
 }
+
 inline void unlock_mutex(MUTEX *mutex)
 {
     pthread_mutex_unlock(mutex);

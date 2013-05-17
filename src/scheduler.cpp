@@ -27,7 +27,7 @@ Scheduler::Scheduler(char* in,
         block_size(block_size),
         iters_left(iters)
 {
-    lock = create_mutex();
+    create_mutex(&lock);
     work_size = (min_work_size / block_size) * block_size;
     if (work_size < min_work_size)
         work_size += block_size;
