@@ -64,7 +64,7 @@ Codec* raw_find_codec(const string& name)
     }
     return 0;
 }
-;
+
 
 // Looks up a codec in CODECS.
 // When it can't be found, but is a combination of other codecs,

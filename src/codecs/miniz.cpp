@@ -1,5 +1,6 @@
-#include "miniz.hpp"
 #include "codecs.hpp"
+#include "common.hpp"
+#include "miniz.hpp"
 
 #if __cplusplus >= 201103L // C++ 2011
 #include <cstdint>
@@ -44,6 +45,7 @@ size_t miniz_c(char* in, size_t isize, char* out, size_t osize, void* mode)
 }
 size_t miniz_d(char* in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     z_stream stream;
     stream.zalloc = Z_NULL;
     stream.zfree  = Z_NULL;

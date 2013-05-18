@@ -6,6 +6,7 @@
  * If your country doesn't recognize author's right to relieve themselves of copyright,
  * you can use it under the terms of WTFPL version 2.0 or later.
  */
+#include "common.hpp"
 #include "simple_codecs.hpp"
 #include "tools.hpp"
 
@@ -265,22 +266,30 @@ extern "C"
 }
 size_t LZ4_c(char*in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     return LZ4_compress_limitedOutput(in, out, isize, osize);
 }
 size_t LZ4hc_c(char*in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(osize);
+    UNUSED(_);
     return LZ4_compressHC(in, out, isize);
 }
 size_t LZ4_d (char*in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(isize);
+    UNUSED(_);
     return LZ4_uncompress(in, out, osize) > 0 ? osize : CODING_ERROR;
 }
 size_t LZ4bz_c(char*in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     return LZ4bz_compress_limitedOutput(in, out, isize, osize);
 }
 size_t LZ4bz_d(char*in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(isize);
+    UNUSED(_);
     return LZ4bz_uncompress(in, out, osize) > 0 ? osize : CODING_ERROR;
 }
 
@@ -293,18 +302,22 @@ extern "C"
 }
 size_t LZF_ultra_c(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     return lzf_compress_ultra(in, isize, out, osize);
 }
 size_t LZF_very_c(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     return lzf_compress_very(in, isize, out, osize);
 }
 size_t LZF_c(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     return lzf_compress(in, isize, out, osize);
 }
 size_t LZF_d(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     return lzf_decompress(in, isize, out, osize);
 }
 
@@ -317,11 +330,13 @@ extern "C"
 }
 size_t LZFX_c(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     unsigned int ret = osize;
     return lzfx_compress(in, isize, out, &ret) >=0 ? ret : CODING_ERROR;
 }
 size_t LZFX_d(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     unsigned int ret = osize;
     return lzfx_decompress(in, isize, out, &ret) >=0 ? ret : CODING_ERROR;
 }
@@ -344,6 +359,7 @@ size_t LZG_c(char* in, size_t isize, char* out, size_t osize, void* mode)
 }
 size_t LZG_d(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     return LZG_Decode((const unsigned char*)in, isize, (unsigned char*)out, osize);
 }
 size_t LZG_m(size_t input_size)
@@ -359,12 +375,14 @@ extern "C"
 }
 size_t lzmat_c(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     MP_U32 retsize = osize;
     int ret = lzmat_encode((MP_U8*)out, &retsize, (MP_U8*)in, isize);
     return ret == LZMAT_STATUS_OK ? retsize : CODING_ERROR;
 }
 size_t lzmat_d(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     MP_U32 ret = osize;
     lzmat_decode((MP_U8*)out, &ret, (MP_U8*)in, isize);
     return ret;
@@ -377,11 +395,13 @@ extern "C"
 }
 size_t LZWC_c(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     size_t ret = lzwc_compress((const unsigned char*)in, isize, (unsigned char*)out, osize);
     return ret >=0 ? ret : CODING_ERROR;
 }
 size_t LZWC_d(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     size_t ret = lzwc_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize);
     return ret >=0 ? ret : CODING_ERROR;
 }
@@ -529,6 +549,8 @@ size_t qlzzip_c(char* in, size_t isize, char* out, size_t osize, void* _)
 #define RLE_64_FUNCTION(FSBENCH_NAME, ORIGINAL_NAME)                       \
 size_t FSBENCH_NAME(char*in,size_t isize, char* out, size_t osize, void* _)\
 {                                                                          \
+    UNUSED(_);                                                             \
+    UNUSED(osize);                                                         \
     return ORIGINAL_NAME(in, out, isize);                                  \
 }
 RLE_64_FUNCTION(RLE64_c, RLE64_Compress64)
@@ -656,12 +678,15 @@ size_t Shrinker_m(size_t input_size)
 
 size_t snappy_c(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(osize);
+    UNUSED(_);
     size_t ret;
     snappy::RawCompress(in, isize, out, &ret);
     return ret;
 }
 size_t snappy_d(char*in,size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     if(!snappy::RawUncompress(in, isize, out))
     {
         return CODING_ERROR;
@@ -755,6 +780,7 @@ size_t zlib_c(char* in, size_t isize, char* out, size_t osize, void* mode)
 }
 size_t zlib_d(char* in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(_);
     z_stream stream;
     stream.zalloc = Z_NULL;
     stream.zfree = Z_NULL;
@@ -816,10 +842,20 @@ size_t zopfli_c(char* in, size_t isize, char* out, size_t osize, void* mode)
 // a pseudocodec that does nothing.
 size_t nop_c(char*in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(in);
+    UNUSED(isize);
+    UNUSED(out);
+    UNUSED(osize);
+    UNUSED(_);
     return 1;
 }
 size_t nop_d(char*in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(in);
+    UNUSED(isize);
+    UNUSED(out);
+    UNUSED(osize);
+    UNUSED(_);
     return osize;
 }
 
@@ -1072,12 +1108,14 @@ const LZO::LzoType* LZO::get_type(const string& args)
 }
 size_t LZO::compressor(char*in, size_t isize, char*out, size_t osize, void* work)
 {
+    UNUSED(osize);
     lzo_uint ret;
     static_lzo_compressor((uint8_t*)in, isize, (uint8_t*)out, &ret, *(char**)work);
     return ret;
 }
 size_t LZO::decompressor(char*in, size_t isize, char*out, size_t osize, void* work)
 {
+    UNUSED(osize);
     lzo_uint ret;
     static_lzo_decompressor((uint8_t*)in, isize, (uint8_t*)out, &ret, *(char**)work);
     return ret;
@@ -1088,6 +1126,8 @@ string LZO::default_args(const string& args)
 }
 void LZO::init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
 {
+    UNUSED(isize);
+    UNUSED(init_decompressor);
     int ret = lzo_init();
     if(ret != LZO_E_OK)
     {
@@ -1311,11 +1351,14 @@ const QuickLZ::QuickLZType* QuickLZ::get_type(const string& args)
 }
 size_t QuickLZ::compressor(char* in, size_t isize, char* out, size_t osize, void* work)
 {
-    return static_qlz_compressor(in,out,isize,*(qlz_state_compress**)work);
+    UNUSED(osize);
+    return static_qlz_compressor(in, out, isize, *(qlz_state_compress**)work);
 }
 size_t QuickLZ::decompressor(char* in, size_t isize, char* out, size_t osize, void* work)
 {
-    return static_qlz_decompressor(in,out,*(qlz_state_decompress**)work);
+    UNUSED(isize);
+    UNUSED(osize);
+    return static_qlz_decompressor(in ,out, *(qlz_state_decompress**)work);
 }
 string QuickLZ::default_args(const string& args)
 {
@@ -1323,6 +1366,7 @@ string QuickLZ::default_args(const string& args)
 }
 void QuickLZ::init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
 {
+    UNUSED(isize);
     if(init_compressor)
     {
         this->qlz_compression_states = new qlz_state_compress*[threads_no];
@@ -1463,10 +1507,13 @@ const string Tor::default_mode("6");
 
 size_t Yappy::compressor(char* in, size_t isize, char* out, size_t osize, void* mode)
 {
+    UNUSED(osize);
     return YappyCompress((ui8*)in, (ui8*)out, isize, *(uintptr_t*)mode) - (ui8*)out;
 }
 size_t Yappy::decompressor(char* in, size_t isize, char* out, size_t osize, void* _)
 {
+    UNUSED(osize);
+    UNUSED(_);
     return YappyUnCompress((ui8*)in, (ui8*)(in+isize), (ui8*)out) - (ui8*)out;
 }
 Yappy::Yappy():

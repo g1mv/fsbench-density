@@ -9,7 +9,7 @@
 // INCLUDES
 ///////////////////////////
 #include "benchmark.hpp"
-#include <limits.h>
+#include "common.hpp"
 #include "threads.hpp"
 #include "tools.hpp"
 
@@ -78,6 +78,7 @@ uint64_t ticks_to_msec(const LARGE_INTEGER& start_ticks,
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
     return (end_ticks.QuadPart - start_ticks.QuadPart) / (ticksPerSecond.QuadPart / 1000);
 #else
+    UNUSED(ticksPerSecond);
     return 1000 * (end_ticks.tv_sec - start_ticks.tv_sec)
             + (end_ticks.tv_nsec - start_ticks.tv_nsec) / 1000000;
 #endif

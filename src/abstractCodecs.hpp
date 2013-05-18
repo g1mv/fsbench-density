@@ -12,6 +12,7 @@
 
 
 #include "codecs.hpp"
+#include "common.hpp"
 
 #if __cplusplus >= 201103L // C++ 2011
 #include <cstdint>
@@ -248,12 +249,16 @@ public:
     }
     static size_t encode(char* in, size_t isize, char* out, size_t osize, void* args)
     {
+        UNUSED(out);
+        UNUSED(osize);
         checksum_t checksummer = *(checksum_t*) args;
         checksummer(in, isize, in + isize);
         return isize + digest_size;
     }
     static size_t decode(char* in, size_t isize, char* out, size_t osize, void* args)
     {
+        UNUSED(out);
+        UNUSED(osize);
         checksum_t checksummer = *(checksum_t*) args;
         // there checksum of the original data is supposed to be stored right after the data
         size_t data_size = isize - digest_size;
@@ -284,6 +289,10 @@ public:
                       bool init_encoder = true,
                       bool init_decoder = true)
     {
+        UNUSED(args);
+        UNUSED(isize);
+        UNUSED(init_encoder);
+        UNUSED(init_decoder);
         if (!params)
         {
             params = new void*[threads_no];

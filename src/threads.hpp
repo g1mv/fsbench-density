@@ -75,7 +75,7 @@ inline void destroy_mutex(MUTEX *mutex)
 
 inline void lock_mutex(MUTEX *mutex)
 {
-    int ret = pthread_mutex_lock(mutex);
+    pthread_mutex_lock(mutex);
 }
 
 inline void unlock_mutex(MUTEX *mutex)

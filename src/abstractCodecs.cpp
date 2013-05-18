@@ -8,6 +8,7 @@
  */
 
 #include "abstractCodecs.hpp"
+#include "common.hpp"
 #include "tools.hpp"
 
 #if __cplusplus >= 201103L // C++ 2011
@@ -53,6 +54,10 @@ void Codec::init(const string& args,
                  bool init_encoder,
                  bool init_decoder)
 {
+    UNUSED(threads_no);
+    UNUSED(isize);
+    UNUSED(init_encoder);
+    UNUSED(init_decoder);
     this->args = args;
 }
 void Codec::cleanup()
@@ -135,6 +140,10 @@ void MultifunctionCodec::init(const string& args,
                               bool init_encoder,
                               bool init_decoder)
 {
+    UNUSED(threads_no);
+    UNUSED(isize);
+    UNUSED(init_encoder);
+    UNUSED(init_decoder);
     this->args = default_args(args);
     const CodecArgs& codec_args = get_type(this->args);
 
@@ -197,6 +206,9 @@ void CodecWithIntModes::init(const string& args,
                              bool init_encoder,
                              bool init_decoder)
 {
+    UNUSED(isize);
+    UNUSED(init_encoder);
+    UNUSED(init_decoder);
     this->args = default_args(args);
     intptr_t mode;
     try
@@ -535,10 +547,13 @@ Codec::transform_type PipelineCodec::_get_combined_transform_type(Codec::transfo
 void BufferedCodec::init(const std::string& args,
                          unsigned threads_no,
                          size_t isize,
-                         bool init_compressor,
-                         bool init_decompressor)
+                         bool init_encoder,
+                         bool init_decoder)
 {
-    if (init_compressor)
+    UNUSED(args);
+    UNUSED(isize);
+    UNUSED(init_decoder);
+    if (init_encoder)
     {
         this->threads_no = threads_no;
         this->buffers = new void*[threads_no];
