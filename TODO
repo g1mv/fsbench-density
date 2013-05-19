@@ -20,6 +20,7 @@ add:
 * https://github.com/ky1000ky2000/lz77/tree/master/lz77
 * https://github.com/stevesan/lz77
 * https://github.com/Sanguinarious/lzh-improved
-* Sanmayce's hashes
+* Sanmayce's hashes - there's SSE version that doesn't compile with GCC and could be ported
+* reintroduce LZ4bz
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4

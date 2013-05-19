@@ -262,7 +262,6 @@ extern "C"
 {
 #include "lz4.h"
 #include "lz4hc.h"
-#include "lz4bz.h"
 }
 size_t LZ4_c(char*in, size_t isize, char* out, size_t osize, void* _)
 {
@@ -280,17 +279,6 @@ size_t LZ4_d (char*in, size_t isize, char* out, size_t osize, void* _)
     UNUSED(isize);
     UNUSED(_);
     return LZ4_uncompress(in, out, osize) > 0 ? osize : CODING_ERROR;
-}
-size_t LZ4bz_c(char*in, size_t isize, char* out, size_t osize, void* _)
-{
-    UNUSED(_);
-    return LZ4bz_compress_limitedOutput(in, out, isize, osize);
-}
-size_t LZ4bz_d(char*in, size_t isize, char* out, size_t osize, void* _)
-{
-    UNUSED(isize);
-    UNUSED(_);
-    return LZ4bz_uncompress(in, out, osize) > 0 ? osize : CODING_ERROR;
 }
 
 #endif//FSBENCH_USE_LZ4

@@ -223,7 +223,6 @@ Codec * codecs[] =
 #endif
 #ifdef FSBENCH_USE_LZ4
               new Codec("LZ4", _LZ4_VERSION, LZ4_c, LZ4_d, no_blowup),
-              new Codec("LZ4bz", _LZ4_VERSION, LZ4bz_c, LZ4bz_d, no_blowup), // LZ4bz_m is not needed as these functions don't expand the input anyway
               new Codec("LZ4hc", _LZ4_VERSION, LZ4hc_c, LZ4_d, no_blowup),
 #endif
 #ifdef FSBENCH_USE_LZFX
@@ -459,7 +458,6 @@ pair<Codec*, string> all_compressors[] =
       make_pair(raw_find_codec("halibut-deflate"), ""),
       make_pair(raw_find_codec("lodepng"), ""),
       make_pair(raw_find_codec("LZ4"), ""),
-      make_pair(raw_find_codec("LZ4bz"), ""),
       make_pair(raw_find_codec("LZ4hc"), ""),
       make_pair(raw_find_codec("LZF"), ""),
       make_pair(raw_find_codec("LZFX"), ""),
