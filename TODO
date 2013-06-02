@@ -4,7 +4,7 @@ small_iters problem: in-place and buffered codecs that overwrite their input (al
 * add memcpy where it's needed (very bad for checksums because they are too fast) 
 
 make lzwc work with multiple blocks
-add uhash and the AES implementation used by vmac/umac; add vmac/umac
+add the AES implementation used by vmac/umac; add vmac/umac
 add mmini-lzh
 add http://code.google.com/p/variablelengthstringhashing/ 
 * with a fast PRNG (xorshift?)

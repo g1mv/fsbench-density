@@ -10,7 +10,6 @@
 #ifndef ABSTRACTCODECS_HPP_B9fgkfG8
 #define ABSTRACTCODECS_HPP_B9fgkfG8
 
-
 #include "codecs.hpp"
 #include "common.hpp"
 
@@ -252,7 +251,16 @@ public:
         UNUSED(out);
         UNUSED(osize);
         checksum_t checksummer = *(checksum_t*) args;
-        checksummer(in, isize, in + isize);
+        // Temporary digest. It's needed, so checksums that write past their buffers have it easier
+        // Also, helps them with alignment management
+        // I use large ints instead of chars to get it aligned
+        const size_t tmp_digest_size1 = digest_size / sizeof(uintmax_t);
+        const size_t tmp_digest_size =
+                tmp_digest_size1 * sizeof(uintmax_t) == digest_size ? tmp_digest_size1 :
+                                                                      tmp_digest_size1 + 1;
+        uintmax_t tmp_digest[tmp_digest_size];
+        checksummer(in, isize, (char*)tmp_digest);
+        memcpy(in + isize, tmp_digest, digest_size);
         return isize + digest_size;
     }
     static size_t decode(char* in, size_t isize, char* out, size_t osize, void* args)

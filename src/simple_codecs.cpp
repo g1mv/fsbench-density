@@ -132,10 +132,20 @@ namespace FsBenchFastCrypto
     // TODO: uhash doesn't support blocks > 16 MB
     void uhash(char* in, size_t isize, char* out)
     {
+        // uhash may overwrite data after the input
+        // That's where fsbench stores checksum
+        // If this function is called during 'decoding',
+        // there's a hash stored already that will be destroyed,
+        // later it will be compared with what we return
+        // which will cause errors. That is - unless we protect the buffer.
+        // Let's make a backup that we'll restore later.
+        char backup[32];
+        memcpy(backup, in+isize, sizeof(backup));
         char key[16] = {0};
         uhash_ctx_t ctx = uhash_alloc(key);
         ::uhash(ctx, in, isize, out);
         uhash_free(ctx);
+        memcpy(in+isize, backup, sizeof(backup));
     }
 
     void vhash(char* in, size_t isize, char* out)
