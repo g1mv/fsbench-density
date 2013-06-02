@@ -3,7 +3,7 @@
 // Functions that use SSE appear to be specific to MS compilers
 // Uncommenting the lines below will make them compile, but they are not connected to the main function,
 // so they are effectively dead code.
-//#define XMM_KAZE_SSE2
+#define XMM_KAZE_SSE2
 //#define XMM_KAZE_SSE4
 //#define XMM_KAZE_AVX
 
@@ -350,8 +350,15 @@ uint32_t FNV1A_Hash_Mantis(const char *str, size_t wrdlen)
 #ifdef XMM_KAZE_AVX
 #include <immintrin.h> //AVX
 #endif
-#define xmmload(p) _mm_load_si128((__m128i const*)(p))
-#define xmmloadu(p) _mm_loadu_si128((__m128i const*)(p))
+
+typedef union
+{
+    __m128i v;
+    int32_t a[4];
+} U128;
+
+#define xmmload(p) _mm_load_si128((U128 const*)(p))
+#define xmmloadu(p) _mm_loadu_si128((U128 const*)(p))
 #define _rotl_KAZE128(x, n) _mm_or_si128(_mm_slli_si128(x, n) , _mm_srli_si128(x, 128-n))
 #define XMM_KAZE_SSE2
 uint32_t FNV1A_Hash_YoshimitsuTRIADiiXMM(const char *str, uint32_t wrdlen)
@@ -365,16 +372,20 @@ uint32_t FNV1A_Hash_YoshimitsuTRIADiiXMM(const char *str, uint32_t wrdlen)
     uint32_t Second_Line_Offset;
 
 #if defined(XMM_KAZE_SSE2) || defined(XMM_KAZE_SSE4) || defined(XMM_KAZE_AVX)
-    __m128i xmm0;
-    __m128i xmm1;
-    __m128i xmm2;
-    __m128i xmm3;
-    __m128i xmm4;
-    __m128i xmm5;
-    __m128i hash32xmm = _mm_set1_epi32(2166136261);
-    __m128i hash32Bxmm = _mm_set1_epi32(2166136261);
-    __m128i hash32Cxmm = _mm_set1_epi32(2166136261);
-    __m128i PRIMExmm = _mm_set1_epi32(709607);
+    U128 xmm0;
+    U128 xmm1;
+    U128 xmm2;
+    U128 xmm3;
+    U128 xmm4;
+    U128 xmm5;
+    U128 hash32xmm;
+    hash32xmm.v = _mm_set1_epi32(2166136261);
+    U128 hash32Bxmm;
+    hash32Bxmm.v = _mm_set1_epi32(2166136261);
+    U128 hash32Cxmm;
+    hash32Cxmm.v = _mm_set1_epi32(2166136261);
+    U128 PRIMExmm;
+    PRIMExmm.v = _mm_set1_epi32(709607);
 #endif
 
 #if defined(XMM_KAZE_SSE2) || defined(XMM_KAZE_SSE4) || defined(XMM_KAZE_AVX)
@@ -383,33 +394,33 @@ if (wrdlen >= 4*24) { // Actually 4*24 is the minimum and not useful, 200++ make
     Loop_Counter++;
     Second_Line_Offset = wrdlen-(Loop_Counter)*(4*3*4);
     for(; Loop_Counter; Loop_Counter--, p += 4*3*sizeof(uint32_t)) {
-    xmm0 = xmmloadu(p+0*16);
-    xmm1 = xmmloadu(p+0*16+Second_Line_Offset);
-    xmm2 = xmmloadu(p+1*16);
-    xmm3 = xmmloadu(p+1*16+Second_Line_Offset);
-    xmm4 = xmmloadu(p+2*16);
-    xmm5 = xmmloadu(p+2*16+Second_Line_Offset);
+    xmm0.v = xmmloadu(p+0*16);
+    xmm1.v = xmmloadu(p+0*16+Second_Line_Offset);
+    xmm2.v = xmmloadu(p+1*16);
+    xmm3.v = xmmloadu(p+1*16+Second_Line_Offset);
+    xmm4.v = xmmloadu(p+2*16);
+    xmm5.v = xmmloadu(p+2*16+Second_Line_Offset);
 #if defined(XMM_KAZE_SSE2)
-        hash32xmm = _mm_mullo_epi16(_mm_xor_si128(hash32xmm , _mm_xor_si128(_rotl_KAZE128(xmm0,5) , xmm1)) , PRIMExmm);       
-        hash32Bxmm = _mm_mullo_epi16(_mm_xor_si128(hash32Bxmm , _mm_xor_si128(_rotl_KAZE128(xmm3,5) , xmm2)) , PRIMExmm);        
-        hash32Cxmm = _mm_mullo_epi16(_mm_xor_si128(hash32Cxmm , _mm_xor_si128(_rotl_KAZE128(xmm4,5) , xmm5)) , PRIMExmm);      
+        hash32xmm.v = _mm_mullo_epi16(_mm_xor_si128(hash32xmm.v , _mm_xor_si128(_rotl_KAZE128(xmm0.v,5) , xmm1.v)) , PRIMExmm.v);       
+        hash32Bxmm.v = _mm_mullo_epi16(_mm_xor_si128(hash32Bxmm.v , _mm_xor_si128(_rotl_KAZE128(xmm3.v,5) , xmm2.v)) , PRIMExmm.v);        
+        hash32Cxmm.v = _mm_mullo_epi16(_mm_xor_si128(hash32Cxmm.v , _mm_xor_si128(_rotl_KAZE128(xmm4.v,5) , xmm5.v)) , PRIMExmm.v);      
 #else
-        hash32xmm = _mm_mullo_epi32(_mm_xor_si128(hash32xmm , _mm_xor_si128(_rotl_KAZE128(xmm0,5) , xmm1)) , PRIMExmm);       
-        hash32Bxmm = _mm_mullo_epi32(_mm_xor_si128(hash32Bxmm , _mm_xor_si128(_rotl_KAZE128(xmm3,5) , xmm2)) , PRIMExmm);        
-        hash32Cxmm = _mm_mullo_epi32(_mm_xor_si128(hash32Cxmm , _mm_xor_si128(_rotl_KAZE128(xmm4,5) , xmm5)) , PRIMExmm);      
+        hash32xmm.v = _mm_mullo_epi32(_mm_xor_si128(hash32xmm.v , _mm_xor_si128(_rotl_KAZE128(xmm0.v,5) , xmm1.v)) , PRIMExmm.v);       
+        hash32Bxmm.v = _mm_mullo_epi32(_mm_xor_si128(hash32Bxmm.v , _mm_xor_si128(_rotl_KAZE128(xmm3.v,5) , xmm2.v)) , PRIMExmm.v);        
+        hash32Cxmm.v = _mm_mullo_epi32(_mm_xor_si128(hash32Cxmm.v , _mm_xor_si128(_rotl_KAZE128(xmm4.v,5) , xmm5.v)) , PRIMExmm.v);      
 #endif
     }
 #if defined(XMM_KAZE_SSE2)
-    hash32xmm = _mm_mullo_epi16(_mm_xor_si128(hash32xmm , hash32Bxmm) , PRIMExmm);       
-    hash32xmm = _mm_mullo_epi16(_mm_xor_si128(hash32xmm , hash32Cxmm) , PRIMExmm);       
+    hash32xmm.v = _mm_mullo_epi16(_mm_xor_si128(hash32xmm.v , hash32Bxmm.v) , PRIMExmm.v);       
+    hash32xmm.v = _mm_mullo_epi16(_mm_xor_si128(hash32xmm.v , hash32Cxmm.v) , PRIMExmm.v);       
 #else
-    hash32xmm = _mm_mullo_epi32(_mm_xor_si128(hash32xmm , hash32Bxmm) , PRIMExmm);       
-    hash32xmm = _mm_mullo_epi32(_mm_xor_si128(hash32xmm , hash32Cxmm) , PRIMExmm);       
+    hash32xmm.v = _mm_mullo_epi32(_mm_xor_si128(hash32xmm.v , hash32Bxmm.v) , PRIMExmm.v);       
+    hash32xmm.v = _mm_mullo_epi32(_mm_xor_si128(hash32xmm.v , hash32Cxmm.v) , PRIMExmm.v);       
 #endif
-    hash32 = (hash32 ^ hash32xmm.m128i_u32[0]) * PRIME;
-    hash32B = (hash32B ^ hash32xmm.m128i_u32[3]) * PRIME;
-    hash32 = (hash32 ^ hash32xmm.m128i_u32[1]) * PRIME;
-    hash32B = (hash32B ^ hash32xmm.m128i_u32[2]) * PRIME;
+    hash32 = (hash32 ^ hash32xmm.a[0]) * PRIME;
+    hash32B = (hash32B ^ hash32xmm.a[3]) * PRIME;
+    hash32 = (hash32 ^ hash32xmm.a[1]) * PRIME;
+    hash32B = (hash32B ^ hash32xmm.a[2]) * PRIME;
 } else if (wrdlen >= 24)
 #else
 if (wrdlen >= 24)

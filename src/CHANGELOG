@@ -1,6 +1,7 @@
 0.13.2
-[+] added 2 more Sanmayce's hashes
+[+] added more Sanmayce's hashes
 [~] updated LZ4 to r95
+[~] updated xxhash to r29
 [~] removed LZ4bz because I don't want to handle the burden of maintaining the patch since Yann just totally changed packaging of LZ4
 [!] portability issues
 

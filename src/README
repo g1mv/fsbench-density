@@ -70,6 +70,7 @@ FNV1a-Tesla                         | Georgi Marinov                            
 FNV1a-Tesla3                        | Georgi Marinov                              | 2013-03-13            | yes      |
 FNV1a-Yorikke                       | Georgi Marinov                              | 2013-05-12            | yes      |
 FNV1a-YoshitsuTRIAD                 | Georgi Marinov                              | 2013-05-12            | yes      |
+FNV1a-YoshimitsuTRIADiiXMM          | Georgi Marinov                              | 2013-05-12            | yes      |
 FNV1a-Yoshimura                     | Georgi Marinov                              | 2013-03-13            | yes      |
 Grøstl224                           | Soeren S. Thomsen, Krystian Matusiewicz     | SHA3 Final, 64bit opt | yes      |
 Grøstl256                           | Soeren S. Thomsen, Krystian Matusiewicz     | SHA3 Final, 64bit opt | yes      |
@@ -97,7 +98,7 @@ SWIFFTX224                          | multiple                                  
 SWIFFTX256                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
 SWIFFTX384                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
 SWIFFTX512                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
-xxhash                              | Yann Collet                                 | r6                    | yes      |
+xxhash                              | Yann Collet                                 | r29                   | yes      |
 xxhash256                           | Yann Collet, m^2                            | 1                     | yes      |
 
 
