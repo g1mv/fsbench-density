@@ -15,6 +15,7 @@ set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
 set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
 set(USE_DOBOZ             0) # inefficient
 set(USE_ECRYPT            1)
+set(USE_FASTCRYPTO        1)
 set(USE_FASTLZ            0) # inefficient
 set(USE_GIPFELI           0) # rarely works...
 set(USE_HALIBUT           0) # inefficient
@@ -48,7 +49,7 @@ set(USE_SIPHASH           1)
 set(USE_SNAPPY            1)
 set(USE_SPOOKY            1)
 set(USE_TINF              0) # inefficient
-set(USE_TOR               0) # doesn't compile on FreeBSD
+set(USE_TOR               0) # doesn't compile on FreeBSD, Debian, Timesys Linux
 set(USE_XXHASH            1)
 set(USE_YAPPY             1)
 set(USE_ZFS               0) # Nothing great
@@ -369,6 +370,11 @@ IF(USE_DOBOZ)
     set(OTHER_SRC ${OTHER_SRC} codecs/Doboz/Compressor.cpp codecs/Doboz/Decompressor.cpp codecs/Doboz/Dictionary.cpp)
     add_definitions(-DFSBENCH_USE_DOBOZ)
 ENDIF(USE_DOBOZ)
+IF(USE_FASTCRYPTO)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/fastcrypto)
+    set(OTHER_SRC ${OTHER_SRC} codecs/fastcrypto/rijndael-alg-fst.c codecs/fastcrypto/umac.c codecs/fastcrypto/vmac.c)
+    add_definitions(-DFSBENCH_USE_FASTCRYPTO)
+ENDIF(USE_FASTCRYPTO)
 IF(USE_FASTLZ)
     set(OTHER_SRC ${OTHER_SRC} codecs/fastlz.c)
     add_definitions(-DFSBENCH_USE_FASTLZ)

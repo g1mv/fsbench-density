@@ -42,6 +42,7 @@ static inline size_t process(char* in, size_t isize, char* out, size_t osize,
     size_t keysize
     )
 {
+    UNUSED(osize);                                                                                       \
     ECRYPT_ctx ctx;
     u8* key = new u8[keysize/CHAR_BIT];
     memset(key, 0, keysize/CHAR_BIT);
@@ -75,6 +76,7 @@ static inline size_t process2(char* in, size_t isize, char* out, size_t osize,
     size_t keysize
     )
 {
+    UNUSED(osize);                                                                                       \
     ECRYPT_ctx ctx;
     u8* key = new u8[keysize/CHAR_BIT];
     memset(key, 0, keysize/CHAR_BIT);

@@ -121,6 +121,37 @@ size_t Doboz_d(char*in, size_t isize, char* out, size_t osize, void* _)
     return d.decompress(in,isize,out,osize) == doboz::RESULT_OK ? osize : CODING_ERROR;
 }
 #endif//FSBENCH_USE_DOBOZ
+#ifdef FSBENCH_USE_FASTCRYPTO
+extern "C"
+{
+#include "umac.h"
+#include "vmac.h"
+}
+namespace FsBenchFastCrypto
+{
+    // TODO: uhash doesn't support blocks > 16 MB
+    void uhash(char* in, size_t isize, char* out)
+    {
+        char key[16] = {0};
+        uhash_ctx_t ctx = uhash_alloc(key);
+        ::uhash(ctx, in, isize, out);
+        uhash_free(ctx);
+    }
+
+    void vhash(char* in, size_t isize, char* out)
+    {
+        vmac_ctx_t ctx;
+        unsigned char user_key[VMAC_KEY_LEN/CHAR_BIT] = {0};
+        ::vmac_set_key(user_key, &ctx);
+        memset(&ctx, 0, sizeof(ctx));
+        uint64_t out1 = 0; // Depending on compilation options, vhash may set it or not.
+                           // If it doesn't, having a constant simplifies things
+        ((uint64_t*)out)[0] = ::vhash((unsigned char*)in, (unsigned int)isize, &out1, &ctx);
+        ((uint64_t*)out)[1] = out1;
+    }
+} //namespace FsBenchFastCrypto
+
+#endif //FSBENCH_USE_FASTCRYPTO
 #ifdef FSBENCH_USE_FASTLZ
 extern "C"
 {

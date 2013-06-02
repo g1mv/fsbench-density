@@ -43,6 +43,13 @@ void CrapWow(char* in, size_t isize, char* out);
 size_t Doboz_c(char* in, size_t isize, char* out, size_t osize, void* _);
 size_t Doboz_d(char* in, size_t isize, char* out, size_t osize, void* _);
 #endif//FSBENCH_USE_DOBOZ
+#ifdef FSBENCH_USE_FASTCRYPTO
+namespace FsBenchFastCrypto
+{
+    void uhash(char* in, size_t isize, char* out);
+    void vhash(char* in, size_t isize, char* out);
+} //namespace FsBenchFastCrypto
+#endif//FSBENCH_USE_FASTCRYPTO
 #ifdef FSBENCH_USE_FASTLZ
 size_t fastlz1_c(char* in, size_t isize, char* out, size_t osize, void*_);
 size_t fastlz2_c(char* in, size_t isize, char* out, size_t osize, void*_);

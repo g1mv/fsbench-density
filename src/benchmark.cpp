@@ -41,7 +41,7 @@ using namespace std;
 #define MB (1024*KB)
 
 //I make all buffers aligned
-#define ALIGNMENT 16
+#define ALIGNMENT 32 // uhash need this much
 
 #define ITERS(count) for(uint64_t i = 0; i < (uint64_t)(count); ++i)
 

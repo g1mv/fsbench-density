@@ -307,6 +307,12 @@ Codec * codecs[] =
               new Checksum<384/CHAR_BIT> ("cryptopp-sha384", _CRYPTOPP_VERSION, FsBenchCryptoPP::sha384),
               new Checksum<512/CHAR_BIT> ("cryptopp-sha512", _CRYPTOPP_VERSION, FsBenchCryptoPP::sha512),
 #endif
+#ifdef FSBENCH_USE_FASTCRYPTO
+#if 0
+              new Checksum<64/CHAR_BIT>("uhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::uhash),
+#endif // doesn't work
+              new Checksum<128/CHAR_BIT>("vhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::vhash),
+#endif
 #ifdef FSBENCH_USE_MURMUR
               new Checksum<8>("SipHash24", _SIPHASH_VERSION, siphash),
 #endif
