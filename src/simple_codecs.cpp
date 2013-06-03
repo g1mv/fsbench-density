@@ -32,6 +32,78 @@ using namespace std;
 // Here they have functions used by their constructors
 //////////////////////////////////////////////////////
 
+#ifdef FSBENCH_USE_AR
+namespace FsBenchAr
+{
+    extern "C"
+    {
+#include "ar/lzh.h"
+    }
+    struct meminfo
+    {
+        const char *in_data;
+        int in_bytes_left;
+        char *out_data;
+        int out_bytes_left;
+    };
+    int read(void *data, int n, void *p)
+    {
+        meminfo *mem = (meminfo*)p;
+        int to_copy = std::min(n, mem->in_bytes_left);
+        memcpy(data, mem->in_data, to_copy);
+        mem->in_data += to_copy;
+        mem->in_bytes_left -= to_copy;
+        return to_copy;
+    }
+    int write(void *data, int n, void *p)
+    {
+        meminfo *mem = (meminfo*)p;
+        int to_copy = std::min(n, mem->out_bytes_left);
+        memcpy(mem->out_data, data, to_copy);
+        mem->out_data += to_copy;
+        mem->out_bytes_left -= to_copy;
+        return to_copy;
+    }
+    // type is different from stdlib's one... unsigned vs. size_t
+    void *_malloc(unsigned n)
+    {
+        return malloc(n);
+    }
+    
+    size_t ar_c(char*in, size_t isize, char* out, size_t osize, void* _)
+    {
+        UNUSED(_);
+        meminfo mem;
+        mem.in_data        = in;
+        mem.in_bytes_left  = isize;
+        mem.out_data       = out;
+        mem.out_bytes_left = osize;
+        int ret = lzh_freeze(read,
+                             write,
+                             _malloc, 
+                             free,
+                             &mem);
+        return ret == 0 ? osize - mem.out_bytes_left : CODING_ERROR;
+    }
+    size_t ar_d(char*in, size_t isize, char* out, size_t osize, void* _)
+    {
+        UNUSED(_);
+        meminfo mem;
+        mem.in_data        = in;
+        mem.in_bytes_left  = isize;
+        mem.out_data       = out;
+        mem.out_bytes_left = osize;
+        int ret = lzh_melt(read,
+                           write,
+                           _malloc, 
+                           free,
+                           osize,
+                           &mem);
+        return ret == 0 ? osize - mem.out_bytes_left : CODING_ERROR;
+    }
+}
+
+#endif//FSBENCH_USE_AR
 #ifdef FSBENCH_USE_BLAKE2
 extern "C"
 {
@@ -53,12 +125,12 @@ extern "C"
 #include "blosc/blosclz.h"
 }
 
-size_t blosc_c(char*in,size_t isize, char* out, size_t osize, void* mode)
+size_t blosc_c(char*in, size_t isize, char* out, size_t osize, void* mode)
 {
     int ret = blosclz_compress(*(intptr_t*)mode, in, isize, out, osize);
     return ret > 0 ? ret : CODING_ERROR;
 }
-size_t blosc_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t blosc_d(char*in, size_t isize, char* out, size_t osize, void* _)
 {
     return blosclz_decompress(in, isize, out, osize);
 }
@@ -143,8 +215,7 @@ namespace FsBenchFastCrypto
         memcpy(backup, in+isize, sizeof(backup));
         char key[16] = {0};
         uhash_ctx_t ctx = uhash_alloc(key);
-        if(ctx == 0)
-            return CODING_ERROR;
+        // FIXME: what if malloc fails?
         ::uhash(ctx, in, isize, out);
         uhash_free(ctx);
         memcpy(in+isize, backup, sizeof(backup));
@@ -165,8 +236,7 @@ namespace FsBenchFastCrypto
         char key[16] = {0};
         char nonce[8] = {0};
         umac_ctx_t ctx = umac_new(key);
-        if(ctx == 0)
-            return CODING_ERROR;
+        // FIXME: what if malloc fails?
         ::umac(ctx, in, isize, out, nonce);
         umac_delete(ctx);
         memcpy(in+isize, backup, sizeof(backup));

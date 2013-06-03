@@ -159,6 +159,7 @@ Codec* find_codec(const std::string& name);
 // TODO: each codec should have a version number by itself,
 // so there's one place less to change when adding / updating 
 #define _7z_VERSION         "9.20"
+#define _AR_VERSION         "2013-06-03"
 #define _BCL_VERSION        "1.2.0"
 #define _BLAKE2_VERSION     "20121223"
 #define _BLOSC_VERSION      "1.1.4"

@@ -115,9 +115,9 @@ int main(int argc, char** argv)
     list<CodecWithParams> codecs;
 
     //debug code
-    /*char*a[] = {"fsbench", "gipfeli", "-w0", "-s1", "-i1", "..\\nbbs.tar"};
-     argv=a;
-     argc=6;*/
+    /*char*a[] = {"fsbench", "ar", "-w0", "-s1", "-i1", "/usr/home/m/bench/nbbs.tar"};
+    argv=a;
+    argc=6;*/
 
     if (argc == 3)
     {

@@ -206,6 +206,9 @@ Codec * codecs[] =
               new Codec("7z-lzx", _7z_VERSION, 0, FsBench7z::unlzx, no_blowup),
 #endif
 #endif
+#ifdef FSBENCH_USE_AR
+              new Codec("ar", _AR_VERSION, FsBenchAr::ar_c, FsBenchAr::ar_d, no_blowup),
+#endif
 #ifdef FSBENCH_USE_BCL
               new Codec("bcl-huffman", _BCL_VERSION, FsBenchBCL::huffman, FsBenchBCL::unhuffman, FsBenchBCL::huffman_maxsize),
               new Codec("bcl-lz", _BCL_VERSION, FsBenchBCL::lz, FsBenchBCL::unlz, FsBenchBCL::lz_maxsize),
@@ -450,6 +453,7 @@ MKLIST(FAST_COMPRESSORS, fast_compressors);
 pair<Codec*, string> all_compressors[] =
     { make_pair(raw_find_codec("7z-deflate"), ""),
       make_pair(raw_find_codec("7z-deflate64"), ""),
+      make_pair(raw_find_codec("ar"), ""),
       make_pair(raw_find_codec("bcl-huffman"), ""),
       make_pair(raw_find_codec("bcl-lz"), ""),
       make_pair(raw_find_codec("bcl-lzfast"), ""),

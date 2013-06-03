@@ -5,6 +5,7 @@
 # Codecs
 # You can enable or disable compilation of individual codecs here
 set(USE_7Z                1)
+set(USE_AR                0) # inefficient
 set(USE_BCL               0) # inefficient
 set(USE_BLAKE2            0) # doesn't compile with MSVC10
 set(USE_BLOSC             0) # inefficient
@@ -338,6 +339,11 @@ IF(USE_ZLIB)
 
     add_definitions(-DNO_VIZ) # Lack of this definition causes troubles sometimes
 ENDIF(USE_ZLIB)
+
+IF(USE_AR)
+    set(OTHER_SRC ${OTHER_SRC} codecs/ar/lzhclib.c codecs/ar/lzhxlib.c)
+    add_definitions(-DFSBENCH_USE_AR)
+ENDIF(USE_AR)
 
 IF(USE_BLAKE2)
     # sadly, it's needed

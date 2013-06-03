@@ -10,7 +10,6 @@ add http://code.google.com/p/variablelengthstringhashing/
 * with a fast PRNG (xorshift?)
 * with a fast crypto PRNG
 * with a static precomputed random sequence
-add hashes from http://www.fastcrypto.org/
 add:
 * https://github.com/zfy0701/Parallel-LZ77
 * htps://github.com/matuba/LZSS
@@ -19,8 +18,6 @@ add:
 * https://github.com/Cereal84/LZ77/tree/master/source
 * https://github.com/ky1000ky2000/lz77/tree/master/lz77
 * https://github.com/stevesan/lz77
-* https://github.com/Sanguinarious/lzh-improved
-* Sanmayce's hashes - there's SSE version that doesn't compile with GCC and could be ported
 * reintroduce LZ4bz
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4

@@ -16,6 +16,14 @@ using namespace std;
 // Codecs that use some of the abstract classes
 // Here they have functions used by their constructors
 //////////////////////////////////////////////////////
+
+#ifdef FSBENCH_USE_AR
+namespace FsBenchAr
+{
+    size_t ar_c(char*in, size_t isize, char* out, size_t osize, void* _);
+    size_t ar_d(char*in, size_t isize, char* out, size_t osize, void* _);
+}
+#endif//FSBENCH_USE_AR
 #ifdef FSBENCH_USE_BLAKE2
 #define BLAKE2_FUNC(name) \
 void fsbench_ ## name (char* in, size_t isize, char* out)

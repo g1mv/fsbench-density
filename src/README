@@ -99,9 +99,9 @@ SWIFFTX256                          | multiple                                  
 SWIFFTX384                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
 SWIFFTX512                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
 uhash                               | Ted Krovetz                                 | 2007-04-17            | yes      |
-vhash                               | Ted Krovetz                                 | 2007-04-17            | yes      |
+vhash                               | Ted Krovetz, Wei Dai                        | 2007-04-17            | yes      |
 umac                                | Ted Krovetz                                 | 2007-04-17            | yes      |
-vmac                                | Ted Krovetz                                 | 2007-04-17            | yes      |
+vmac                                | Ted Krovetz, Wei Dai                        | 2007-04-17            | yes      |
 xxhash                              | Yann Collet                                 | r29                   | yes      |
 xxhash256                           | Yann Collet, m^2                            | 1                     | yes      |
 
@@ -125,53 +125,53 @@ Sosemanuk                           | Thomas Pornin                           | 
 Trivium                             | Christophe De Cannière                  | 2006-02-23 | yes      |
 
 Compressors:
-name                                | author                                  | version    | default? |
--------------------------------------------------------------------------------------------------------
-7z - deflate                        | Igor Pavlov                             | 9.20       | yes      |
-7z - deflate64                      | Igor Pavlov                             | 9.20       | yes      |
-Basic Compression Library - huffman | Marcus Geelnard                         | 1.2.0      | no       |
-Basic Compression Library - lz      | Marcus Geelnard                         | 1.2.0      | no       |
-Basic Compression Library - lzfast  | Marcus Geelnard                         | 1.2.0      | no       |
-Basic Compression Library - rle     | Marcus Geelnard                         | 1.2.0      | no       |
-blosc                               | Francesc Alted                          | 1.1.4      | no       |
-BriefLZ                             | Joergen Ibsen                           | 1.0.5      | no       |
-bzip2                               | Julian Seward                           | 1.0.6      | yes      |
-crypto++ - deflate                  | Wei Dai                                 | 5.6.1      | yes      |
-Doboz                               | Attila T. Afra                          | 2011-03-19 | no       |
-FastLZ                              | Ariya Hidayat                           | 0.1.0      | no       |
-gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala        | 2011-10-19 | no       |
-Halibut - deflate                   | Simon Tatham                            | SVN r9550  | no       |
-lodepng - deflate                   | Lode Vandevenne                         | 20120729   | no       |
-LZ4                                 | Yann Collet                             | r85        | yes      |
-LZ4hc                               | Yann Collet                             | r85        | yes      |
-LZ4bz                               | Yann Collet, Bulat Ziganshin            | r85        | yes      |
-LZF                                 | Marc Alexander Lehmann                  | 3.6        | yes      |
-LZFX                                | Andrew Collette                         | r16        | no       |
-LZG                                 | Marcus Geelnard                         | 1.0.6      | no       |
-LZHAM                               | Richard Geldreich, Jr.                  | SVN r96    | no       |
-LZJB                                | Jeff Bonwick                            | 2010       | no       |
-mmini - lzl                         | Adam Ierymenko                          | 2010       | no       |
-LZMAT                               | Vitaly Evseenko                         | 1.1        | yes      |
-LZO                                 | Markus Franz Xaver Johannes Oberhumer   | 2.05       | yes      |
-LZSS                                | Ilia Muraviev                           | 2008-07-31 | no       |
-LZV1                                | Hermann Vogt                            | 0.5        | no       |
-LZWC                                | David Catt                              | 0.4        | no       |
-lzx_compress                        | Matthew T. Russotto                     | 2005-07-06 | no       |
-miniz                               | Richard Geldreich, Jr.                  | 1.11       | yes      |
-nrv2a                               | Markus Franz Xaver Johannes Oberhumer   | 1.03       | no       |
-nrv2b                               | Markus Franz Xaver Johannes Oberhumer   | 1.03       | no       |
-nrv2d                               | Markus Franz Xaver Johannes Oberhumer   | 1.03       | no       |
-QuickLZ                             | Lasse Mikkel Reinhold                   | 1.5.1b6    | yes      |
-QuickLZ zip                         | Lasse Mikkel Reinhold                   | 0.4        | no       |
-RLE64                               | Javier Gutiérrez Chamorro               | R3.00      | yes      |
-SCZ                                 | Carl Kindman                            | 2008-11-25 | no       |
-Shrinker                            | Fu Siyuan                               | r5         | yes      |
-Snappy                              | ???                                     | 1.0.5      | yes      |
-tinf                                | Joergen Ibsen                           | 1.00       | no       |
-Tornado                             | Joachim Henke, Bulat Ziganshin          | 0.5        | yes      |
-Yappy                               | Peter Popov                             | v2         | yes      |
-zlib - deflate                      | Mark Adler, Jean-loup Gailly            | 1.2.7      | yes      |
-zopfli - deflate                    | Lode Vandevenne, Jyrki Alakuijala       | 2013-03-01 | yes      |
+name                                | author                                           | version    | default? |
+----------------------------------------------------------------------------------------------------------------
+7z - deflate                        | Igor Pavlov                                      | 9.20       | yes      |
+7z - deflate64                      | Igor Pavlov                                      | 9.20       | yes      |
+ar                                  | Haruhiko Okumura, Kerwin F. Medina, SanguineRose | 2013-06-03 | no       |
+Basic Compression Library - huffman | Marcus Geelnard                                  | 1.2.0      | no       |
+Basic Compression Library - lz      | Marcus Geelnard                                  | 1.2.0      | no       |
+Basic Compression Library - lzfast  | Marcus Geelnard                                  | 1.2.0      | no       |
+Basic Compression Library - rle     | Marcus Geelnard                                  | 1.2.0      | no       |
+blosc                               | Francesc Alted                                   | 1.1.4      | no       |
+BriefLZ                             | Joergen Ibsen                                    | 1.0.5      | no       |
+bzip2                               | Julian Seward                                    | 1.0.6      | yes      |
+crypto++ - deflate                  | Wei Dai                                          | 5.6.1      | yes      |
+Doboz                               | Attila T. Afra                                   | 2011-03-19 | no       |
+FastLZ                              | Ariya Hidayat                                    | 0.1.0      | no       |
+gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala                 | 2011-10-19 | no       |
+Halibut - deflate                   | Simon Tatham                                     | SVN r9550  | no       |
+lodepng - deflate                   | Lode Vandevenne                                  | 20120729   | no       |
+LZ4                                 | Yann Collet                                      | r95        | yes      |
+LZ4hc                               | Yann Collet                                      | r95        | yes      |
+LZF                                 | Marc Alexander Lehmann                           | 3.6        | yes      |
+LZFX                                | Andrew Collette                                  | r16        | no       |
+LZG                                 | Marcus Geelnard                                  | 1.0.6      | no       |
+LZHAM                               | Richard Geldreich, Jr.                           | SVN r96    | no       |
+LZJB                                | Jeff Bonwick                                     | 2010       | no       |
+mmini - lzl                         | Adam Ierymenko                                   | 2010       | no       |
+LZMAT                               | Vitaly Evseenko                                  | 1.1        | yes      |
+LZO                                 | Markus Franz Xaver Johannes Oberhumer            | 2.05       | yes      |
+LZSS                                | Ilia Muraviev                                    | 2008-07-31 | no       |
+LZV1                                | Hermann Vogt                                     | 0.5        | no       |
+LZWC                                | David Catt                                       | 0.4        | no       |
+lzx_compress                        | Matthew T. Russotto                              | 2005-07-06 | no       |
+miniz                               | Richard Geldreich, Jr.                           | 1.11       | yes      |
+nrv2a                               | Markus Franz Xaver Johannes Oberhumer            | 1.03       | no       |
+nrv2b                               | Markus Franz Xaver Johannes Oberhumer            | 1.03       | no       |
+nrv2d                               | Markus Franz Xaver Johannes Oberhumer            | 1.03       | no       |
+QuickLZ                             | Lasse Mikkel Reinhold                            | 1.5.1b6    | yes      |
+QuickLZ zip                         | Lasse Mikkel Reinhold                            | 0.4        | no       |
+RLE64                               | Javier Gutiérrez Chamorro                        | R3.00      | yes      |
+SCZ                                 | Carl Kindman                                     | 2008-11-25 | no       |
+Shrinker                            | Fu Siyuan                                        | r5         | yes      |
+Snappy                              | ???                                              | 1.0.5      | yes      |
+tinf                                | Joergen Ibsen                                    | 1.00       | no       |
+Tornado                             | Joachim Henke, Bulat Ziganshin                   | 0.5        | yes      |
+Yappy                               | Peter Popov                                      | v2         | yes      |
+zlib - deflate                      | Mark Adler, Jean-loup Gailly                     | 1.2.7      | yes      |
+zopfli - deflate                    | Lode Vandevenne, Jyrki Alakuijala                | 2013-03-01 | yes      |
 
 *************************
 Notes on included codecs:
