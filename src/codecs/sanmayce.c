@@ -1,11 +1,10 @@
 #include "sanmayce.h"
 
-// Functions that use SSE appear to be specific to MS compilers
-// Uncommenting the lines below will make them compile, but they are not connected to the main function,
-// so they are effectively dead code.
+#ifdef FSBENCH_SSL2
 #define XMM_KAZE_SSE2
 //#define XMM_KAZE_SSE4
 //#define XMM_KAZE_AVX
+#endif
 
 // "No High-Speed Limit", says Tesla.
 // 

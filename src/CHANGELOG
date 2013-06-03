@@ -1,11 +1,12 @@
 0.13.3
 [+] added uhash, vhash
+[!] disabled FNV1a-YosimitsuTriadiiXMM unless SSL2 is explicitly enabled
 
 0.13.2
 [+] added more Sanmayce's hashes
 [~] updated LZ4 to r95
 [~] updated xxhash to r29
-[~] removed LZ4bz because I don't want to handle the burden of maintaining the patch since Yann just totally changed packaging of LZ4
+[-] removed LZ4bz because I don't want to handle the burden of maintaining the patch since Yann just totally changed packaging of LZ4
 [!] portability issues
 
 0.13.1
