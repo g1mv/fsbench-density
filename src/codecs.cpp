@@ -310,6 +310,8 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_FASTCRYPTO
               new Checksum<64/CHAR_BIT>("uhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::uhash),
               new Checksum<128/CHAR_BIT>("vhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::vhash),
+              new Checksum<64/CHAR_BIT>("umac", _FASTCRYPTO_VERSION, FsBenchFastCrypto::umac),
+              new Checksum<128/CHAR_BIT>("vmac", _FASTCRYPTO_VERSION, FsBenchFastCrypto::vmac),
 #endif
 #ifdef FSBENCH_USE_MURMUR
               new Checksum<8>("SipHash24", _SIPHASH_VERSION, siphash),
@@ -527,6 +529,10 @@ pair<Codec*, string> all_checksums[] =
           make_pair(raw_find_codec("cryptopp-sha256"), ""),
           make_pair(raw_find_codec("cryptopp-sha384"), ""),
           make_pair(raw_find_codec("cryptopp-sha512"), ""),
+          make_pair(raw_find_codec("uhash"), ""),
+          make_pair(raw_find_codec("vhash"), ""),
+          make_pair(raw_find_codec("umac"), ""),
+          make_pair(raw_find_codec("vmac"), ""),
           make_pair(raw_find_codec("SipHash24"), ""),
           make_pair(raw_find_codec("murmur3_x86_32"), ""),
           make_pair(raw_find_codec("SpookyHash"), ""),

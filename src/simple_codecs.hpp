@@ -48,6 +48,8 @@ namespace FsBenchFastCrypto
 {
     void uhash(char* in, size_t isize, char* out);
     void vhash(char* in, size_t isize, char* out);
+    void umac(char* in, size_t isize, char* out);
+    void vmac(char* in, size_t isize, char* out);
 } //namespace FsBenchFastCrypto
 #endif//FSBENCH_USE_FASTCRYPTO
 #ifdef FSBENCH_USE_FASTLZ

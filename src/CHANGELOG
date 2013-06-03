@@ -1,3 +1,7 @@
+0.13.4
+[+] added umac, vmac
+[!] added uhash, vhash, umac, vmac to the list of checksums
+
 0.13.3
 [+] added uhash, vhash
 [!] disabled FNV1a-YosimitsuTriadiiXMM unless SSL2 is explicitly enabled

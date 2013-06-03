@@ -100,6 +100,8 @@ SWIFFTX384                          | multiple                                  
 SWIFFTX512                          | multiple                                    | SHA3 rnd 1, 64bit opt | no       |
 uhash                               | Ted Krovetz                                 | 2007-04-17            | yes      |
 vhash                               | Ted Krovetz                                 | 2007-04-17            | yes      |
+umac                                | Ted Krovetz                                 | 2007-04-17            | yes      |
+vmac                                | Ted Krovetz                                 | 2007-04-17            | yes      |
 xxhash                              | Yann Collet                                 | r29                   | yes      |
 xxhash256                           | Yann Collet, m^2                            | 1                     | yes      |
 
