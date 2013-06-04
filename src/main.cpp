@@ -24,7 +24,7 @@
 // DEFINITIONS
 ///////////////////////////
 #define PROGNAME "fsbench"
-#define PROGVERSION "0.14"
+#define PROGVERSION "0.13"
 
 ///////////////////////////
 // INCLUDES

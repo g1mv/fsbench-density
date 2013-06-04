@@ -1,6 +1,6 @@
 #include "sanmayce.h"
 
-#ifdef FSBENCH_SSL2
+#ifdef FSBENCH_SSE2
 #define XMM_KAZE_SSE2
 //#define XMM_KAZE_SSE4
 //#define XMM_KAZE_AVX

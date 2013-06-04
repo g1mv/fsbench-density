@@ -42,7 +42,7 @@ namespace BlueMidnightWish2
     SHA3_FUNCTION(256)
 }
 #endif
-#ifdef FSBENCH_USE_SHA3_RND2
+#if defined(FSBENCH_USE_SHA3_RND2) && defined(FSBENCH_SSE2)
 namespace CubeHash
 {
 #   include "CubeHash/cubehash.c"

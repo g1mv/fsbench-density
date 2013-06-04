@@ -317,10 +317,10 @@ Codec * codecs[] =
               new Checksum<128/CHAR_BIT>("vmac", _FASTCRYPTO_VERSION, FsBenchFastCrypto::vmac),
 #endif
 #ifdef FSBENCH_USE_MURMUR
-              new Checksum<8>("SipHash24", _SIPHASH_VERSION, siphash),
+              new Checksum< sizeof(uint32_t)>("murmur3_x86_32", _MURMUR_VERSION, murmur_x86_32),
 #endif
 #ifdef FSBENCH_USE_SIPHASH
-              new Checksum< sizeof(uint32_t)>("murmur3_x86_32", _MURMUR_VERSION, murmur_x86_32),
+              new Checksum<8>("SipHash24", _SIPHASH_VERSION, siphash),
 #endif
 #ifdef FSBENCH_USE_SPOOKY
               new Checksum<2*sizeof(uint64_t)>("SpookyHash", _SPOOKY_VERSION, spooky),

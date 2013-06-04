@@ -7,7 +7,7 @@
 set(USE_7Z                1)
 set(USE_AR                0) # inefficient
 set(USE_BCL               0) # inefficient
-set(USE_BLAKE2            0) # doesn't compile with MSVC10
+set(USE_BLAKE2            0) # doesn't compile with MSVC10. Requires SSE2, so you need to enable it below too.
 set(USE_BLOSC             0) # inefficient
 set(USE_BLZ               0) # inefficient
 set(USE_BZ2               0) # there are barely any competitors for it
@@ -103,7 +103,7 @@ ENDIF(${CMAKE_C_SIZEOF_DATA_PTR} STREQUAL 4)
 
 IF(${ARCH} STREQUAL "x86")
     IF(USE_SSE2)
-        add_definitions( -DFSBENCH_SSL2) 
+        add_definitions( -DFSBENCH_SSE2) 
     ENDIF(USE_SSE2)
 ENDIF(${ARCH} STREQUAL "x86")
 
@@ -345,7 +345,7 @@ IF(USE_AR)
     add_definitions(-DFSBENCH_USE_AR)
 ENDIF(USE_AR)
 
-IF(USE_BLAKE2)
+IF(USE_BLAKE2 AND USE_SSE2)
     # sadly, it's needed
     # Never tested on other compilers
     set(GCC_FLAGS "${GCC_FLAGS} -std=c99")
@@ -353,7 +353,7 @@ IF(USE_BLAKE2)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/blake2)
     set(OTHER_SRC ${OTHER_SRC} codecs/blake2/blake2b.c codecs/blake2/blake2bp.c codecs/blake2/blake2s.c codecs/blake2/blake2sp.c)
     add_definitions(-DFSBENCH_USE_BLAKE2)
-ENDIF(USE_BLAKE2)
+ENDIF(USE_BLAKE2 AND USE_SSE2)
 
 IF(USE_BLOSC)
     set(OTHER_SRC ${OTHER_SRC} codecs/blosc/blosclz.c)
