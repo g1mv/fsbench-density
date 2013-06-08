@@ -104,7 +104,6 @@ size_t LZWC_d(char*in,size_t isize, char* out, size_t osize, void* _);
 #endif//FSBENCH_USE_LZWC
 #ifdef FSBENCH_USE_LZX_COMPRESS
 size_t LZX_c(char* in, size_t isize, char* out, size_t osize, void* window_size);
-size_t LZX_d(char* in, size_t isize, char* out, size_t osize, void* memory);
 #endif// FSBENCH_USE_LZX_COMPRES
 #ifdef FSBENCH_USE_MMINI
 extern "C"

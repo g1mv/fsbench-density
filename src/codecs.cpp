@@ -12,6 +12,7 @@
 #include "tools.hpp"
 
 #include <algorithm>
+#include <climits>
 
 using namespace std;
 
@@ -358,10 +359,13 @@ Codec * codecs[] =
               BMW2(256)
               SHA3_CHECKSUM(BlueMidnightWish, 384, _SHA3_RND1_VERSION)
               SHA3_CHECKSUM(BlueMidnightWish, 512, _SHA3_RND1_VERSION)
+
+#       if defined(FSBENCH_SSE2)
               SHA3_CHECKSUM(CubeHash, 224, _SHA3_RND1_VERSION)
               SHA3_CHECKSUM(CubeHash, 256, _SHA3_RND1_VERSION)
               SHA3_CHECKSUM(CubeHash, 384, _SHA3_RND1_VERSION)
               SHA3_CHECKSUM(CubeHash, 512, _SHA3_RND1_VERSION)
+#       endif
 #   endif
 #   ifdef FSBENCH_USE_SHA3_RND3
               SHA3_CHECKSUM(Blake, 224, _SHA3_VERSION)

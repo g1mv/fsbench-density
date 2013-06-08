@@ -70,7 +70,7 @@ namespace FsBenchAr
         return malloc(n);
     }
     
-    size_t ar_c(char*in, size_t isize, char* out, size_t osize, void* _)
+    size_t ar_c(char *in, size_t isize, char *out, size_t osize, void *_)
     {
         UNUSED(_);
         meminfo mem;
@@ -85,7 +85,7 @@ namespace FsBenchAr
                              &mem);
         return ret == 0 ? osize - mem.out_bytes_left : CODING_ERROR;
     }
-    size_t ar_d(char*in, size_t isize, char* out, size_t osize, void* _)
+    size_t ar_d(char *in, size_t isize, char *out, size_t osize, void *_)
     {
         UNUSED(_);
         meminfo mem;
@@ -110,7 +110,7 @@ extern "C"
 #include "blake2/blake2.h"
 }
 #define BLAKE2_FUNC_DEFINITION(name, size)                           \
-        void fsbench_ ## name (char* in, size_t isize, char* out)    \
+        void fsbench_ ## name (char *in, size_t isize, char *out)    \
         {                                                            \
             name((uint8_t*)out, (const void*)in, 0, size, isize, 0); \
         }
@@ -125,13 +125,14 @@ extern "C"
 #include "blosc/blosclz.h"
 }
 
-size_t blosc_c(char*in, size_t isize, char* out, size_t osize, void* mode)
+size_t blosc_c(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
     int ret = blosclz_compress(*(intptr_t*)mode, in, isize, out, osize);
     return ret > 0 ? ret : CODING_ERROR;
 }
-size_t blosc_d(char*in, size_t isize, char* out, size_t osize, void* _)
+size_t blosc_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     return blosclz_decompress(in, isize, out, osize);
 }
 #endif//FSBENCH_USE_BLOSC
@@ -141,15 +142,15 @@ extern "C"
 #include "bzlib.h"
 }
 
-size_t bz2_c(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t bz2_c(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
     unsigned int _osize = osize;
     int ret = BZ2_bzBuffToBuffCompress(out, &_osize, in, isize, *(intptr_t*)mode, 0, 0);
     return ret == BZ_OK ? _osize : CODING_ERROR;
 }
-size_t bz2_d(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t bz2_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
-
+    UNUSED(_);
     unsigned int _osize = osize;
     int ret = BZ2_bzBuffToBuffDecompress(out, &_osize, in, isize, 0, 0);
     return ret == BZ_OK ? _osize : CODING_ERROR;
@@ -157,11 +158,11 @@ size_t bz2_d(char* in, size_t isize, char* out, size_t osize, void* _)
 #endif//FSBENCH_USE_BZ2
 #ifdef FSBENCH_USE_CITYHASH
 #include "CityHash/city.h"
-void CityHash64(char* in, size_t isize, char* out)
+void CityHash64(char *in, size_t isize, char *out)
 {
     *(uint64_t*) out = CityHash64((const char*)in, isize);
 }
-void CityHash128(char* in, size_t isize, char* out)
+void CityHash128(char *in, size_t isize, char *out)
 {
     uint128 ret = CityHash128((const char*)in, isize);
     ((uint64_t*)out)[0] = Uint128Low64(ret);
@@ -173,7 +174,7 @@ extern "C"
 {
 #include "CrapWow.h"
 }
-void CrapWow(char* in, size_t isize, char* out)
+void CrapWow(char *in, size_t isize, char *out)
 {
     *(uint32_t*) out = CrapWow((const uint8_t*)in, (uint32_t)isize, (uint32_t)0);
 }
@@ -181,14 +182,17 @@ void CrapWow(char* in, size_t isize, char* out)
 #ifdef FSBENCH_USE_DOBOZ
 #include "Doboz/Compressor.h"
 #include "Doboz/Decompressor.h"
-size_t Doboz_c(char*in, size_t isize, char* out, size_t osize, void* _)
+size_t Doboz_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(osize);
+    UNUSED(_);
     doboz::Compressor c;
     size_t ret;
     return c.compress(in,isize,out,c.getMaxCompressedSize(isize),ret) == doboz::RESULT_OK ? ret : CODING_ERROR;
 }
-size_t Doboz_d(char*in, size_t isize, char* out, size_t osize, void* _)
+size_t Doboz_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     doboz::Decompressor d;
     return d.decompress(in,isize,out,osize) == doboz::RESULT_OK ? osize : CODING_ERROR;
 }
@@ -202,7 +206,7 @@ extern "C"
 namespace FsBenchFastCrypto
 {
     // TODO: uhash doesn't support blocks > 16 MB
-    void uhash(char* in, size_t isize, char* out)
+    void uhash(char *in, size_t isize, char *out)
     {
         // uhash may overwrite data after the input
         // That's where fsbench stores checksum
@@ -222,7 +226,7 @@ namespace FsBenchFastCrypto
     }
     
     // TODO: uhash doesn't support blocks > 16 MB
-    void umac(char* in, size_t isize, char* out)
+    void umac(char *in, size_t isize, char *out)
     {
         // uhash may overwrite data after the input
         // That's where fsbench stores checksum
@@ -242,7 +246,7 @@ namespace FsBenchFastCrypto
         memcpy(in+isize, backup, sizeof(backup));
     }
 
-    void vhash(char* in, size_t isize, char* out)
+    void vhash(char *in, size_t isize, char *out)
     {
         vmac_ctx_t ctx;
         unsigned char user_key[VMAC_KEY_LEN/CHAR_BIT] = {0};
@@ -254,7 +258,7 @@ namespace FsBenchFastCrypto
         ((uint64_t*)out)[1] = out1;
     }
 
-    void vmac(char* in, size_t isize, char* out)
+    void vmac(char *in, size_t isize, char *out)
     {
         vmac_ctx_t ctx;
         unsigned char user_key[VMAC_KEY_LEN/CHAR_BIT] = {0};
@@ -274,16 +278,21 @@ extern "C"
 {
 #include "fastlz.h"
 }
-size_t fastlz1_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t fastlz1_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(osize);
+    UNUSED(_);
     return fastlz_compress_level(1, in, isize, out);
 }
-size_t fastlz2_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t fastlz2_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(osize);
+    UNUSED(_);
     return fastlz_compress_level(2, in, isize, out);
 }
-size_t fastlz_d (char*in,size_t isize, char* out, size_t osize, void* _)
+size_t fastlz_d (char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     return fastlz_decompress(in, isize, out, osize);
 }
 size_t fastlz_m (size_t input_size)
@@ -299,13 +308,14 @@ extern "C"
 {
 #include "halibut-deflate.h"
 }
-size_t halibut_c(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t halibut_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     size_t total_out = 0;
     deflate_compress_ctx* ctx = deflate_compress_new(DEFLATE_TYPE_BARE);
     do
     {
-        void* tmp_buf = 0;
+        void *tmp_buf = 0;
         int received_size = 0;
         int chunk_size = min((size_t)HALIBUT_BUF_SIZE, isize);
         int flush = isize > HALIBUT_BUF_SIZE ? DEFLATE_NO_FLUSH : DEFLATE_END_OF_DATA;
@@ -332,13 +342,14 @@ size_t halibut_c(char* in, size_t isize, char* out, size_t osize, void* _)
     deflate_compress_free(ctx);
     return total_out;
 }
-size_t halibut_d(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t halibut_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     size_t total_out = 0;
-    deflate_decompress_ctx* ctx = deflate_decompress_new(DEFLATE_TYPE_BARE);
+    deflate_decompress_ctx *ctx = deflate_decompress_new(DEFLATE_TYPE_BARE);
     do
     {
-        void* tmp_buf = 0;
+        void *tmp_buf = 0;
         int received_size = 0;
 
         int chunk_size = min((size_t)HALIBUT_BUF_SIZE, isize);
@@ -374,13 +385,14 @@ size_t halibut_d(char* in, size_t isize, char* out, size_t osize, void* _)
 #endif//FSBENCH_USE_HALIBUT
 #ifdef FSBENCH_USE_LODEPNG
 #include "lodepng.h"
-size_t lodepng_c(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t lodepng_c(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
+    UNUSED(osize);
     LodePNGCompressSettings settings;
     lodepng_compress_settings_init(&settings);
     settings.windowsize = *(intptr_t*)mode;
 
-    unsigned char* tmp = 0;
+    unsigned char *tmp = 0;
     size_t _osize = 0;
     unsigned ret = lodepng_deflate(&tmp, &_osize, (unsigned char*)in, isize, &settings);
     if(ret != 0)
@@ -389,13 +401,15 @@ size_t lodepng_c(char* in, size_t isize, char* out, size_t osize, void* mode)
     free(tmp);
     return _osize;
 }
-size_t lodepng_d(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t lodepng_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(osize);
+    UNUSED(_);
     LodePNGDecompressSettings settings;
     lodepng_decompress_settings_init(&settings);
     settings.ignore_adler32 = 1;
 
-    unsigned char* tmp = 0;
+    unsigned char *tmp = 0;
     size_t _osize = 0;
     unsigned ret = lodepng_inflate(&tmp, &_osize, (unsigned char*)in, isize, &settings);
     if(ret != 0)
@@ -411,18 +425,18 @@ extern "C"
 #include "lz4.h"
 #include "lz4hc.h"
 }
-size_t LZ4_c(char*in, size_t isize, char* out, size_t osize, void* _)
+size_t LZ4_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     return LZ4_compress_limitedOutput(in, out, isize, osize);
 }
-size_t LZ4hc_c(char*in, size_t isize, char* out, size_t osize, void* _)
+size_t LZ4hc_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(osize);
     UNUSED(_);
     return LZ4_compressHC(in, out, isize);
 }
-size_t LZ4_d (char*in, size_t isize, char* out, size_t osize, void* _)
+size_t LZ4_d (char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(isize);
     UNUSED(_);
@@ -436,22 +450,22 @@ extern "C"
 {
 #include "lzf.h"
 }
-size_t LZF_ultra_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZF_ultra_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     return lzf_compress_ultra(in, isize, out, osize);
 }
-size_t LZF_very_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZF_very_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     return lzf_compress_very(in, isize, out, osize);
 }
-size_t LZF_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZF_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     return lzf_compress(in, isize, out, osize);
 }
-size_t LZF_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZF_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     return lzf_decompress(in, isize, out, osize);
@@ -464,13 +478,13 @@ extern "C"
 {
 #include "lzfx.h"
 }
-size_t LZFX_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZFX_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     unsigned int ret = osize;
     return lzfx_compress(in, isize, out, &ret) >=0 ? ret : CODING_ERROR;
 }
-size_t LZFX_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZFX_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     unsigned int ret = osize;
@@ -484,8 +498,9 @@ extern "C"
 {
 #include "liblzg/include/lzg.h"
 }
-size_t LZG_c(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t LZG_c(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
+    UNUSED(osize);
     lzg_encoder_config_t cfg;
     cfg.level = *(intptr_t*)mode;
     cfg.fast = LZG_TRUE;
@@ -493,7 +508,7 @@ size_t LZG_c(char* in, size_t isize, char* out, size_t osize, void* mode)
     cfg.userdata = NULL;
     return LZG_Encode((const unsigned char*)in, isize, (unsigned char*)out, LZG_MaxEncodedSize(isize), &cfg);
 }
-size_t LZG_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZG_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     return LZG_Decode((const unsigned char*)in, isize, (unsigned char*)out, osize);
@@ -509,14 +524,14 @@ extern "C"
 {
 #include "lzmat.h"
 }
-size_t lzmat_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t lzmat_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     MP_U32 retsize = osize;
     int ret = lzmat_encode((MP_U8*)out, &retsize, (MP_U8*)in, isize);
     return ret == LZMAT_STATUS_OK ? retsize : CODING_ERROR;
 }
-size_t lzmat_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t lzmat_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     MP_U32 ret = osize;
@@ -529,17 +544,17 @@ extern "C"
 {
 #include "LZWC.h"
 }
-size_t LZWC_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZWC_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     size_t ret = lzwc_compress((const unsigned char*)in, isize, (unsigned char*)out, osize);
-    return ret >=0 ? ret : CODING_ERROR;
+    return ret > 0 ? ret : CODING_ERROR;
 }
-size_t LZWC_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZWC_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     size_t ret = lzwc_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize);
-    return ret >=0 ? ret : CODING_ERROR;
+    return ret > 0 ? ret : CODING_ERROR;
 }
 #endif//FSBENCH_USE_LZWC
 #ifdef FSBENCH_USE_LZX_COMPRESS
@@ -549,7 +564,7 @@ extern "C"
 }
 int LZX_get_bytes(void *arg, int n, void *buf)
 {
-    pair<char*,int>* data = (pair<char*,int>*)arg;
+    pair<char*,int> *data = (pair<char*,int>*)arg;
     int bytes_to_copy = min(n, data->second);
     memcpy(buf, data->first, bytes_to_copy);
     data->first += bytes_to_copy;
@@ -563,7 +578,7 @@ int LZX_at_eof(void *arg)
 }
 int LZX_put_bytes(void *arg, int n, void *buf)
 {
-    pair<char*,size_t>* data = (pair<char*,size_t>*)arg;
+    pair<char*,size_t> *data = (pair<char*,size_t>*)arg;
     size_t bytes_to_copy = min((size_t)n, data->second);
     memcpy(data->first, buf, bytes_to_copy);
     data->first += bytes_to_copy;
@@ -571,7 +586,7 @@ int LZX_put_bytes(void *arg, int n, void *buf)
     return bytes_to_copy;
 }
 
-size_t LZX_c(char* in, size_t isize, char* out, size_t osize, void* window_size)
+size_t LZX_c(char *in, size_t isize, char *out, size_t osize, void *window_size)
 {
     lzx_data *lzxd;
     lzx_results lzxr;
@@ -601,10 +616,6 @@ size_t LZX_c(char* in, size_t isize, char* out, size_t osize, void* window_size)
 
     return lzxr.len_compressed_output;
 }
-size_t LZX_d(char* in, size_t isize, char* out, size_t osize, void* memory)
-{
-    return osize;
-}
 #endif// FSBENCH_USE_LZX_COMPRES
 #ifdef FSBENCH_USE_MMINI
 extern "C"
@@ -615,33 +626,35 @@ extern "C"
 // TODO: Make an abstract codec for codecs with maximum block size
 //       There's also Shrinker with such properties, maybe others 
 /*
-size_t mmini_c(char* in, size_t isize, char* out, size_t osize, void* buffer)
+size_t mmini_c(char *in, size_t isize, char *out, size_t osize, void *buffer)
 {
     size_t ret = mmini_compress((const unsigned char*)in, isize, (unsigned char*)out, osize, buffer);
     return ret ? ret : CODING_ERROR;
 }
-size_t mmini_d(char* in, size_t isize, char* out, size_t osize, void* buffer)
+size_t mmini_d(char *in, size_t isize, char *out, size_t osize, void *buffer)
 {
     size_t ret = mmini_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize, buffer);
     return ret ? ret : CODING_ERROR;
 }
 */
-size_t mmini_lzl_c(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t mmini_lzl_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     size_t ret = mmini_lzl_compress((const unsigned char*)in, isize, (unsigned char*)out, osize);
     return ret ? ret : CODING_ERROR;
 }
-size_t mmini_lzl_d(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t mmini_lzl_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     size_t ret = mmini_lzl_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize);
     return ret ? ret : CODING_ERROR;
 }
-size_t mmini_huffman_c(char* in, size_t isize, char* out, size_t osize, void* buffer)
+size_t mmini_huffman_c(char *in, size_t isize, char *out, size_t osize, void *buffer)
 {
     size_t ret = mmini_huffman_compress((const unsigned char*)in, isize, (unsigned char*)out, osize, *(void**)buffer);
     return ret ? ret : CODING_ERROR;
 }
-size_t mmini_huffman_d(char* in, size_t isize, char* out, size_t osize, void* buffer)
+size_t mmini_huffman_d(char *in, size_t isize, char *out, size_t osize, void *buffer)
 {
     size_t ret = mmini_huffman_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize, *(void**)buffer);
     return ret ? ret : CODING_ERROR;
@@ -649,15 +662,15 @@ size_t mmini_huffman_d(char* in, size_t isize, char* out, size_t osize, void* bu
 #endif//FSBENCH_USE_MURMUR
 #ifdef FSBENCH_USE_MURMUR
 #include "MurmurHash3.h"
-void murmur_x86_32(char* in, size_t isize, char* out)
+void murmur_x86_32(char *in, size_t isize, char *out)
 {
     MurmurHash3_x86_32(in, isize, 0, out);
 }
-void murmur_x86_128(char* in, size_t isize, char* out)
+void murmur_x86_128(char *in, size_t isize, char *out)
 {
     MurmurHash3_x86_128(in, isize, 0, out);
 }
-void murmur_x64_128(char* in, size_t isize, char* out)
+void murmur_x64_128(char *in, size_t isize, char *out)
 {
     MurmurHash3_x64_128(in, isize, 0, out);
 }
@@ -668,8 +681,10 @@ extern "C"
 {
 #include "quicklzzip.h"
 }
-size_t qlzzip_c(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t qlzzip_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(osize);
+    UNUSED(_);
     unsigned out_bits = qlz_deflate((unsigned char*)in, (unsigned char*)out, 0, (unsigned)isize, 1);
     // round up
     if(out_bits & 7)
@@ -683,7 +698,7 @@ size_t qlzzip_c(char* in, size_t isize, char* out, size_t osize, void* _)
 #include "RLE64.hpp"
 
 #define RLE_64_FUNCTION(FSBENCH_NAME, ORIGINAL_NAME)                       \
-size_t FSBENCH_NAME(char*in,size_t isize, char* out, size_t osize, void* _)\
+size_t FSBENCH_NAME(char *in, size_t isize, char *out, size_t osize, void *_)\
 {                                                                          \
     UNUSED(_);                                                             \
     UNUSED(osize);                                                         \
@@ -704,42 +719,42 @@ extern "C"
 {
 #include "sanmayce.h"
 }
-void fnv1_jesteress(char* in, size_t isize, char* out)
+void fnv1_jesteress(char *in, size_t isize, char *out)
 {
     *(uint32_t*) out = FNV1A_Hash_Jesteress(in, isize);
 }
-void fnv1_mantis(char* in, size_t isize, char* out)
+void fnv1_mantis(char *in, size_t isize, char *out)
 {
     *(uint32_t*) out = FNV1A_Hash_Mantis(in, isize);
 }
-void fnv1_meiyan(char* in, size_t isize, char* out)
+void fnv1_meiyan(char *in, size_t isize, char *out)
 {
     *(uint32_t*) out = FNV1A_Hash_Meiyan(in, isize);
 }
-void fnv1_tesla(char* in, size_t isize, char* out)
+void fnv1_tesla(char *in, size_t isize, char *out)
 {
     *(uint64_t*) out = FNV1A_Hash_Tesla(in, isize);
 }
-void fnv1_tesla3(char* in, size_t isize, char* out)
+void fnv1_tesla3(char *in, size_t isize, char *out)
 {
     *(uint64_t*) out = FNV1A_Hash_Tesla3(in, isize);
 }
-void fnv1_yorikke(char* in, size_t isize, char* out)
+void fnv1_yorikke(char *in, size_t isize, char *out)
 {
     *(uint32_t*) out = FNV1A_Hash_Yorikke(in, isize);
 }
-void fnv1_yoshimitsu_triad(char* in, size_t isize, char* out)
+void fnv1_yoshimitsu_triad(char *in, size_t isize, char *out)
 {
     *(uint32_t*) out = FNV1A_Hash_YoshimitsuTRIAD(in, isize);
 }
-void fnv1_yoshimura(char* in, size_t isize, char* out)
+void fnv1_yoshimura(char *in, size_t isize, char *out)
 {
     *(uint64_t*) out = FNV1A_Hash_Yoshimura(in, isize);
 }
 #endif//FSBENCH_USE_SANMAYCE_FNV
 #ifdef FSBENCH_USE_SIPHASH
 #include "siphash.hpp"
-void siphash(char* in, size_t isize, char* out)
+void siphash(char *in, size_t isize, char *out)
 {
     const unsigned char k[16] =
     {   0};
@@ -763,8 +778,10 @@ inline int32_t get_next_shrinker_chunk_size(size_t size_left)
     return size_left;
 }
 
-size_t Shrinker_c(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t Shrinker_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(osize);
+    UNUSED(_);
     size_t total_out = 0;
 
     while(isize > 0)
@@ -784,8 +801,10 @@ size_t Shrinker_c(char* in, size_t isize, char* out, size_t osize, void* _)
     }
     return total_out;
 }
-size_t Shrinker_d(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t Shrinker_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(isize);
+    UNUSED(_);
     size_t osize_left = osize;
 
     while(osize_left > 0)
@@ -812,7 +831,7 @@ size_t Shrinker_m(size_t input_size)
 
 #include "snappy/snappy.h"
 
-size_t snappy_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t snappy_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(osize);
     UNUSED(_);
@@ -820,7 +839,7 @@ size_t snappy_c(char*in,size_t isize, char* out, size_t osize, void* _)
     snappy::RawCompress(in, isize, out, &ret);
     return ret;
 }
-size_t snappy_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t snappy_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     if(!snappy::RawUncompress(in, isize, out))
@@ -835,7 +854,7 @@ size_t snappy_m(size_t input_size)
 #endif// FSBENCH_USE_SNAPPY
 #ifdef FSBENCH_USE_SPOOKY
 #include "spooky.h"
-void spooky(char* in, size_t isize, char* out)
+void spooky(char *in, size_t isize, char *out)
 {
     uint64_t d1=0, d2=0;
     SpookyHash::Hash128(in, isize, &d1, &d2);
@@ -849,11 +868,11 @@ extern "C"
 #include "xxhash.h"
 #include "xxhash256.h"
 }
-void xxhash(char* in, size_t isize, char* out)
+void xxhash(char *in, size_t isize, char *out)
 {
     *(unsigned int*) out = XXH32(in, isize, 0);
 }
-void xxhash_256(char* in, size_t isize, char* out)
+void xxhash_256(char *in, size_t isize, char *out)
 {
     uint64_t* seed_out = (uint64_t*)out;
     seed_out[0] = seed_out[1] = seed_out[2] = seed_out[3] = 0;
@@ -867,20 +886,22 @@ extern "C"
 {
 #include "zfs/zfs.h"
 }
-size_t LZJB_c(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZJB_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     size_t ret = lzjb_compress2010((uint8_t*)in, (uint8_t*)out, isize, osize, 0);
     return ret == isize ? CODING_ERROR : ret;
 }
-size_t LZJB_d(char*in,size_t isize, char* out, size_t osize, void* _)
+size_t LZJB_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     return lzjb_decompress2010((uint8_t*)in, (uint8_t*)out, isize, osize, 0);
 }
-void fletcher2(char* in, size_t isize, char* out)
+void fletcher2(char *in, size_t isize, char *out)
 {
     fletcher_2_native(in, isize, (uint64_t*)out);
 }
-void fletcher4(char* in, size_t isize, char* out)
+void fletcher4(char *in, size_t isize, char *out)
 {
     fletcher_4_native(in, isize, (uint64_t*)out);
 }
@@ -890,7 +911,7 @@ extern "C"
 {
 #include "zlib/zlib.h"
 }
-size_t zlib_c(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t zlib_c(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
     z_stream stream;
     stream.zalloc = Z_NULL;
@@ -914,7 +935,7 @@ size_t zlib_c(char* in, size_t isize, char* out, size_t osize, void* mode)
     }
     return stream.total_out;
 }
-size_t zlib_d(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t zlib_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(_);
     z_stream stream;
@@ -945,7 +966,7 @@ extern "C"
 {
 #include "zopfli/deflate.h"
 }
-size_t zopfli_c(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t zopfli_c(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
     Options options;
     InitOptions(&options);
@@ -953,7 +974,7 @@ size_t zopfli_c(char* in, size_t isize, char* out, size_t osize, void* mode)
     options.numiterations = *(intptr_t*)mode;
 
     unsigned char bit_pointer = 0;
-    unsigned char* outbuf = 0;
+    unsigned char *outbuf = 0;
     size_t out_size = 0;
     Deflate(&options,
             2, // best compression
@@ -976,7 +997,7 @@ size_t zopfli_c(char* in, size_t isize, char* out, size_t osize, void* mode)
 }
 #endif //FSBENCH_USE_ZOPFLI
 // a pseudocodec that does nothing.
-size_t nop_c(char*in, size_t isize, char* out, size_t osize, void* _)
+size_t nop_c(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(in);
     UNUSED(isize);
@@ -985,7 +1006,7 @@ size_t nop_c(char*in, size_t isize, char* out, size_t osize, void* _)
     UNUSED(_);
     return 1;
 }
-size_t nop_d(char*in, size_t isize, char* out, size_t osize, void* _)
+size_t nop_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(in);
     UNUSED(isize);
@@ -1002,12 +1023,15 @@ extern "C"
 #include "brieflz/brieflz.h"
 }
 
-size_t BriefLZ::compressor(char* in, size_t isize, char* out, size_t osize, void* work)
+size_t BriefLZ::compressor(char *in, size_t isize, char *out, size_t osize, void *work)
 {
+    UNUSED(osize);
     return blz_pack(in, out, isize, *(void**)work);
 }
-size_t BriefLZ::decompressor(char* in, size_t isize, char* out, size_t osize, void* work)
+size_t BriefLZ::decompressor(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(isize);
+    UNUSED(_);
     return blz_depack(in, out, osize);
 }
 
@@ -1018,6 +1042,8 @@ size_t BriefLZ::max_compressed_size(size_t input_size)
 
 void BriefLZ::init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
 {
+    UNUSED(args);
+    UNUSED(init_decompressor);
     if(init_compressor)
     {
         int piece_size = blz_workmem_size(isize);
@@ -1053,7 +1079,7 @@ const string& LZHAM::default_args(const string& args)
 {
     return args == "" ? default_mode : args;
 }
-size_t LZHAM::compressor(char* in, size_t _isize, char* out, size_t _osize, void* _data)
+size_t LZHAM::compressor(char *in, size_t _isize, char *out, size_t _osize, void *_data)
 {
     lzham_compress_state_ptr data = *(lzham_compress_state_ptr*)_data;
     lzham_compress_reinit(data);
@@ -1075,8 +1101,8 @@ size_t LZHAM::compressor(char* in, size_t _isize, char* out, size_t _osize, void
 
     return status == LZHAM_COMP_STATUS_SUCCESS ? total_out : CODING_ERROR;
 }
-size_t LZHAM::decompressor(char* in, size_t _isize, char* out, size_t _osize, void* _data)
-{
+size_t LZHAM::decompressor(char *in, size_t _isize, char *out, size_t _osize, void *_data)
+{;
     lzham_decompress_state_ptr state = (*(DecompressionState**)_data)->decompression_state;
     lzham_decompress_params* params = (*(DecompressionState**)_data)->decompression_params;
 
@@ -1096,6 +1122,7 @@ size_t LZHAM::decompressor(char* in, size_t _isize, char* out, size_t _osize, vo
 }
 void LZHAM::init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
 {
+    UNUSED(isize);
     this->args = default_args(args);
     uintptr_t mode;
     try
@@ -1109,7 +1136,7 @@ void LZHAM::init(const string& args, unsigned threads_no, size_t isize, bool ini
 
     if(init_compressor)
     {
-        if(mode < 0 || mode > (int)LZHAM_TOTAL_COMP_LEVELS)
+        if(mode > (int)LZHAM_TOTAL_COMP_LEVELS)
         throw InvalidParams(help());
 
         lzham_compress_params comp_params;
@@ -1242,14 +1269,14 @@ const LZO::LzoType* LZO::get_type(const string& args)
     transform(args_lower.begin(), args_lower.end(), args_lower.begin(), ::tolower);
     return lzo_types().find(args_lower)->second;
 }
-size_t LZO::compressor(char*in, size_t isize, char*out, size_t osize, void* work)
+size_t LZO::compressor(char *in, size_t isize, char*out, size_t osize, void *work)
 {
     UNUSED(osize);
     lzo_uint ret;
     static_lzo_compressor((uint8_t*)in, isize, (uint8_t*)out, &ret, *(char**)work);
     return ret;
 }
-size_t LZO::decompressor(char*in, size_t isize, char*out, size_t osize, void* work)
+size_t LZO::decompressor(char *in, size_t isize, char*out, size_t osize, void *work)
 {
     UNUSED(osize);
     lzo_uint ret;
@@ -1321,18 +1348,23 @@ map<const string, LZO::LzoType*> LZO::LZO_TYPES;
 
 #endif// FSBENCH_USE_LZO
 #ifdef FSBENCH_USE_LZSS_IM
-size_t LZSS_IM::compressor(char* in, size_t isize, char* out, size_t osize, void* p)
+size_t LZSS_IM::compressor(char *in, size_t isize, char *out, size_t osize, void *p)
 {
-    Params* params = *(Params**)p;
+    UNUSED(osize);
+    Params *params = *(Params**)p;
     return params->coder.lzssim_encode((unsigned char*)in, (unsigned char*)out, isize, params->mode);
 }
-size_t LZSS_IM::decompressor(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t LZSS_IM::decompressor(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(isize);
+    UNUSED(_);
     LZSSIM::lzssim_decode((unsigned char*)in, (unsigned char*)out, osize);
     return osize;
 }
 void LZSS_IM::init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
 {
+    UNUSED(isize);
+    UNUSED(init_decompressor);
     this->threads_no = threads_no;
     this->args = args;
     if(init_compressor)
@@ -1340,7 +1372,7 @@ void LZSS_IM::init(const string& args, unsigned threads_no, size_t isize, bool i
         this->params = (void**)new Params*[threads_no];
         for(unsigned i=0; i<threads_no; ++i)
         {
-            Params* p = new Params;
+            Params *p = new Params;
             p->mode = args == "x" || args == "X";
             this->params[i] = p;
         }
@@ -1373,12 +1405,13 @@ extern "C"
 #include "lzv1.h"
 }
 
-size_t LZV1_c(char* in, size_t isize, char* out, size_t osize, void* memory)
+size_t LZV1_c(char *in, size_t isize, char *out, size_t osize, void *memory)
 {
     return wLZV1((uch*)in, (uch*)out, *(ush**)memory, isize, osize);
 }
-size_t LZV1_d(char* in, size_t isize, char* out, size_t osize, void* memory)
+size_t LZV1_d(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     return rLZV1((uch*)in, (uch*)out, isize, osize);
 }
 #endif //FSBENCH_USE_LZV1
@@ -1390,14 +1423,17 @@ const string& Nrv::default_args(const string& args)
     return args == "" ? default_mode : args;
 }
 
-size_t Nrv::compressor(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t Nrv::compressor(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
+    UNUSED(osize);
     ucl_uint ret;
     current_type->compressor((const unsigned char*)in, isize, (unsigned char*)out, &ret, NULL, *(uintptr_t*)mode, NULL, NULL);
     return (int)ret;
 }
-size_t Nrv::decompressor(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t Nrv::decompressor(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(osize);
+    UNUSED(_);
     ucl_uint ret;
     current_type->decompressor((const unsigned char*)in, isize, (unsigned char*)out, &ret, NULL);
     return (int)ret;
@@ -1417,6 +1453,8 @@ const Nrv::NrvType* Nrv::get_type(const string& type_name)
 }
 void Nrv::init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
 {
+    UNUSED(isize);
+    UNUSED(init_decompressor);
     if(init_compressor)
     {
         this->args = default_args(args); // I let the decoder ignore args, they are not used and they won't be printed in the output
@@ -1485,12 +1523,12 @@ const QuickLZ::QuickLZType* QuickLZ::get_type(const string& args)
 
     return qlz_types().find(args_lower)->second;
 }
-size_t QuickLZ::compressor(char* in, size_t isize, char* out, size_t osize, void* work)
+size_t QuickLZ::compressor(char *in, size_t isize, char *out, size_t osize, void *work)
 {
     UNUSED(osize);
     return static_qlz_compressor(in, out, isize, *(qlz_state_compress**)work);
 }
-size_t QuickLZ::decompressor(char* in, size_t isize, char* out, size_t osize, void* work)
+size_t QuickLZ::decompressor(char *in, size_t isize, char *out, size_t osize, void *work)
 {
     UNUSED(isize);
     UNUSED(osize);
@@ -1588,12 +1626,13 @@ const string& Tor::default_args(const string& args)
 {
     return args == "" ? default_mode : args;
 }
-size_t Tor::compressor(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t Tor::compressor(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
     return tor_compress(*(uintptr_t*)mode, (uint8_t*)in, (uint8_t*)out, isize);
 }
-size_t Tor::decompressor(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t Tor::decompressor(char *in, size_t isize, char *out, size_t osize, void *_)
 {
+    UNUSED(_);
     return tor_decompress((uint8_t*)in, (uint8_t*)out, isize);
 }
 void Tor::init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
@@ -1641,12 +1680,12 @@ const string Tor::default_mode("6");
 
 #include "Yappy.hpp"
 
-size_t Yappy::compressor(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t Yappy::compressor(char *in, size_t isize, char *out, size_t osize, void *mode)
 {
     UNUSED(osize);
     return YappyCompress((ui8*)in, (ui8*)out, isize, *(uintptr_t*)mode) - (ui8*)out;
 }
-size_t Yappy::decompressor(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t Yappy::decompressor(char *in, size_t isize, char *out, size_t osize, void *_)
 {
     UNUSED(osize);
     UNUSED(_);

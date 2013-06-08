@@ -17,7 +17,9 @@
 #include <cstring>
 #include <climits>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
@@ -43,7 +45,7 @@ using namespace std;
 //I make all buffers aligned
 #define ALIGNMENT 32 // uhash need this much
 
-#define ITERS(count) for(uint64_t i = 0; i < (uint64_t)(count); ++i)
+#define ITERS(count) for(uint_least64_t i = 0; i < (uint_least64_t)(count); ++i)
 
 ///////////////////////////
 // TYPES
@@ -55,11 +57,11 @@ typedef THREAD_RETURN_TYPE (*thread_function)(void* params);
 // HELPERS
 ///////////////////////////
 
-void copy_input_buffer(const char* inbuf,
-                       char* outbuf,
-                       size_t size,
-                       size_t bsize,
-                       size_t padded_bsize)
+static void copy_input_buffer(const char* inbuf,
+                              char* outbuf,
+                              size_t size,
+                              size_t bsize,
+                              size_t padded_bsize)
 {
     while (size)
     {
@@ -71,7 +73,7 @@ void copy_input_buffer(const char* inbuf,
     }
 }
 
-uint64_t ticks_to_msec(const LARGE_INTEGER& start_ticks,
+static inline uint64_t ticks_to_msec(const LARGE_INTEGER& start_ticks,
                        const LARGE_INTEGER& end_ticks,
                        const LARGE_INTEGER& ticksPerSecond)
 {
@@ -85,7 +87,7 @@ uint64_t ticks_to_msec(const LARGE_INTEGER& start_ticks,
 
 }
 
-inline size_t round_up(size_t A, size_t B)
+static inline size_t round_up(size_t A, size_t B)
 {
     // rounds A up to the closest multiply of B
     // note: A has to be in range (-B, INT_MAX-B].
@@ -95,10 +97,10 @@ inline size_t round_up(size_t A, size_t B)
     return ret;
 }
 
-unsigned getSmallItersCount(const char* inbuf,
-                            char* outbuf,
-                            size_t size,
-                            unsigned threads_no)
+static unsigned getSmallItersCount(const char* inbuf,
+                                   char* outbuf,
+                                   size_t size,
+                                   unsigned threads_no)
 {
     // determine the number of small iters, that is how many times do we need to compress a file to get a single timing large enough to be meaningful
     // I assume that 'meaningful' is 'larger than 0.5 s.'
@@ -111,7 +113,7 @@ unsigned getSmallItersCount(const char* inbuf,
 
     INIT_TIMER(ticksPerSecond);
 
-    for (small_iters = 1; small_iters < 8192; small_iters *= 2) // 8192 is a safe default. small_iters can be increased inside the loop 2+epsilon times
+    for (small_iters = 1; small_iters < (UINT_MAX / 2); small_iters *= 2)
     {
         LARGE_INTEGER start_ticks, end_ticks;
         GET_TIME(start_ticks);
@@ -120,16 +122,16 @@ unsigned getSmallItersCount(const char* inbuf,
 
         GET_TIME(end_ticks);
 
-        uint64_t msec = ticks_to_msec(start_ticks, end_ticks, ticksPerSecond);
+        uint_least64_t msec = ticks_to_msec(start_ticks, end_ticks, ticksPerSecond);
         if (msec > 250)
         {
-            uint64_t estimation = small_iters;
+            uint_least64_t estimation = small_iters;
             estimation *= threads_no;
             estimation *= 1000;
             estimation /= msec; // enough iterations for 1 second
             estimation /= 2; // but I want 1/2 second
             estimation /= 3; // estimation that codecs are 3x slower than memcpy
-            small_iters = max(estimation, (uint64_t) 1);
+            small_iters = max((unsigned)estimation, small_iters);
             break;
         }
     }
@@ -138,31 +140,58 @@ unsigned getSmallItersCount(const char* inbuf,
     return small_iters;
 }
 
-string speed_string(uint64_t bytes, uint64_t msec)
+static string speed_string(uint_least64_t bytes, uint_least64_t msec)
 {
     if (msec)
     {
         const string units[] =
-            { " B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" }; //OK, uint64_t is not enough to reach YB ;)
+            { " B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
         int units_no = sizeof(units) / sizeof(string);
-        uint64_t divider = 1;
+        uint_least64_t divider = 1;
         for (int i = 0; i < units_no; ++i, divider *= KB)
         {
-            uintmax_t size_per_sec = (((uintmax_t) bytes * 1000) / msec) / divider;
+            
+            double size_per_sec = (((double) bytes * 1000) / msec) / divider;
             if (size_per_sec <= 9999)
-                return to_string(size_per_sec) + " " + units[i] + "/s";
+            {
+                std::stringstream ss;
+                int precision;
+                if(size_per_sec < 10)
+                {
+                    precision = 2;
+                }
+                else if(size_per_sec < 100)
+                {
+                    precision = 1;
+                }
+                else
+                {
+                    precision = 0;
+                }
+                ss << std::fixed << std::setprecision(precision) << size_per_sec;
+
+                std::string ret;
+
+                while (ss.good())
+                {
+                    char c = ss.get();
+                    if (ss.good())
+                        ret += c;
+                }
+                return ret + " " + units[i] + "/s";
+            }
         }
         // out of units
     }
     return "fast :)";
 }
 
-string efficiency_string(uint64_t saved_bytes, uint64_t msec)
+static string efficiency_string(uint_least64_t saved_bytes, uint_least64_t msec)
 {
     if (msec)
     {
-        uint64_t divider = 1;
-        for (int i = 0; divider < (UINT64_MAX / KB); ++i, divider *= KB)
+        uint_least64_t divider = 1;
+        for (int i = 0; divider < (UINT_LEAST64_MAX / KB); ++i, divider *= KB)
         {
             uintmax_t size_per_sec = (((uintmax_t) saved_bytes * 1000) / msec) / divider;
             if (size_per_sec <= 9999)
@@ -177,7 +206,7 @@ string efficiency_string(uint64_t saved_bytes, uint64_t msec)
  * @note It prints error to cerr. 
  * @return true if yes, false otherwise 
  */
-bool check_codec(const Codec &codec)
+static bool check_codec(const Codec &codec)
 {
     if (codec.encoder == 0)
     {
@@ -199,10 +228,10 @@ bool check_codec(const Codec &codec)
 // OUTPUT PRINTING
 ///////////////////////////
 
-void printMemcpy(uint64_t milisecs, uint64_t input_size, uint32_t iters, bool csv)
+static void printMemcpy(uint_least64_t milisecs, uint_least64_t input_size, uint_least64_t iters, bool csv)
 {
     //because of timer inaccuracy some jobs may take 0 ms. And I divide by dmili later...
-    milisecs = max(milisecs, (uint64_t) 1);
+    milisecs = max(milisecs, (uint_least64_t) 1);
     if (csv)
     {
         cout << milisecs << " ms," << speed_string(input_size * iters, milisecs) << ","
@@ -215,7 +244,7 @@ void printMemcpy(uint64_t milisecs, uint64_t input_size, uint32_t iters, bool cs
         {
             if (milisecs)
             {
-                uint64_t speed = input_size * iters / milisecs * 1000 / MB;
+                uint_least64_t speed = input_size * iters / milisecs * 1000 / MB;
                 cout << "memcpy: " << milisecs << " ms, " << input_size << " bytes = "
                         << speed << " MB/s\n";
             }
@@ -231,16 +260,16 @@ void printMemcpy(uint64_t milisecs, uint64_t input_size, uint32_t iters, bool cs
     }
 }
 
-void printTime(uint64_t cmili,
-               uint64_t dmili,
-               uint64_t input_size,
-               uint64_t compressible_bytes,
-               uint64_t compressed_size,
-               uint32_t iters,
-               bool csv)
+static void printTime(uint_least64_t cmili,
+                      uint_least64_t dmili,
+                      uint_least64_t input_size,
+                      uint_least64_t compressible_bytes,
+                      uint_least64_t compressed_size,
+                      uint_least64_t iters,
+                      bool csv)
 {
     //because of timer inaccuracy some jobs may take 0 ms. And I divide by dmili later...
-    dmili = max(dmili, (uint64_t) 1);
+    dmili = max(dmili, (uint_least64_t) 1);
 
     if (csv)
     {
@@ -284,18 +313,25 @@ void printTime(uint64_t cmili,
         cout.width(old_width);
     }
 }
-void printHeaders()
+static void printHeaders(bool csv)
 {
+    if(csv)
     {
-        ConsoleColour cc(CODEC_COLOUR);
-        cout << "Codec                                   version      args" << endl;
+        cout << "Codec,version,args,E.time (ms),D.time (ms),E. size, source size" << endl;
     }
+    else
     {
-        ConsoleColour cc(RESULT_COLOUR);
-        cout << "C.Size      (C.Ratio)        C.Speed   D.Speed      C.Eff. D.Eff." << endl;
+        {
+            ConsoleColour cc(CODEC_COLOUR);
+            cout << "Codec                                   version      args" << endl;
+        }
+        {
+            ConsoleColour cc(RESULT_COLOUR);
+            cout << "C.Size      (C.Ratio)        E.Speed   D.Speed      E.Eff. D.Eff." << endl;
+        }
     }
 }
-void printCodec(const Codec& codec, bool csv)
+static void printCodec(const Codec& codec, bool csv)
 {
     if (csv)
         cout << codec.name << "," << codec.version << "," << codec.args << ",";
@@ -311,11 +347,11 @@ void printCodec(const Codec& codec, bool csv)
 ///////////////////////////
 
 // TODO: How about each chunk verifying itself?
-void check_decoding(uint32_t input_crc,
-                    char* buf,
-                    size_t size,
-                    size_t bsize,
-                    size_t padded_bsize)
+static void check_decoding(uint32_t input_crc,
+                           char* buf,
+                           size_t size,
+                           size_t bsize,
+                           size_t padded_bsize)
 {
     uint32_t output_crc = 0;
     while (size)
@@ -351,7 +387,7 @@ void check_decoding(uint32_t input_crc,
  * 
  * @return compressed data size, that is - it ignores chunk_size pieces
  */
-THREAD_RETURN_TYPE encode(EncodeParams* params)
+static THREAD_RETURN_TYPE encode(EncodeParams* params)
 {
     uintmax_t total = 0; // summing up across small iterations can yield a large number
     uintmax_t successfully_encoded_bytes = 0;
@@ -427,7 +463,7 @@ THREAD_RETURN_TYPE encode(EncodeParams* params)
     return THREAD_RETURN;
 }
 
-THREAD_RETURN_TYPE decode(DecodeParams* params)
+static THREAD_RETURN_TYPE decode(DecodeParams* params)
 {
     uintmax_t total_out = 0; // summing up across small iterations can yield a large number
 
@@ -484,14 +520,14 @@ THREAD_RETURN_TYPE decode(DecodeParams* params)
 // THE MAIN TESTING FUNCTION'S HELPERS
 //////////////////////////////////////
 
-inline void prepareEncoderData(Codec& codec,
-                               EncodeParams* params,
-                               size_t threads_no,
-                               size_t bsize,
-                               size_t ssize,
-                               size_t workbsize,
-                               bool verify,
-                               Scheduler* scheduler)
+static inline void prepareEncoderData(Codec& codec,
+                                      EncodeParams* params,
+                                      size_t threads_no,
+                                      size_t bsize,
+                                      size_t ssize,
+                                      size_t workbsize,
+                                      bool verify,
+                                      Scheduler* scheduler)
 {
     void** codec_eparams = codec.eparams();
     for (size_t i = 0; i < threads_no; ++i)
@@ -508,13 +544,13 @@ inline void prepareEncoderData(Codec& codec,
     }
 }
 
-inline void prepareDecoderData(Codec& codec,
-                               DecodeParams* params,
-                               size_t threads_no,
-                               size_t ssize,
-                               size_t workbsize,
-                               bool verify,
-                               Scheduler* scheduler)
+static inline void prepareDecoderData(Codec& codec,
+                                      DecodeParams* params,
+                                      size_t threads_no,
+                                      size_t ssize,
+                                      size_t workbsize,
+                                      bool verify,
+                                      Scheduler* scheduler)
 {
     void** codec_dparams = codec.dparams();
     for (size_t i = 0; i < threads_no; ++i)
@@ -528,11 +564,11 @@ inline void prepareDecoderData(Codec& codec,
     }
 }
 // CPU warmup
-void warmup(char** workbufs,
-            char* inbuf,
-            size_t workbuf_size,
-            size_t inbuf_size,
-            size_t iters)
+static void warmup(char** workbufs,
+                   char* inbuf,
+                   size_t workbuf_size,
+                   size_t inbuf_size,
+                   size_t iters)
 {
     ITERS(iters)
     {
@@ -542,7 +578,7 @@ void warmup(char** workbufs,
     }
 }
 // reads file size and resets the file position to the beginning of the file
-size_t file_size(ifstream& file)
+static size_t file_size(ifstream& file)
 {
     file.seekg(0, ios_base::end);
     size_t size = file.tellg();
@@ -551,11 +587,11 @@ size_t file_size(ifstream& file)
 }
 
 // prints a warning when something seems wrong with the way tests are performed
-void warn_if_needed(unsigned threads_no,
-                    unsigned desired_threads_no,
-                    size_t input_size,
-                    size_t bsize,
-                    size_t blocks)
+static void warn_if_needed(unsigned threads_no,
+                           unsigned desired_threads_no,
+                           size_t input_size,
+                           size_t bsize,
+                           size_t blocks)
 {
     if (threads_no < desired_threads_no)
     {
@@ -574,10 +610,10 @@ void warn_if_needed(unsigned threads_no,
     }
 }
 
-void allocate_working_data(THREAD_HANDLE*& threads,
-                           EncodeParams*& params,
-                           DecodeParams*& dparams,
-                           unsigned threads_no)
+static void allocate_working_data(THREAD_HANDLE*& threads,
+                                  EncodeParams*& params,
+                                  DecodeParams*& dparams,
+                                  unsigned threads_no)
 {
     // prepare space for thread handlers
     if (threads_no > 1)
@@ -591,10 +627,10 @@ void allocate_working_data(THREAD_HANDLE*& threads,
 }
 
 template<typename Params>
-void run_test(THREAD_HANDLE* threads,
-              Params* params,
-              unsigned threads_no,
-              thread_function test_function)
+static void run_test(THREAD_HANDLE* threads,
+                     Params* params,
+                     unsigned threads_no,
+                     thread_function test_function)
 {
     for (unsigned i = 0; i < threads_no - 1; ++i)
     {
@@ -718,7 +754,7 @@ unsigned test(list<CodecWithParams>& codecs,
     GET_TIME(cend_ticks);
     printMemcpy(ticks_to_msec(cstart_ticks, cend_ticks, ticksPerSecond), size, small_iters, csv);
 
-    printHeaders();
+    printHeaders(csv);
     // some space needed by the main loop
     THREAD_HANDLE* threads = 0;
     EncodeParams* params;
@@ -865,7 +901,7 @@ unsigned test(list<CodecWithParams>& codecs,
 
         codec.cleanup();
     } // end loop over codecs
-    printHeaders();
+    printHeaders(csv);
 
     delete[] params;
     delete[] dparams;

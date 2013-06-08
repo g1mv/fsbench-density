@@ -1,7 +1,10 @@
 0.13.4
 [+] added umac, vmac
 [+] added ar
+[~] cleanup
+[~] improved printing of results
 [!] added uhash, vhash, umac, vmac to the list of checksums
+[!] Hopefully fixed compilation issues on some Unices 
 
 0.13.3
 [+] added uhash, vhash

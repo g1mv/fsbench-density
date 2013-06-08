@@ -318,6 +318,13 @@ int main(int argc, char** argv)
         cerr << e.what();
         return 1;
     }
-    cout << "done... (" << iterations << 'x' << small_iters << " iteration(s)).\n";
+    if (csv)
+    {
+        cout << "Iterations" << iterations << ',' << small_iters << "\n";
+    }
+    else
+    {
+        cout << "done... (" << iterations << 'x' << small_iters << " iteration(s)).\n";
+    }
     return 0;
 }

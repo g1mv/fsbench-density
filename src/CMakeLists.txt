@@ -83,7 +83,7 @@ project (FSBENCH)
 
 include_directories (${FSBENCH_SOURCE_DIR})
 include_directories (${FSBENCH_SOURCE_DIR}/codecs)
- 
+
 
 #-------------------#
 # platform-specific #
@@ -107,15 +107,6 @@ IF(${ARCH} STREQUAL "x86")
     ENDIF(USE_SSE2)
 ENDIF(${ARCH} STREQUAL "x86")
 
-IF(WIN32)
-    add_definitions( -DFREEARC_WIN) # tornado
-ENDIF(WIN32)
-
-IF(UNIX)
-    set(EXE_LINKER_FLAGS "-lrt -lpthread")
-    add_definitions(-DFREEARC_UNIX) # tornado
-ENDIF(UNIX)
-
 IF(${ARCH} STREQUAL "AMD64")
     add_definitions(-DFREEARC_INTEL_BYTE_ORDER -DFREEARC_64BIT)
     add_definitions(-D__x86_64__)
@@ -124,7 +115,7 @@ IF(${ARCH} STREQUAL "x86")
     add_definitions(-DFREEARC_INTEL_BYTE_ORDER)
 ENDIF(${ARCH} STREQUAL "x86")
 
-IF(MSVC) # Cmake doesn't use the strongest optimization flags here, so I fix it myself
+IF(MSVC) # Cmake doesn't use the strongest optimisation flags here, so I fix it myself
     string(REPLACE "/O2" "/Ox" CMAKE_CXX_FLAGS_RELEASE
     "${CMAKE_CXX_FLAGS_RELEASE}")
 ENDIF(MSVC)
@@ -512,6 +503,13 @@ IF(USE_TINF)
     add_definitions(-DFSBENCH_USE_TINF)
 ENDIF(USE_TINF)
 IF(USE_TOR)
+
+    IF(WIN32)
+        add_definitions( -DFREEARC_WIN)
+    ENDIF(WIN32)
+    IF(UNIX)
+        add_definitions(-DFREEARC_UNIX)
+    ENDIF(UNIX)
     set(OTHER_SRC ${OTHER_SRC} codecs/tornado/tor_test.cpp)
     add_definitions(-DFSBENCH_USE_TOR)
     add_definitions(-D_UNICODE -DUNICODE)
@@ -529,7 +527,7 @@ IF(USE_ZFS)
     add_definitions(-DFSBENCH_USE_ZFS)
 ENDIF(USE_ZFS)
 
-    
+
 set(SRC ${MAIN_SRC} ${7z_SRC} ${BCL_SRC} ${BZ2_SRC} ${CRYPTOPP_SRC} ${ECRYPT_SRC} ${LZHAM_SRC} ${LZO_SRC} ${NRV_SRC} ${ZLIB_SRC} ${ZOPFLI_SRC} ${OTHER_SRC})
 
 
@@ -563,6 +561,9 @@ set(CMAKE_C_FLAGS          "${CMAKE_C_FLAGS}          ${C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXE_LINKER_FLAGS}")
 
 add_executable (fsbench ${SRC})
+IF (UNIX)
+    target_link_libraries (fsbench optimized -lrt -lpthread)
+ENDIF(UNIX)
 
 
 #---------------#
