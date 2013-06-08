@@ -40,7 +40,7 @@ using namespace std;
 ///////////////////////////
 
 #define KB 1024
-#define MB (1024*KB)
+#define MB (1024 * KB)
 
 //I make all buffers aligned
 #define ALIGNMENT 32 // uhash need this much
@@ -51,14 +51,14 @@ using namespace std;
 // TYPES
 ///////////////////////////
 
-typedef THREAD_RETURN_TYPE (*thread_function)(void* params);
+typedef THREAD_RETURN_TYPE (*thread_function)(void * params);
 
 ///////////////////////////
 // HELPERS
 ///////////////////////////
 
-static void copy_input_buffer(const char* inbuf,
-                              char* outbuf,
+static void copy_input_buffer(const char * inbuf,
+                              char * outbuf,
                               size_t size,
                               size_t bsize,
                               size_t padded_bsize)
@@ -73,9 +73,9 @@ static void copy_input_buffer(const char* inbuf,
     }
 }
 
-static inline uint64_t ticks_to_msec(const LARGE_INTEGER& start_ticks,
-                       const LARGE_INTEGER& end_ticks,
-                       const LARGE_INTEGER& ticksPerSecond)
+static inline uint64_t ticks_to_msec(const LARGE_INTEGER & start_ticks,
+                       const LARGE_INTEGER & end_ticks,
+                       const LARGE_INTEGER & ticksPerSecond)
 {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
     return (end_ticks.QuadPart - start_ticks.QuadPart) / (ticksPerSecond.QuadPart / 1000);
@@ -97,8 +97,8 @@ static inline size_t round_up(size_t A, size_t B)
     return ret;
 }
 
-static unsigned getSmallItersCount(const char* inbuf,
-                                   char* outbuf,
+static unsigned getSmallItersCount(const char * inbuf,
+                                   char * outbuf,
                                    size_t size,
                                    unsigned threads_no)
 {
@@ -152,7 +152,7 @@ static string speed_string(uint_least64_t bytes, uint_least64_t msec)
         {
             
             double size_per_sec = (((double) bytes * 1000) / msec) / divider;
-            if (size_per_sec <= 9999)
+            if (size_per_sec < 10000)
             {
                 std::stringstream ss;
                 int precision;
@@ -206,7 +206,7 @@ static string efficiency_string(uint_least64_t saved_bytes, uint_least64_t msec)
  * @note It prints error to cerr. 
  * @return true if yes, false otherwise 
  */
-static bool check_codec(const Codec &codec)
+static bool check_codec(const Codec & codec)
 {
     if (codec.encoder == 0)
     {
@@ -331,7 +331,7 @@ static void printHeaders(bool csv)
         }
     }
 }
-static void printCodec(const Codec& codec, bool csv)
+static void printCodec(const Codec & codec, bool csv)
 {
     if (csv)
         cout << codec.name << "," << codec.version << "," << codec.args << ",";
@@ -348,7 +348,7 @@ static void printCodec(const Codec& codec, bool csv)
 
 // TODO: How about each chunk verifying itself?
 static void check_decoding(uint32_t input_crc,
-                           char* buf,
+                           char * buf,
                            size_t size,
                            size_t bsize,
                            size_t padded_bsize)
@@ -387,7 +387,7 @@ static void check_decoding(uint32_t input_crc,
  * 
  * @return compressed data size, that is - it ignores chunk_size pieces
  */
-static THREAD_RETURN_TYPE encode(EncodeParams* params)
+static THREAD_RETURN_TYPE encode(EncodeParams * params)
 {
     uintmax_t total = 0; // summing up across small iterations can yield a large number
     uintmax_t successfully_encoded_bytes = 0;
@@ -397,7 +397,7 @@ static THREAD_RETURN_TYPE encode(EncodeParams* params)
     Scheduler::WorkItem wi;
     while (params->scheduler->getChunk(wi) == 0)
     {
-        char* p = wi.out;
+        char * p = wi.out;
         size_t processed_bytes = 0;
         unsigned i = 0;
         for (; processed_bytes < wi.isize; processed_bytes += params->workbsize, ++i)
@@ -463,7 +463,7 @@ static THREAD_RETURN_TYPE encode(EncodeParams* params)
     return THREAD_RETURN;
 }
 
-static THREAD_RETURN_TYPE decode(DecodeParams* params)
+static THREAD_RETURN_TYPE decode(DecodeParams * params)
 {
     uintmax_t total_out = 0; // summing up across small iterations can yield a large number
 
@@ -471,8 +471,8 @@ static THREAD_RETURN_TYPE decode(DecodeParams* params)
     while (params->scheduler->getChunk(wi) >= 0)
     {
         ptrdiff_t job_out = 0;
-        char* ip = wi.in;
-        char* op = wi.out;
+        char * ip = wi.in;
+        char * op = wi.out;
         unsigned i = 0;
         size_t processed_bytes = 0;
         for (; processed_bytes < wi.isize; processed_bytes += params->workbsize, ++i)
@@ -520,16 +520,16 @@ static THREAD_RETURN_TYPE decode(DecodeParams* params)
 // THE MAIN TESTING FUNCTION'S HELPERS
 //////////////////////////////////////
 
-static inline void prepareEncoderData(Codec& codec,
-                                      EncodeParams* params,
+static inline void prepareEncoderData(Codec & codec,
+                                      EncodeParams * params,
                                       size_t threads_no,
                                       size_t bsize,
                                       size_t ssize,
                                       size_t workbsize,
                                       bool verify,
-                                      Scheduler* scheduler)
+                                      Scheduler * scheduler)
 {
-    void** codec_eparams = codec.eparams();
+    void ** codec_eparams = codec.eparams();
     for (size_t i = 0; i < threads_no; ++i)
     {
         params[i].encoder = codec.encoder;
@@ -544,15 +544,15 @@ static inline void prepareEncoderData(Codec& codec,
     }
 }
 
-static inline void prepareDecoderData(Codec& codec,
-                                      DecodeParams* params,
+static inline void prepareDecoderData(Codec & codec,
+                                      DecodeParams * params,
                                       size_t threads_no,
                                       size_t ssize,
                                       size_t workbsize,
                                       bool verify,
-                                      Scheduler* scheduler)
+                                      Scheduler * scheduler)
 {
-    void** codec_dparams = codec.dparams();
+    void ** codec_dparams = codec.dparams();
     for (size_t i = 0; i < threads_no; ++i)
     {
         params[i].decoder = codec.decoder;
@@ -564,8 +564,8 @@ static inline void prepareDecoderData(Codec& codec,
     }
 }
 // CPU warmup
-static void warmup(char** workbufs,
-                   char* inbuf,
+static void warmup(char ** workbufs,
+                   char * inbuf,
                    size_t workbuf_size,
                    size_t inbuf_size,
                    size_t iters)
@@ -578,7 +578,7 @@ static void warmup(char** workbufs,
     }
 }
 // reads file size and resets the file position to the beginning of the file
-static size_t file_size(ifstream& file)
+static size_t file_size(ifstream & file)
 {
     file.seekg(0, ios_base::end);
     size_t size = file.tellg();
@@ -610,9 +610,9 @@ static void warn_if_needed(unsigned threads_no,
     }
 }
 
-static void allocate_working_data(THREAD_HANDLE*& threads,
-                                  EncodeParams*& params,
-                                  DecodeParams*& dparams,
+static void allocate_working_data(THREAD_HANDLE *& threads,
+                                  EncodeParams *& params,
+                                  DecodeParams *& dparams,
                                   unsigned threads_no)
 {
     // prepare space for thread handlers
@@ -627,8 +627,8 @@ static void allocate_working_data(THREAD_HANDLE*& threads,
 }
 
 template<typename Params>
-static void run_test(THREAD_HANDLE* threads,
-                     Params* params,
+static void run_test(THREAD_HANDLE * threads,
+                     Params * params,
                      unsigned threads_no,
                      thread_function test_function)
 {
@@ -668,8 +668,8 @@ static void run_test(THREAD_HANDLE* threads,
  * 
  * @return number of small_iters actually used. The same as small_iters unless small_iters == 0.
  */
-unsigned test(list<CodecWithParams>& codecs,
-              ifstream& input_file,
+unsigned test(list<CodecWithParams> & codecs,
+              ifstream & input_file,
               unsigned iters,
               unsigned small_iters,
               size_t bsize,
@@ -707,8 +707,8 @@ unsigned test(list<CodecWithParams>& codecs,
     size_t workbuf_size = workbuf_block_size * blocks;
 
     // allocate possibly misaligned buffers
-    char* _inbuf = new (nothrow) char[inbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
-    char* _workbuf = new (nothrow) char[2 * workbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
+    char * _inbuf = new (nothrow) char[inbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
+    char * _workbuf = new (nothrow) char[2 * workbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
     BlockInfo* metadatabuf = new (nothrow) BlockInfo[blocks];
 
     if (!_inbuf || !_workbuf || !metadatabuf)
@@ -721,8 +721,8 @@ unsigned test(list<CodecWithParams>& codecs,
     }
 
     // aligned buffers
-    char* workbufs[2];
-    char* inbuf = (char*) (
+    char * workbufs[2];
+    char * inbuf = (char*) (
             ((uintptr_t) _inbuf & ~(ALIGNMENT - 1)) ? ((uintptr_t) _inbuf & ~(ALIGNMENT - 1))
                                                               + ALIGNMENT :
                                                       (uintptr_t) _inbuf & ~(ALIGNMENT - 1));
@@ -756,16 +756,16 @@ unsigned test(list<CodecWithParams>& codecs,
 
     printHeaders(csv);
     // some space needed by the main loop
-    THREAD_HANDLE* threads = 0;
-    EncodeParams* params;
-    DecodeParams* dparams;
+    THREAD_HANDLE * threads = 0;
+    EncodeParams * params;
+    DecodeParams * dparams;
     allocate_working_data(threads, params, dparams, threads_no);
 
     // the main loop
     for (list<CodecWithParams>::iterator it = codecs.begin(); it != codecs.end(); ++it)
     {
-        Codec& codec = it->codec;
-        const string& codec_init_params = it->params;
+        Codec & codec = it->codec;
+        const string & codec_init_params = it->params;
 
         codec.init(codec_init_params, threads_no, min(size, bsize));
         // note: checking can't be done earlier
