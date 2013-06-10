@@ -1,5 +1,6 @@
 #include "7z.hpp"
 #include "codecs.hpp"
+#include "common.hpp"
 
 #include "CPP/7zip/IStream.h"
 #include "CPP/7zip/Compress/DeflateDecoder.h"
@@ -28,17 +29,17 @@ namespace FsBench7z
 
 struct IOStream : ISequentialInStream, ISequentialOutStream
 {
-    STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
-    STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+    STDMETHOD(Read)(void * data, UInt32 size, UInt32 * processedSize);
+    STDMETHOD(Write)(const void * data, UInt32 size, UInt32 * processedSize);
 
-    IOStream(char* buf, size_t size):
-        size(size),
-        buf(buf)
+    IOStream(char * buf_, size_t size_):
+        size(size_),
+        buf(buf_)
     {}
     size_t size;
 private:
-    char* buf;
-      STDMETHOD(QueryInterface) (REFIID iid, void **outObject)
+    char * buf;
+      STDMETHOD(QueryInterface) (REFIID, void**)
       {return S_OK;}
       STDMETHOD_(ULONG, AddRef)()
       {return S_OK;}
@@ -47,16 +48,16 @@ private:
 };
 struct ProgressInfo : ICompressProgressInfo
 {
-  STDMETHOD(SetRatioInfo)(const UInt64 *inSize, const UInt64 *outSize)
+  STDMETHOD(SetRatioInfo)(const UInt64*, const UInt64*)
   {return S_OK;}
-  STDMETHOD(SetTotal)(UInt64 total)
+  STDMETHOD(SetTotal)(UInt64)
   {return S_OK;}
-  STDMETHOD(SetCompleted)(const UInt64 *completeValue)
+  STDMETHOD(SetCompleted)(const UInt64 *)
   {return S_OK;}
 
 private:
 
-  STDMETHOD(QueryInterface) (REFIID iid, void **outObject)
+  STDMETHOD(QueryInterface) (REFIID, void**)
   {return S_OK;}
   STDMETHOD_(ULONG, AddRef)()
   {return S_OK;}
@@ -105,21 +106,21 @@ HRESULT set_deflate_compress_level(T& coder, int level)
     return coder.SetCoderProperties(PROPIDs, PROPVARIANTs, NUM_PROPS);
 }
 
-STDMETHODIMP IOStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+STDMETHODIMP IOStream::Read(void * data, UInt32 size_, UInt32 * processedSize)
 {
-    UInt32 to_consume = min(this->size, (size_t)size);
+    UInt32 to_consume = min(this->size, (size_t)size_);
     memcpy(data, buf, to_consume);
     buf += to_consume;
     this->size -= to_consume;
     *processedSize = to_consume;
     return S_OK;
 }
-STDMETHODIMP IOStream::Write(const void *data, UInt32 size, UInt32 *processedSize)
+STDMETHODIMP IOStream::Write(const void * data, UInt32 size_, UInt32 * processedSize)
 {
     if(this->size == 0)
         return E_OUTOFMEMORY;
 
-    UInt32 to_write = min(this->size, (size_t)size);
+    UInt32 to_write = min(this->size, (size_t)size_);
     memcpy(buf, data, to_write);
     buf += to_write;
     this->size -= to_write;
@@ -128,7 +129,7 @@ STDMETHODIMP IOStream::Write(const void *data, UInt32 size, UInt32 *processedSiz
 }
 
 template<typename T>
-size_t _decompress(T coder, char*in, size_t isize, char*out, size_t osize, void*_)
+size_t _decompress(T coder, char * in, size_t isize, char * out, size_t osize, void * _)
 {
     ProgressInfo pi;
     IOStream istream(in,  isize);
@@ -141,7 +142,13 @@ size_t _decompress(T coder, char*in, size_t isize, char*out, size_t osize, void*
     return osize;
 }
 template<typename T>
-size_t _compress(T coder, HRESULT (*set_compress_level)(T& coder, int level), char*in, size_t isize, char*out, size_t osize, void*mode)
+size_t _compress(T coder,
+                 HRESULT (*set_compress_level)(T& coder, int level),
+                 char * in,
+                 size_t isize,
+                 char * out,
+                 size_t osize,
+                 void * mode)
 {
     ProgressInfo pi;
     IOStream istream(in,  isize);
@@ -158,31 +165,37 @@ size_t _compress(T coder, HRESULT (*set_compress_level)(T& coder, int level), ch
 }
 
 
-size_t inflate(char*in, size_t isize, char*out, size_t osize, void*_)
+size_t inflate(char * in, size_t isize, char * out, size_t osize, void * _)
 {
     NCompress::NDeflate::NDecoder::CCOMCoder coder;
     return _decompress(coder, in, isize, out, osize, _);
 }
 
-size_t deflate(char*in, size_t isize, char*out, size_t osize, void*mode)
+size_t deflate(char * in, size_t isize, char * out, size_t osize, void * mode)
 {
     NCompress::NDeflate::NEncoder::CCOMCoder coder;
-    return _compress(coder, set_deflate_compress_level<NCompress::NDeflate::NEncoder::CCOMCoder>, in, isize, out, osize, mode);
+    return _compress(coder,
+                     set_deflate_compress_level<NCompress::NDeflate::NEncoder::CCOMCoder>,
+                     in,
+                     isize,
+                     out,
+                     osize,
+                     mode);
 }
 
-size_t inflate64(char*in, size_t isize, char*out, size_t osize, void*_)
+size_t inflate64(char * in, size_t isize, char * out, size_t osize, void * _)
 {
     NCompress::NDeflate::NDecoder::CCOMCoder64 coder;
     return _decompress(coder, in, isize, out, osize, _);
 }
 
-size_t deflate64(char*in, size_t isize, char*out, size_t osize, void*mode)
+size_t deflate64(char * in, size_t isize, char * out, size_t osize, void * mode)
 {
     NCompress::NDeflate::NEncoder::CCOMCoder64 coder;
     return _compress(coder, set_deflate_compress_level<NCompress::NDeflate::NEncoder::CCOMCoder64>, in, isize, out, osize, mode);
 }
 #if 0
-size_t unlzx(char*in, size_t isize, char*out, size_t osize, void*_)
+size_t unlzx(char * in, size_t isize, char * out, size_t osize, void * _)
 {
     NCompress::NLzx::CDecoder coder;
     return _decompress(coder, in, isize, out, osize, _);

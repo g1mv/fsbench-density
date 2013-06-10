@@ -91,15 +91,15 @@ static inline size_t process2(char* in, size_t isize, char* out, size_t osize,
 }
 
 static const string invalid_keysize("Invalid keysize");
-#define INIT(KEYSIZE, MAXKEYSIZE, INIT)                                          \
-    INIT();                                                                      \
-    CodecWithIntModes::init(args, threads_no, isize, init_encoder, init_decoder);\
-    intptr_t keysize = (intptr_t)(eparams()[0]);                                 \
-    for (int i=0; KEYSIZE(i) <= MAXKEYSIZE;++i)                                  \
-    {                                                                            \
-        if(keysize == KEYSIZE(i))                                                \
-            return;                                                              \
-    }                                                                            \
+#define INIT(KEYSIZE, MAXKEYSIZE, INIT)                                           \
+    INIT();                                                                       \
+    CodecWithIntModes::init(args_, threads_no, isize, init_encoder, init_decoder);\
+    intptr_t keysize = (intptr_t)(eparams()[0]);                                  \
+    for (int i=0; KEYSIZE(i) <= MAXKEYSIZE;++i)                                   \
+    {                                                                             \
+        if(keysize == KEYSIZE(i))                                                 \
+            return;                                                               \
+    }                                                                             \
     throw InvalidParams(invalid_keysize);
 
 #define ENCODER_DECODER_DEFINITION(CLASS_NAME)                                                           \
@@ -136,7 +136,7 @@ size_t CLASS_NAME::decode(char* in, size_t isize, char* out, size_t osize, void*
     CLASS_NAME::CLASS_NAME():                                                                                              \
         ECryptCodec(#CLASS_NAME, VERSION, encode, decode, CLASS_NAME##_KEYSIZE(0), CLASS_NAME##_MAXKEYSIZE, DAFULT_KEYSIZE)\
     {}                                                                                                                     \
-void CLASS_NAME::init(const std::string& args, unsigned threads_no, size_t isize, bool init_encoder, bool init_decoder)    \
+void CLASS_NAME::init(const std::string& args_, unsigned threads_no, size_t isize, bool init_encoder, bool init_decoder)   \
 {                                                                                                                          \
     INIT(CLASS_NAME##_KEYSIZE, CLASS_NAME##_MAXKEYSIZE, CLASS_NAME##_init)                                                 \
 }
@@ -151,15 +151,30 @@ void CLASS_NAME::init(const std::string& args, unsigned threads_no, size_t isize
         
 namespace FsBenchECrypt
 {
-ECryptCodec::ECryptCodec(const std::string& name, const std::string& version,
-        encoder_t encode, decoder_t decode,
-        intptr_t min_mode, intptr_t max_mode, const std::string& default_mode):
-    CodecWithIntModes(name, version, encode, decode, min_mode, max_mode, default_mode, no_blowup, moving, moving, false)
+ECryptCodec::ECryptCodec(const std::string & name_,
+                         const std::string & version_,
+                         encoder_t encode,
+                         decoder_t decode,
+                         intptr_t min_mode_,
+                         intptr_t max_mode_,
+                         const std::string & default_mode_):
+    CodecWithIntModes(name_,
+                      version_,
+                      encode,
+                      decode,
+                      min_mode_,
+                      max_mode_,
+                      default_mode_,
+                      no_blowup,
+                      moving,
+                      moving,
+                      false)
     {}
     
-string ECryptCodec::help() const                                                                                \
-{                                                                                                                      \
-    return this->name + " " + this->version + "\nYou can use key length as a parameter, but only some are accepted\n"; \
+string ECryptCodec::help() const                                             \
+{                                                                            \
+    return this->name + " " + this->version +                                \
+    "\nYou can use key length as a parameter, but only some are accepted\n"; \
 }
 
 ECRYPT_CLASS_DEFINITION2(AES128Bernstein, "128", "little-4")
