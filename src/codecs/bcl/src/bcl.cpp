@@ -10,12 +10,12 @@ extern "C"
 namespace FsBenchBCL
 {
 
-size_t huffman(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t huffman(char * in, size_t isize, char * out, size_t, void *)
 {
     return Huffman_Compress((unsigned char*)in, (unsigned char*)out, isize);
 }
 
-size_t unhuffman(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t unhuffman(char * in, size_t isize, char * out, size_t osize, void *)
 {
     Huffman_Uncompress((unsigned char*)in, (unsigned char*)out, isize, osize);
     return osize;
@@ -26,12 +26,12 @@ size_t huffman_maxsize(size_t input_size)
     return input_size + input_size/100 + 320;
 }
 
-size_t lz(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t lz(char * in, size_t isize, char * out, size_t, void *)
 {
     return LZ_Compress((unsigned char*)in, (unsigned char*)out, isize);
 }
 
-size_t unlz(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t unlz(char * in, size_t isize, char * out, size_t osize, void *)
 {
     LZ_Uncompress((unsigned char*)in, (unsigned char*)out, isize);
     return osize;
@@ -42,12 +42,12 @@ size_t lz_maxsize(size_t input_size)
     return input_size + input_size/256 + 1;
 }
 
-size_t rle(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t rle(char * in, size_t isize, char * out, size_t, void *)
 {
     return RLE_Compress((unsigned char*)in, (unsigned char*)out, isize);
 }
 
-size_t unrle(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t unrle(char * in, size_t isize, char * out, size_t osize, void *)
 {
     RLE_Uncompress((unsigned char*)in, (unsigned char*)out, isize);
     return osize;
@@ -58,11 +58,11 @@ size_t rle_maxsize(size_t input_size)
     return input_size + input_size/256 + 1;
 }
 
-size_t LZFast::lzfast(char* in, size_t isize, char* out, size_t osize, void* work)
+size_t LZFast::lzfast(char * in, size_t isize, char * out, size_t, void * work)
 {
     return LZ_CompressFast((unsigned char*)in, (unsigned char*)out, isize, *(unsigned int**)work);
 }
-void LZFast::init(const std::string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor)
+void LZFast::init(const std::string &, unsigned threads_no, size_t isize, bool init_compressor, bool)
 {
     if(init_compressor)
     {
@@ -83,7 +83,7 @@ void LZFast::cleanup()
         this->params  = 0;
     }
 }
-void** LZFast::eparams()
+void ** LZFast::eparams()
 {
     return params;
 }

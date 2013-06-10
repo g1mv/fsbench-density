@@ -7,7 +7,7 @@ namespace FsBenchGipfeli
 {
 using namespace gipfeli;
 
-size_t compress(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t compress(char * in, size_t isize, char * out, size_t, void *)
 {
     Compressor compressor;
     Status status = compressor.Init();
@@ -21,7 +21,7 @@ size_t compress(char* in, size_t isize, char* out, size_t osize, void* _)
     memcpy(out, output_str.data(), compressed_size);
     return compressed_size;
 }
-size_t decompress(char* in, size_t isize, char* out, size_t osize, void* _)
+size_t decompress(char * in, size_t isize, char * out, size_t, void *)
 {
     Uncompressor decompressor;
     Status status = decompressor.Init();

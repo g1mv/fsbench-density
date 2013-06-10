@@ -49,15 +49,11 @@ Codec::Codec(const std::string & name,
 {
 }
 void Codec::init(const string & args,
-                 unsigned threads_no,
-                 size_t isize,
-                 bool init_encoder,
-                 bool init_decoder)
+                 unsigned,
+                 size_t,
+                 bool,
+                 bool)
 {
-    UNUSED(threads_no);
-    UNUSED(isize);
-    UNUSED(init_encoder);
-    UNUSED(init_decoder);
     this->args = args;
 }
 void Codec::cleanup()
@@ -135,15 +131,11 @@ MultifunctionCodec::MultifunctionCodec(const string & name,
 {
 }
 void MultifunctionCodec::init(const string & args,
-                              unsigned threads_no,
-                              size_t isize,
-                              bool init_encoder,
-                              bool init_decoder)
+                              unsigned,
+                              size_t,
+                              bool,
+                              bool)
 {
-    UNUSED(threads_no);
-    UNUSED(isize);
-    UNUSED(init_encoder);
-    UNUSED(init_decoder);
     this->args = default_args(args);
     const CodecArgs & codec_args = get_type(this->args);
 
@@ -202,13 +194,10 @@ CodecWithIntModes::CodecWithIntModes(const string & name,
 }
 void CodecWithIntModes::init(const string & args,
                              unsigned threads_no,
-                             size_t isize,
-                             bool init_encoder,
-                             bool init_decoder)
+                             size_t,
+                             bool,
+                             bool)
 {
-    UNUSED(isize);
-    UNUSED(init_encoder);
-    UNUSED(init_decoder);
     this->args = default_args(args);
     intptr_t mode;
     try
@@ -544,15 +533,12 @@ Codec::transform_type PipelineCodec::_get_combined_transform_type(Codec::transfo
     else
         return second == moving ? moving : buffered;
 }
-void BufferedCodec::init(const std::string & args,
+void BufferedCodec::init(const std::string &,
                          unsigned threads_no,
-                         size_t isize,
+                         size_t,
                          bool init_encoder,
-                         bool init_decoder)
+                         bool)
 {
-    UNUSED(args);
-    UNUSED(isize);
-    UNUSED(init_decoder);
     if (init_encoder)
     {
         this->threads_no = threads_no;
