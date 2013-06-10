@@ -22,17 +22,6 @@
 #include <sstream>
 #include <stdexcept>
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
-#include <windows.h>
-#define INIT_TIMER(x) if (!QueryPerformanceFrequency(&x)) { cout<<"QueryPerformance not present"; }
-#define GET_TIME(x) QueryPerformanceCounter(&x);
-#else
-#include <time.h>
-typedef struct timespec LARGE_INTEGER;
-#define INIT_TIMER(x)
-#define GET_TIME(x) if(clock_gettime( CLOCK_REALTIME, &x) == -1 ){ cout<<"clock_gettime error"; }
-#endif
-
 using namespace std;
 
 ///////////////////////////
@@ -43,7 +32,7 @@ using namespace std;
 #define MB (1024 * KB)
 
 //I make all buffers aligned
-#define ALIGNMENT 32 // uhash need this much
+#define ALIGNMENT 32U // uhash need this much
 
 #define ITERS(count) for(uint_least64_t i = 0; i < (uint_least64_t)(count); ++i)
 
@@ -85,16 +74,6 @@ static inline uint64_t ticks_to_msec(const LARGE_INTEGER & start_ticks,
             + (end_ticks.tv_nsec - start_ticks.tv_nsec) / 1000000;
 #endif
 
-}
-
-static inline size_t round_up(size_t A, size_t B)
-{
-    // rounds A up to the closest multiply of B
-    // note: A has to be in range (-B, INT_MAX-B].
-    size_t ret = (A / B) * B; // this rounds towards 0
-    if (A > ret) // so we need to round up manually
-        ret += B;
-    return ret;
 }
 
 static unsigned getSmallItersCount(const char * inbuf,
@@ -656,118 +635,133 @@ static void run_test(THREAD_HANDLE * threads,
  * 
  * @param codecs: a list of codecs to be tested
  * @param input_file: file to be used as a compression source
+ * @param desired_bsize: data will be divided into blocks of bsize bytes and each block will be compressed independently.
+ * @param desired_threads_no: number of threads to use. The code will not create more threads then blocks though.
+ */
+Tester::Tester(list<CodecWithParams> & codecs,
+               ifstream & input_file,
+               size_t desired_bsize,
+               unsigned desired_threads_no) :
+               codecs(codecs)
+{
+
+    INIT_TIMER(ticksPerSecond);
+
+    this->input_size = file_size(input_file);
+    if (this->input_size == 0)
+        throw invalid_argument("The file is empty!");
+    
+    this->bsize = min(desired_bsize, this->input_size);
+
+    // number of blocks
+    this->blocks_no = round_up(this->input_size, this->bsize) / this->bsize;
+
+    this->threads_no = min((size_t) desired_threads_no, this->blocks_no);
+
+    // user warnings
+    warn_if_needed(this->threads_no, desired_threads_no, this->input_size, this->bsize, this->blocks_no);
+
+    this->workbuf_block_size = this->bsize; // I need some space for tests
+    for (list<CodecWithParams>::iterator it = this->codecs.begin(); it != this->codecs.end(); ++it)
+        this->workbuf_block_size = max(this->workbuf_block_size, it->codec.max_encoded_size(this->bsize));
+
+    this->workbuf_block_size = round_up(this->workbuf_block_size + OVERRUN_PAD, (size_t)ALIGNMENT);
+
+    this->inbuf_size = this->input_size + OVERRUN_PAD;
+    this->workbuf_size = this->workbuf_block_size * this->blocks_no;
+
+    // allocate possibly misaligned buffers
+    this->_inbuf = new (nothrow) char[this->inbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
+    this->_workbuf = new (nothrow) char[2 * this->workbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
+    this->metadatabuf = new (nothrow) BlockInfo[this->blocks_no];
+
+    if (!this->_inbuf || !this->_workbuf || !this->metadatabuf)
+    {
+        string message = "Not enough memory!\n";
+        message += "Tried to allocate " + to_string(this->inbuf_size + ALIGNMENT - 1) + "+"
+                + to_string(2 * this->workbuf_size + ALIGNMENT - 1);
+        message += "+" + to_string(this->blocks_no * sizeof(BlockInfo)) + " bytes.";
+        throw runtime_error(message);
+    }
+
+    // aligned buffers
+    this->inbuf = (char*) (
+            ((uintptr_t) this->_inbuf & ~(ALIGNMENT - 1)) ? ((uintptr_t) this->_inbuf & ~(ALIGNMENT - 1))
+                                                              + ALIGNMENT :
+                                                      (uintptr_t) this->_inbuf & ~(ALIGNMENT - 1));
+    this->workbufs[0] = (char*) (
+            ((uintptr_t) this->_workbuf & ~(ALIGNMENT - 1)) ? ((uintptr_t) this->_workbuf & ~(ALIGNMENT - 1))
+                                                                + ALIGNMENT :
+                                                        (uintptr_t) this->_workbuf & ~(ALIGNMENT - 1));
+    this->workbufs[1] = this->workbufs[0] + this->workbuf_size; // workbuf_size is a multiply of ALIGNMENT, so this one is aligned too
+
+    input_file.read(this->inbuf, this->input_size);
+
+    if (input_file.fail())
+        throw runtime_error("Error reading file!");
+
+    this->input_crc = crc(this->inbuf, this->input_size, 0);
+}
+
+Tester::~Tester()
+{
+    delete[] this->_inbuf;
+    delete[] this->_workbuf;
+    delete[] this->metadatabuf;
+}
+
+/**
+ * The main testing function
+ * 
  * @param iters: number of measurements to be taken. The function reports the best of them.
  * @param small_iters: desired number of iterations for each measurement. 0 to determine it automatically.
- * @param bsize: data will be divided into blocks of bsize bytes and each block will be compressed independently.
  * @param ssize: Sector size - the smallest simulated I/O size. Output size of each block will be rounded up to ssize.
  * @param verify: If true, check if decoding produced correct output.
  * @param warmup_iters: number of memcpy runs before the actual compression, to warm the CPU up.
- * @param desired_threads_no: number of threads to use. The code will not create more threads then blocks though.
  * @param csv: output data as csv
  * @param job_size: scheduler produces data in chunks. job_size is a suggested size of such chunk (in bytes).
  * 
  * @return number of small_iters actually used. The same as small_iters unless small_iters == 0.
  */
-unsigned test(list<CodecWithParams> & codecs,
-              ifstream & input_file,
-              unsigned iters,
-              unsigned small_iters,
-              size_t bsize,
-              size_t ssize,
-              bool verify,
-              unsigned warmup_iters,
-              unsigned desired_threads_no,
-              bool csv,
-              size_t job_size)
+unsigned Tester::test(unsigned iters,
+                      unsigned small_iters,
+                      size_t ssize,
+                      bool verify,
+                      unsigned warmup_iters,
+                      bool csv,
+                      size_t job_size)
 {
-    LARGE_INTEGER ticksPerSecond, cstart_ticks, dstart_ticks, cend_ticks, dend_ticks;
-
-    INIT_TIMER(ticksPerSecond);
-
-    size_t size = file_size(input_file);
-    if (size == 0)
-        throw invalid_argument("The file is empty!");
-    bsize = min(bsize, size);
-
-    // number of blocks
-    size_t blocks = round_up(size, bsize) / bsize;
-
-    unsigned threads_no = min((size_t) desired_threads_no, blocks);
-
-    // user warnings
-    warn_if_needed(threads_no, desired_threads_no, size, bsize, blocks);
-
-    size_t workbuf_block_size = bsize; // I need some space for tests
-    for (list<CodecWithParams>::iterator it = codecs.begin(); it != codecs.end(); ++it)
-        workbuf_block_size = max(workbuf_block_size, it->codec.max_encoded_size(bsize));
-
-    workbuf_block_size = round_up(workbuf_block_size + OVERRUN_PAD, ALIGNMENT);
-
-    size_t inbuf_size = size + OVERRUN_PAD;
-    size_t workbuf_size = workbuf_block_size * blocks;
-
-    // allocate possibly misaligned buffers
-    char * _inbuf = new (nothrow) char[inbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
-    char * _workbuf = new (nothrow) char[2 * workbuf_size + ALIGNMENT - 1]; // some extra space, so I can align it
-    BlockInfo* metadatabuf = new (nothrow) BlockInfo[blocks];
-
-    if (!_inbuf || !_workbuf || !metadatabuf)
-    {
-        string message = "Not enough memory!\n";
-        message += "Tried to allocate " + to_string(inbuf_size + ALIGNMENT - 1) + "+"
-                + to_string(2 * workbuf_size + ALIGNMENT - 1);
-        message += "+" + to_string(blocks * sizeof(BlockInfo)) + " bytes.";
-        throw runtime_error(message);
-    }
-
-    // aligned buffers
-    char * workbufs[2];
-    char * inbuf = (char*) (
-            ((uintptr_t) _inbuf & ~(ALIGNMENT - 1)) ? ((uintptr_t) _inbuf & ~(ALIGNMENT - 1))
-                                                              + ALIGNMENT :
-                                                      (uintptr_t) _inbuf & ~(ALIGNMENT - 1));
-    workbufs[0] = (char*) (
-            ((uintptr_t) _workbuf & ~(ALIGNMENT - 1)) ? ((uintptr_t) _workbuf & ~(ALIGNMENT - 1))
-                                                                + ALIGNMENT :
-                                                        (uintptr_t) _workbuf & ~(ALIGNMENT - 1));
-    workbufs[1] = workbufs[0] + workbuf_size; // workbuf_size is a multiply of ALIGNMENT, so this one is aligned too
-
-    input_file.read(inbuf, size);
-
-    if (input_file.fail())
-        throw runtime_error("Error reading file!");
-
-    uint32_t input_crc = crc(inbuf, size, 0);
+    LARGE_INTEGER cstart_ticks, dstart_ticks, cend_ticks, dend_ticks;
 
     // warm the CPU up
-    warmup(workbufs, inbuf, workbuf_size, inbuf_size, warmup_iters);
+    warmup(this->workbufs, this->inbuf, this->workbuf_size, this->inbuf_size, warmup_iters);
 
     if (!small_iters)
     {
-        small_iters = getSmallItersCount(inbuf, workbufs[1], size, threads_no);
+        small_iters = getSmallItersCount(this->inbuf, this->workbufs[1], this->input_size, this->threads_no);
     }
 
     // check memcpy performance
     GET_TIME(cstart_ticks);
     ITERS(small_iters)
-        memcpy(workbufs[1], inbuf, size);
+        memcpy(this->workbufs[1], this->inbuf, this->input_size);
     GET_TIME(cend_ticks);
-    printMemcpy(ticks_to_msec(cstart_ticks, cend_ticks, ticksPerSecond), size, small_iters, csv);
+    printMemcpy(ticks_to_msec(cstart_ticks, cend_ticks, this->ticksPerSecond), this->input_size, small_iters, csv);
 
     printHeaders(csv);
     // some space needed by the main loop
     THREAD_HANDLE * threads = 0;
     EncodeParams * params;
     DecodeParams * dparams;
-    allocate_working_data(threads, params, dparams, threads_no);
+    allocate_working_data(threads, params, dparams, this->threads_no);
 
     // the main loop
-    for (list<CodecWithParams>::iterator it = codecs.begin(); it != codecs.end(); ++it)
+    for (list<CodecWithParams>::iterator it = this->codecs.begin(); it != this->codecs.end(); ++it)
     {
         Codec & codec = it->codec;
         const string & codec_init_params = it->params;
 
-        codec.init(codec_init_params, threads_no, min(size, bsize));
+        codec.init(codec_init_params, this->threads_no, min(this->input_size, this->bsize));
         // note: checking can't be done earlier
         //       because codecs are allowed to set (en|de)coders in init()
         if (!check_codec(codec))
@@ -791,35 +785,35 @@ unsigned test(list<CodecWithParams> & codecs,
             input_buffer = 0;
             output_buffer = 1; // if a transform is in place, it could be 0 as well 
 
-            copy_input_buffer(inbuf, workbufs[input_buffer], size, bsize, workbuf_block_size);
+            copy_input_buffer(this->inbuf, this->workbufs[input_buffer], this->input_size, this->bsize, this->workbuf_block_size);
 
-            bool last_block_is_full = round_up(size, bsize) == size;
-            size_t size_in_blocks = size
-                    + (workbuf_block_size - bsize) * (last_block_is_full ? blocks : (blocks - 1));
+            bool last_block_is_full = round_up(this->input_size, this->bsize) == this->input_size;
+            size_t size_in_blocks = this->input_size
+                    + (this->workbuf_block_size - this->bsize) * (last_block_is_full ? this->blocks_no : (this->blocks_no - 1));
 
-            Scheduler scheduler = Scheduler(workbufs[input_buffer],
-                                            workbufs[output_buffer],
-                                            metadatabuf,
+            Scheduler scheduler = Scheduler(this->workbufs[input_buffer],
+                                            this->workbufs[output_buffer],
+                                            this->metadatabuf,
                                             size_in_blocks,
-                                            workbuf_block_size,
+                                            this->workbuf_block_size,
                                             small_iters,
                                             job_size);
             // initialize thread data
             prepareEncoderData(codec,
                                params,
-                               threads_no,
-                               bsize,
+                               this->threads_no,
+                               this->bsize,
                                ssize,
-                               workbuf_block_size,
+                               this->workbuf_block_size,
                                verify,
                                &scheduler);
 
             // ready...set...go!
             GET_TIME(cstart_ticks);
-            run_test(threads, params, threads_no, (thread_function) encode);
+            run_test(threads, params, this->threads_no, (thread_function) encode);
             GET_TIME(cend_ticks);
 
-            for (unsigned j = 0; j < threads_no; ++j)
+            for (unsigned j = 0; j < this->threads_no; ++j)
             {
                 complen += params[j].encoded_bytes;
                 compressible_bytes += params[j].successfully_encoded_bytes;
@@ -832,40 +826,40 @@ unsigned test(list<CodecWithParams> & codecs,
             {
                 if (codec.encode_transform_type == Codec::moving)
                     // clear the previous buffer
-                    memset(workbufs[input_buffer], 0, workbuf_size);
+                    memset(this->workbufs[input_buffer], 0, this->workbuf_size);
                 else
                     // clear the working buffer
-                    memset(workbufs[output_buffer], 0, workbuf_size);
+                    memset(this->workbufs[output_buffer], 0, this->workbuf_size);
             }
 
             input_buffer =
                     codec.encode_transform_type == Codec::moving ? output_buffer : input_buffer;
             output_buffer = 1 - input_buffer;
 
-            scheduler = Scheduler(workbufs[input_buffer],
-                                  workbufs[output_buffer],
-                                  metadatabuf,
-                                  workbuf_size,
-                                  workbuf_block_size,
+            scheduler = Scheduler(this->workbufs[input_buffer],
+                                  this->workbufs[output_buffer],
+                                  this->metadatabuf,
+                                  this->workbuf_size,
+                                  this->workbuf_block_size,
                                   small_iters,
                                   job_size);
 
             // prepare decompression settings
             prepareDecoderData(codec,
                                dparams,
-                               threads_no,
+                               this->threads_no,
                                ssize,
-                               workbuf_block_size,
+                               this->workbuf_block_size,
                                verify,
                                &scheduler);
 
             // ready...set...go!
             GET_TIME(dstart_ticks);
-            run_test(threads, dparams, threads_no, (thread_function) decode);
+            run_test(threads, dparams, this->threads_no, (thread_function) decode);
             GET_TIME(dend_ticks);
 
-            uint32_t ctime = ticks_to_msec(cstart_ticks, cend_ticks, ticksPerSecond);
-            uint32_t dtime = ticks_to_msec(dstart_ticks, dend_ticks, ticksPerSecond);
+            uint32_t ctime = ticks_to_msec(cstart_ticks, cend_ticks, this->ticksPerSecond);
+            uint32_t dtime = ticks_to_msec(dstart_ticks, dend_ticks, this->ticksPerSecond);
 
             fastest_ctime = min(fastest_ctime, ctime);
             fastest_dtime = min(fastest_dtime, dtime);
@@ -874,7 +868,7 @@ unsigned test(list<CodecWithParams> & codecs,
             {
                 printTime(fastest_ctime,
                           fastest_dtime,
-                          size,
+                          this->input_size,
                           compressible_bytes,
                           complen,
                           small_iters,
@@ -885,7 +879,7 @@ unsigned test(list<CodecWithParams> & codecs,
         if (csv) // with csv we haven't written anything yet
             printTime(fastest_ctime,
                       fastest_dtime,
-                      size,
+                      this->input_size,
                       compressible_bytes,
                       complen,
                       small_iters,
@@ -896,7 +890,7 @@ unsigned test(list<CodecWithParams> & codecs,
         {
             unsigned data_buffer =
                     codec.decode_transform_type == Codec::moving ? output_buffer : input_buffer;
-            check_decoding(input_crc, workbufs[data_buffer], size, bsize, workbuf_block_size);
+            check_decoding(this->input_crc, this->workbufs[data_buffer], this->input_size, this->bsize, this->workbuf_block_size);
         }
 
         codec.cleanup();
@@ -907,9 +901,5 @@ unsigned test(list<CodecWithParams> & codecs,
     delete[] dparams;
     if (threads)
         delete[] threads;
-
-    delete[] _inbuf;
-    delete[] _workbuf;
-    delete[] metadatabuf;
     return small_iters;
 }

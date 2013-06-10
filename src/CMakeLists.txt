@@ -71,7 +71,7 @@ set(USE_SSE2 0)
 set(USE_ASM 0)
 
 # Type of a build
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 #############################################
 ## CODE, NORMALLY YOU SHOULDN'T EDIT BELOW ##

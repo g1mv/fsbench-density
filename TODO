@@ -19,6 +19,7 @@ add:
 * https://github.com/ky1000ky2000/lz77/tree/master/lz77
 * https://github.com/stevesan/lz77
 * reintroduce LZ4bz
+* http://bench.cr.yp.to/supercop.html (!)
 
 csv output: header and footer are in colour
 number of small iters calculated individually for each codec

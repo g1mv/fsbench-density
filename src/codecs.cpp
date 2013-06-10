@@ -54,7 +54,7 @@ using namespace std;
 /////////////////////////////////
 
 // Just looks up a codec in CODECS
-Codec* raw_find_codec(const string& name)
+static Codec * raw_find_codec(const string & name)
 {
     for (list<Codec*>::iterator it = CODECS.begin(); it != CODECS.end(); ++it)
     {
@@ -76,9 +76,9 @@ Codec* raw_find_codec(const string& name)
 // The could be worked around, but I think that only in some ugly ways
 // Not we, because the codec wouldn't live long enough
 // This has some funny side effects like codec1/codec2/codec3 that works iff you did codec2/codec3 before
-Codec* find_codec(const string& name)
+Codec * find_codec(const string & name)
 {
-    Codec* ret = raw_find_codec(name);
+    Codec * ret = raw_find_codec(name);
     if (!ret)
     {
         // maybe it's a pipeline of existing codecs?
@@ -87,12 +87,12 @@ Codec* find_codec(const string& name)
         {
             string first_name = name.substr(0, pos);
             string second_name = name.substr(pos + 1);
-            Codec* first = find_codec(first_name);
-            Codec* second = find_codec(second_name);
+            Codec * first = find_codec(first_name);
+            Codec * second = find_codec(second_name);
             if (first && second)
             {
                 // good, it's a pipeline of existing codecs
-                PipelineCodec* codec = new PipelineCodec(*first, *second);
+                PipelineCodec * codec = new PipelineCodec(*first, *second);
                 CODECS.push_back(codec);
                 ret = codec;
             }
@@ -105,12 +105,12 @@ Codec* find_codec(const string& name)
             {
                 string encoder_name = name.substr(0, pos);
                 string decoder_name = name.substr(pos + 1);
-                Codec* encoder = raw_find_codec(encoder_name);
-                Codec* decoder = raw_find_codec(decoder_name);
+                Codec * encoder = raw_find_codec(encoder_name);
+                Codec * decoder = raw_find_codec(decoder_name);
                 if (encoder && decoder)
                 {
                     // good, it's a combination of existing codecs
-                    CombinationCodec* codec = new CombinationCodec(*encoder, *decoder);
+                    CombinationCodec * codec = new CombinationCodec(*encoder, *decoder);
                     CODECS.push_back(codec);
                     ret = codec;
                 }
@@ -239,7 +239,7 @@ Codec * codecs[] =
               new Codec("lzmat", _LZMAT_VERSION, lzmat_c, lzmat_d, no_blowup),
 #endif
 #ifdef FSBENCH_USE_LZV1
-              new BufferedCodec("LZV1", _LZV1_VERSION, LZV1_c, LZV1_d, no_blowup, sizeof(ush)*16384, sizeof(ush)),
+              new BufferedCodec("LZV1", _LZV1_VERSION, LZV1_c, LZV1_d, no_blowup, sizeof(ush) * 16384, sizeof(ush)),
 #endif
 #ifdef FSBENCH_USE_LZWC
               new Codec("LZWC", _LZWC_VERSION, LZWC_c, LZWC_d, no_blowup),
@@ -296,8 +296,8 @@ Codec * codecs[] =
               new Checksum<32>("Blake2sp", _BLAKE2_VERSION, fsbench_blake2sp),
 #endif
 #ifdef FSBENCH_USE_CITYHASH
-              new Checksum< sizeof(uint64_t)>("CityHash64", _CITYHASH_VERSION, CityHash64),
-              new Checksum<2*sizeof(uint64_t)>("CityHash128", _CITYHASH_VERSION, CityHash128),
+              new Checksum<    sizeof(uint64_t)>("CityHash64", _CITYHASH_VERSION, CityHash64),
+              new Checksum<2 * sizeof(uint64_t)>("CityHash128", _CITYHASH_VERSION, CityHash128),
 #endif
 #ifdef FSBENCH_USE_CRAPWOW
               new Checksum<sizeof(unsigned int)>("CrapWow", _CRAPWOW_VERSION, CrapWow),
@@ -324,7 +324,7 @@ Codec * codecs[] =
               new Checksum<8>("SipHash24", _SIPHASH_VERSION, siphash),
 #endif
 #ifdef FSBENCH_USE_SPOOKY
-              new Checksum<2*sizeof(uint64_t)>("SpookyHash", _SPOOKY_VERSION, spooky),
+              new Checksum<2 * sizeof(uint64_t)>("SpookyHash", _SPOOKY_VERSION, spooky),
 #endif
 #ifdef FSBENCH_USE_SANMAYCE_FNV
               new Checksum<sizeof(uint32_t)>("FNV1a-Jesteress", _SANMAYCE_VERSION, fnv1_jesteress),
@@ -395,11 +395,11 @@ Codec * codecs[] =
 #endif // defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3)
 #ifdef FSBENCH_USE_XXHASH
               new Checksum<sizeof(unsigned int)>("xxhash", _XXHASH_VERSION, xxhash),
-              new Checksum<4*sizeof(uint64_t)> ("xxhash256", _XXHASH256_VERSION, xxhash_256),
+              new Checksum<4 * sizeof(uint64_t)> ("xxhash256", _XXHASH256_VERSION, xxhash_256),
 #endif
 #ifdef FSBENCH_USE_ZFS
-              new Checksum<4*sizeof(uint64_t)>("fletcher2", _ZFS_VERSION, fletcher2),
-              new Checksum<4*sizeof(uint64_t)>("fletcher4", _ZFS_VERSION, fletcher4),
+              new Checksum<4 * sizeof(uint64_t)>("fletcher2", _ZFS_VERSION, fletcher2),
+              new Checksum<4 * sizeof(uint64_t)>("fletcher4", _ZFS_VERSION, fletcher4),
 #endif
 #ifdef FSBENCH_USE_ECRYPT
               new FsBenchECrypt::AES128Bernstein(),
@@ -421,7 +421,7 @@ Codec * codecs[] =
 
 list<Codec*> CODECS = list<Codec*>(codecs, codecs + sizeof(codecs) / sizeof(Codec*));
 
-list<CodecWithParams> createParamsList(list<pair<Codec*, const string> > lst)
+static list<CodecWithParams> createParamsList(list<pair<Codec*, const string> > lst)
 {
     list<CodecWithParams> ret;
     for (list<pair<Codec*, const string> >::iterator it = lst.begin(); it != lst.end(); ++it)
@@ -433,14 +433,14 @@ list<CodecWithParams> createParamsList(list<pair<Codec*, const string> > lst)
 }
 #define MKLIST(name, array) list<CodecWithParams> (name) = createParamsList(list< pair<Codec*,const string> >((array), (array) + sizeof((array)) / sizeof(pair<Codec*,const string>)))
 
-pair<Codec*, string> default_codecs[] =
+static const pair<Codec*, const string> default_codecs[] =
     { make_pair(raw_find_codec("LZ4"), ""),
       make_pair(raw_find_codec("LZO"), ""),
       make_pair(raw_find_codec("QuickLZ"), ""),
       make_pair(raw_find_codec("Snappy"), "") };
 MKLIST(DEFAULT_CODECS, default_codecs);
 
-pair<Codec*, string> fast_compressors[] =
+static const pair<Codec*, const string> fast_compressors[] =
     { make_pair(raw_find_codec("bcl-rle"), ""),
       make_pair(raw_find_codec("blosc"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
@@ -454,7 +454,7 @@ pair<Codec*, string> fast_compressors[] =
       make_pair(raw_find_codec("Snappy"), "") };
 MKLIST(FAST_COMPRESSORS, fast_compressors);
 
-pair<Codec*, string> all_compressors[] =
+static const pair<Codec*, const string> all_compressors[] =
     { make_pair(raw_find_codec("7z-deflate"), ""),
       make_pair(raw_find_codec("7z-deflate64"), ""),
       make_pair(raw_find_codec("ar"), ""),
@@ -504,7 +504,7 @@ pair<Codec*, string> all_compressors[] =
         };
 MKLIST(ALL_COMPRESSORS, all_compressors);
 
-pair<Codec*, string> all_ciphers[] =
+static const pair<Codec*, const string> all_ciphers[] =
     { make_pair(raw_find_codec("AES128Bernstein"), ""),
       make_pair(raw_find_codec("AES256Hongjun"), ""),
       make_pair(raw_find_codec("ChaCha"), ""),
@@ -522,7 +522,7 @@ pair<Codec*, string> all_ciphers[] =
         };
 MKLIST(ALL_CIPHERS, all_ciphers);
 
-pair<Codec*, string> all_checksums[] =
+static const pair<Codec*, const string> all_checksums[] =
         { make_pair(raw_find_codec("Blake2b"), ""),
           make_pair(raw_find_codec("Blake2bp"), ""),
           make_pair(raw_find_codec("Blake2s"), ""),

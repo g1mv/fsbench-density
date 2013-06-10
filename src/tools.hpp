@@ -9,6 +9,8 @@
 #ifndef TOOLS_HPP_BhjgkfG8
 #define TOOLS_HPP_BhjgkfG8
 
+#include <cassert>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -26,10 +28,10 @@ extern "C"
 #include <windows.h>
 #endif
 
-int case_insensitive_compare(const std::string& s1, const std::string& s2);
+int case_insensitive_compare(const std::string & s1, const std::string & s2);
 
 template<typename T>
-std::string to_string(const T& item)
+std::string to_string(const T & item)
 {
     std::stringstream ss;
 
@@ -47,7 +49,7 @@ std::string to_string(const T& item)
 }
 
 template<typename T, typename S>
-void from_string(const S& str, T& item)
+void from_string(const S & str, T & item)
 {
     std::stringstream ss;
 
@@ -74,6 +76,24 @@ private:
 #endif
 };
 
-uint32_t crc(char* data, size_t size, uint32_t crc = 0);
+uint32_t crc(char * data, size_t size, uint32_t crc = 0);
+
+/**
+ * Rounds A up to the closest multiply of B
+ * @note   A has to be in range (-B, numeric_limits<T>::max() - B].
+ * @return the rounding result
+ */
+template<typename T>
+static inline size_t round_up(T A, T B)
+{
+    // rounds A up to the closest multiply of B
+    // note: A has to be in range (-B, INT_MAX-B].
+    assert(A >= std::numeric_limits<T>::max() - B);
+    assert(!std::numeric_limits<T>::is_signed || A > -B);
+    T ret = (A / B) * B; // this rounds towards 0
+    if (A > ret) // so we need to round up manually
+        ret += B;
+    return ret;
+}
 
 #endif // TOOLS_HPP_BhjgkfG8

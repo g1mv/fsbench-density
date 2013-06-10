@@ -35,7 +35,7 @@ struct CodecArgs
     std::string args;
     encoder_t encoder;
     decoder_t decoder;
-    CodecArgs(const std::string& args, encoder_t encoder, decoder_t decoder) :
+    CodecArgs(const std::string & args, encoder_t encoder, decoder_t decoder) :
             args(args), encoder(encoder), decoder(decoder)
     {
     }
@@ -45,24 +45,24 @@ struct MultifunctionCodec: Codec
 {
 private:
 
-    const CodecArgs* allowed_args;
+    const CodecArgs * allowed_args;
     size_t len;
     const std::string default_arg;
 
-    const CodecArgs& get_type(const std::string& args);
-    const std::string& default_args(const std::string& args);
+    const CodecArgs & get_type(const std::string & args);
+    const std::string & default_args(const std::string & args);
 
 public:
 
-    MultifunctionCodec(const std::string& name,
-                       const std::string& version,
-                       const CodecArgs* allowed_args,
+    MultifunctionCodec(const std::string & name,
+                       const std::string & version,
+                       const CodecArgs * allowed_args,
                        size_t len,
-                       const std::string& default_arg,
+                       const std::string & default_arg,
                        max_encoded_size_t max_size = _max_compressed_size);
 
     virtual std::string help() const;
-    virtual void init(const std::string& args,
+    virtual void init(const std::string & args,
                       unsigned threads_no,
                       size_t isize,
                       bool init_encoder = true,
@@ -84,35 +84,35 @@ private:
     const int max_mode;
     const std::string default_mode;
 
-    const std::string& default_args(const std::string& args) const;
+    const std::string & default_args(const std::string & args) const;
 
 public:
 
-    CodecWithIntModes(const std::string& name,
-                      const std::string& version,
+    CodecWithIntModes(const std::string & name,
+                      const std::string & version,
                       encoder_t encoder,
                       decoder_t decoder,
                       intptr_t min_mode,
                       intptr_t max_mode,
-                      const std::string& default_mode,
+                      const std::string & default_mode,
                       max_encoded_size_t max_size = _max_compressed_size,
                       transform_type encode_transform_type = moving,
                       transform_type decode_transform_type = moving,
                       bool can_be_skipped = true);
 
     virtual std::string help() const;
-    virtual void init(const std::string& args,
+    virtual void init(const std::string & args,
                       unsigned threads_no,
                       size_t isize,
                       bool init_encoder = true,
                       bool init_decoder = true);
     virtual void cleanup();
 
-    virtual void** eparams(); // parmeters to be sent to compressors
-    virtual void** dparams(); // parmeters to be sent to decompressors 
+    virtual void ** eparams(); // parmeters to be sent to compressors
+    virtual void ** dparams(); // parmeters to be sent to decompressors 
 
 protected:
-    void** params;
+    void ** params;
 
 };
 
@@ -125,8 +125,8 @@ struct CombinationCodec: Codec
 {
 private:
 
-    Codec& encoderObject;
-    Codec& decoderObject;
+    Codec & encoderObject;
+    Codec & decoderObject;
 
 public:
 
@@ -141,8 +141,8 @@ public:
                       bool init_decoder = true);
     virtual void cleanup();
 
-    virtual void** eparams();    // parmeters to be sent to compressors
-    virtual void** dparams();    // parmeters to be sent to decompressors 
+    virtual void ** eparams();    // parmeters to be sent to compressors
+    virtual void ** dparams();    // parmeters to be sent to decompressors 
 
     size_t max_encoded_size(size_t input_size);
 };
@@ -169,49 +169,49 @@ struct PipelineCodec: Codec
 {
 private:
 
-    Codec& first_codec;
-    Codec& second_codec;
+    Codec & first_codec;
+    Codec & second_codec;
 
     struct EncodeParams
     {
-        void* first_codec_params;
-        void* second_codec_params;
-        Codec* first_encoder;
-        Codec* second_encoder;
+        void * first_codec_params;
+        void * second_codec_params;
+        Codec * first_encoder;
+        Codec * second_encoder;
     };
     struct DecodeParams
     {
-        void* first_codec_params;
-        void* second_codec_params;
-        Codec* first_decoder;
-        Codec* second_decoder;
+        void * first_codec_params;
+        void * second_codec_params;
+        Codec * first_decoder;
+        Codec * second_decoder;
     };
-    EncodeParams* encoder_params;
-    DecodeParams* decoder_params;
-    void** encoder_params_ptrs;
-    void** decoder_params_ptrs;
+    EncodeParams * encoder_params;
+    DecodeParams * decoder_params;
+    void ** encoder_params_ptrs;
+    void ** decoder_params_ptrs;
 
-    static size_t encode(char* in, size_t isize, char* out, size_t osize, void* args);
-    static size_t decode(char* in, size_t isize, char* out, size_t osize, void* args);
+    static size_t encode(char * in, size_t isize, char * out, size_t osize, void * args);
+    static size_t decode(char * in, size_t isize, char * out, size_t osize, void * args);
     size_t max_encoded_size(size_t input_size);
 
     static transform_type _get_combined_transform_type(transform_type first, transform_type second);
 
 public:
 
-    PipelineCodec(Codec& first_codec, Codec& second_codec);
+    PipelineCodec(Codec & first_codec, Codec & second_codec);
 
     // Initialises both codecs.
     // args takes form: [encoder_args[/decoder_args]]
-    virtual void init(const std::string& args,
+    virtual void init(const std::string & args,
                       unsigned threads_no,
                       size_t isize,
                       bool init_encoder = true,
                       bool init_decoder = true);
     virtual void cleanup();
 
-    virtual void** eparams();    // parmeters to be sent to compressors
-    virtual void** dparams();    // parmeters to be sent to decompressors 
+    virtual void ** eparams();    // parmeters to be sent to compressors
+    virtual void ** dparams();    // parmeters to be sent to decompressors 
 };
 /**
  * Checksum
@@ -222,13 +222,13 @@ public:
 template<size_t digest_size>
 class Checksum: public Codec
 {
-    typedef void (*checksum_t)(char* in, size_t isize, char* out);
+    typedef void (*checksum_t)(char * in, size_t isize, char * out);
 private:
     checksum_t checksummer;
-    void** params;
+    void ** params;
 
 public:
-    Checksum(const std::string& name, const std::string& version, checksum_t checksummer) :
+    Checksum(const std::string & name, const std::string & version, checksum_t checksummer) :
             Codec(name,
                   version,
                   encode,
@@ -246,7 +246,7 @@ public:
     {
         return size + digest_size;
     }
-    static size_t encode(char* in, size_t isize, char* out, size_t osize, void* args)
+    static size_t encode(char * in, size_t isize, char * out, size_t osize, void * args)
     {
         UNUSED(out);
         UNUSED(osize);
@@ -263,7 +263,7 @@ public:
         memcpy(in + isize, tmp_digest, digest_size);
         return isize + digest_size;
     }
-    static size_t decode(char* in, size_t isize, char* out, size_t osize, void* args)
+    static size_t decode(char * in, size_t isize, char * out, size_t osize, void * args)
     {
         UNUSED(out);
         UNUSED(osize);
@@ -291,7 +291,7 @@ public:
      *       instead of just once with both set to true?
      * @todo docs
      */
-    virtual void init(const std::string& args,
+    virtual void init(const std::string & args,
                       unsigned threads_no,
                       size_t isize,
                       bool init_encoder = true,
@@ -303,7 +303,7 @@ public:
         UNUSED(init_decoder);
         if (!params)
         {
-            params = new void*[threads_no];
+            params = new void *[threads_no];
             for (unsigned i = 0; i < threads_no; ++i)
                 params[i] = (void*) checksummer;
         }
@@ -316,11 +316,11 @@ public:
             params = 0;
         }
     }
-    virtual void** eparams()
+    virtual void ** eparams()
     {
         return params;
     }
-    virtual void** dparams()
+    virtual void ** dparams()
     {
         return eparams();
     }
@@ -337,8 +337,8 @@ public:
      *                      It's passed to both encoder and decoder
      * @param bufalignment: Alignment of the working-memory buffer. Must be a power of 2.
      */
-    BufferedCodec(const std::string& name,
-                  const std::string& version,
+    BufferedCodec(const std::string & name,
+                  const std::string & version,
                   encoder_t compressor,
                   decoder_t decompressor,
                   max_encoded_size_t max_blowup,
@@ -351,18 +351,18 @@ public:
             threads_no(0)
     {
     }
-    virtual void init(const std::string& args,
+    virtual void init(const std::string & args,
                       unsigned threads_no,
                       size_t isize,
                       bool init_compressor,
                       bool init_decompressor);
     virtual void cleanup();
-    void** dparams();
-    void** eparams();
+    void ** dparams();
+    void ** eparams();
 
 protected:
-    void** params;  /// Aligned buffers passed to encoders / decoder
-    void** buffers; /// Raw, possibly misaligned buffers
+    void ** params;  /// Aligned buffers passed to encoders / decoder
+    void ** buffers; /// Raw, possibly misaligned buffers
 private:
     size_t bufsize;
     size_t bufalignment;

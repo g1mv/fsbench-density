@@ -21,7 +21,7 @@
 
 using namespace std;
 
-int case_insensitive_compare(const string & s1, const string& s2)
+int case_insensitive_compare(const string & s1, const string & s2)
 {
     string::const_iterator it1 = s1.begin();
     string::const_iterator it2 = s2.begin();
@@ -105,7 +105,7 @@ ConsoleColour::~ConsoleColour()
  * 
  * Despite the name, it's not a crc.
  */
-uint32_t crc(char* data, size_t size, uint32_t crc)
+uint32_t crc(char * data, size_t size, uint32_t crc)
 {
 
     static const unsigned int table[256] =

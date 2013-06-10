@@ -24,12 +24,12 @@
 //         it can quit trying before the end of data
 //         it's warranted that the actual buffer size is not smaller than max_encoded_size(isize)
 //         and that actual size of the input buffer is just as big (which matters i.e. for in_place codecs)
-typedef size_t (*encoder_t)(char* in, size_t isize, char* out, size_t osize, void* args);
+typedef size_t (*encoder_t)(char * in, size_t isize, char * out, size_t osize, void * args);
 // in    - input buffer
 // isize - input data size
 // out   - output buffer
 // osize - output data size = decoded size
-typedef size_t (*decoder_t)(char* in, size_t isize, char* out, size_t osize, void* args);
+typedef size_t (*decoder_t)(char * in, size_t isize, char * out, size_t osize, void * args);
 typedef size_t (*max_encoded_size_t)(size_t input_size);
 
 // When some codec can warrant no size blowup (and i.e. error instead), this function can be used
@@ -49,8 +49,8 @@ struct Codec
 {
     struct InvalidParams: std::exception
     {
-        virtual const char* what() const throw ();
-        InvalidParams(const std::string& message);
+        virtual const char * what() const throw ();
+        InvalidParams(const std::string & message);
         ~InvalidParams() throw ()
         {
         }
@@ -79,15 +79,15 @@ struct Codec
     bool can_be_skipped; //when a compressor fails to reduce size, the data can be left uncompressed and decompression can be skipped
                          //this doesn't hold for checksums, they have to be calculated even though they don't save space ;)
 
-    virtual void** eparams(); // parmeters to be sent to compressors
-    virtual void** dparams(); // parmeters to be sent to decompressors 
+    virtual void ** eparams(); // parmeters to be sent to compressors
+    virtual void ** dparams(); // parmeters to be sent to decompressors 
 
     /**
      * Creates a codec
      * @throw InvalidParams Dude, something's wrong with your command line. 
      */
-    Codec(const std::string& name,
-          const std::string& version,
+    Codec(const std::string & name,
+          const std::string & version,
           encoder_t encoder,
           decoder_t decoder,
           max_encoded_size_t max_size = _max_compressed_size,
@@ -113,7 +113,7 @@ struct Codec
     // - name
     // - version
     // - can_be_skipped
-    virtual void init(const std::string& args,
+    virtual void init(const std::string & args,
                       unsigned threads_no,
                       size_t isize,
                       bool init_compressor = true,
@@ -135,13 +135,13 @@ protected:
  */
 struct CodecWithParams
 {
-    Codec& codec;
+    Codec & codec;
     const std::string params;
-    CodecWithParams(Codec& codec, const std::string& params) :
+    CodecWithParams(Codec & codec, const std::string & params) :
             codec(codec), params(params)
     {
     }
-    CodecWithParams operator=(const CodecWithParams& src)
+    CodecWithParams operator=(const CodecWithParams & src)
     {
         return CodecWithParams(src.codec, src.params);
     }
@@ -154,7 +154,7 @@ extern std::list<CodecWithParams> ALL_COMPRESSORS;
 extern std::list<CodecWithParams> ALL_CHECKSUMS;
 extern std::list<CodecWithParams> ALL_CIPHERS;
 
-Codec* find_codec(const std::string& name);
+Codec * find_codec(const std::string & name);
 
 // TODO: each codec should have a version number by itself,
 // so there's one place less to change when adding / updating 

@@ -20,168 +20,168 @@ using namespace std;
 #ifdef FSBENCH_USE_AR
 namespace FsBenchAr
 {
-    size_t ar_c(char*in, size_t isize, char* out, size_t osize, void* _);
-    size_t ar_d(char*in, size_t isize, char* out, size_t osize, void* _);
+    size_t ar_c(char * in, size_t isize, char * out, size_t osize, void * _);
+    size_t ar_d(char * in, size_t isize, char * out, size_t osize, void * _);
 }
 #endif//FSBENCH_USE_AR
 #ifdef FSBENCH_USE_BLAKE2
 #define BLAKE2_FUNC(name) \
-void fsbench_ ## name (char* in, size_t isize, char* out)
+void fsbench_ ## name (char * in, size_t isize, char * out)
 BLAKE2_FUNC(blake2s);
 BLAKE2_FUNC(blake2b);
 BLAKE2_FUNC(blake2sp);
 BLAKE2_FUNC(blake2bp);
 #endif//FSBENCH_USE_BLAKE2
 #ifdef FSBENCH_USE_BLOSC
-size_t blosc_c(char* in, size_t isize, char* out, size_t osize,void* mode);
-size_t blosc_d(char* in, size_t isize, char* out, size_t osize,void* _);
+size_t blosc_c(char * in, size_t isize, char * out, size_t osize,void * mode);
+size_t blosc_d(char * in, size_t isize, char * out, size_t osize,void * _);
 #endif//FSBENCH_USE_BLOSC
 #ifdef FSBENCH_USE_BZ2
-size_t bz2_c(char* in, size_t isize, char* out, size_t osize, void* mode);
-size_t bz2_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t bz2_c(char * in, size_t isize, char * out, size_t osize, void * mode);
+size_t bz2_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_BZ2
 #ifdef FSBENCH_USE_CITYHASH
-void CityHash64(char* in, size_t isize, char* out);
-void CityHash128(char* in, size_t isize, char* out);
+void CityHash64(char * in, size_t isize, char * out);
+void CityHash128(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_CITYHASH
 #ifdef FSBENCH_USE_CRAPWOW
-void CrapWow(char* in, size_t isize, char* out);
+void CrapWow(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_CRAPWOW
 #ifdef FSBENCH_USE_DOBOZ
-size_t Doboz_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t Doboz_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t Doboz_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t Doboz_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_DOBOZ
 #ifdef FSBENCH_USE_FASTCRYPTO
 namespace FsBenchFastCrypto
 {
-    void uhash(char* in, size_t isize, char* out);
-    void vhash(char* in, size_t isize, char* out);
-    void umac(char* in, size_t isize, char* out);
-    void vmac(char* in, size_t isize, char* out);
+    void uhash(char * in, size_t isize, char * out);
+    void vhash(char * in, size_t isize, char * out);
+    void umac(char * in, size_t isize, char * out);
+    void vmac(char * in, size_t isize, char * out);
 } //namespace FsBenchFastCrypto
 #endif//FSBENCH_USE_FASTCRYPTO
 #ifdef FSBENCH_USE_FASTLZ
-size_t fastlz1_c(char* in, size_t isize, char* out, size_t osize, void*_);
-size_t fastlz2_c(char* in, size_t isize, char* out, size_t osize, void*_);
-size_t fastlz_d (char* in, size_t isize, char* out, size_t osize, void*_);
+size_t fastlz1_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t fastlz2_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t fastlz_d (char * in, size_t isize, char * out, size_t osize, void * _);
 size_t fastlz_m (size_t input_size);
 #endif//FSBENCH_USE_FASTLZ
 #ifdef FSBENCH_USE_HALIBUT
-size_t halibut_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t halibut_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t halibut_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t halibut_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_HALIBUT
 #ifdef FSBENCH_USE_LODEPNG
-size_t lodepng_c(char* in, size_t isize, char* out, size_t osize, void* mode);
-size_t lodepng_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t lodepng_c(char * in, size_t isize, char * out, size_t osize, void * mode);
+size_t lodepng_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LODEPNG
 #ifdef FSBENCH_USE_LZ4
-size_t LZ4_c (char*in, size_t isize, char* out, size_t osize, void* _);
-size_t LZ4hc_c (char*in, size_t isize, char* out, size_t osize, void* _);
-size_t LZ4_d (char*in, size_t isize, char* out, size_t osize, void* _);
+size_t LZ4_c (char * in, size_t isize, char * out, size_t osize, void * _);
+size_t LZ4hc_c (char * in, size_t isize, char * out, size_t osize, void * _);
+size_t LZ4_d (char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LZ4
 #ifdef FSBENCH_USE_LZF
-size_t LZF_ultra_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t LZF_very_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t LZF_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t LZF_d(char*in,size_t isize, char* out, size_t osize, void* _);
+size_t LZF_ultra_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t LZF_very_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t LZF_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t LZF_d(char * in,size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LZF
 #ifdef FSBENCH_USE_LZFX
-size_t LZFX_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t LZFX_d(char*in,size_t isize, char* out, size_t osize, void* _);
+size_t LZFX_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t LZFX_d(char * in,size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LZFX
 #ifdef FSBENCH_USE_LZG
-size_t LZG_c(char* in, size_t isize, char* out, size_t osize, void* mode);
-size_t LZG_d(char*in,size_t isize, char* out, size_t osize, void* _);
+size_t LZG_c(char * in, size_t isize, char * out, size_t osize, void * mode);
+size_t LZG_d(char * in,size_t isize, char * out, size_t osize, void * _);
 size_t LZG_m(size_t input_size);
 #endif//FSBENCH_USE_LZG
 #ifdef FSBENCH_USE_LZMAT
-size_t lzmat_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t lzmat_d(char*in,size_t isize, char* out, size_t osize, void* _);
+size_t lzmat_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t lzmat_d(char * in,size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LZMAT
 #ifdef FSBENCH_USE_LZWC
-size_t LZWC_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t LZWC_d(char*in,size_t isize, char* out, size_t osize, void* _);
+size_t LZWC_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t LZWC_d(char * in,size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LZWC
 #ifdef FSBENCH_USE_LZX_COMPRESS
-size_t LZX_c(char* in, size_t isize, char* out, size_t osize, void* window_size);
+size_t LZX_c(char * in, size_t isize, char * out, size_t osize, void* window_size);
 #endif// FSBENCH_USE_LZX_COMPRES
 #ifdef FSBENCH_USE_MMINI
 extern "C"
 {
 #include "mmini.h" // for MMINI_HUFFHEAP_SIZE
 }
-size_t mmini_c(char* in, size_t isize, char* out, size_t osize, void* buffer);
-size_t mmini_d(char* in, size_t isize, char* out, size_t osize, void* buffer);
-size_t mmini_huffman_c(char* in, size_t isize, char* out, size_t osize, void* buffer);
-size_t mmini_huffman_d(char* in, size_t isize, char* out, size_t osize, void* buffer);
-size_t mmini_lzl_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t mmini_lzl_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t mmini_c(char * in, size_t isize, char * out, size_t osize, void * buffer);
+size_t mmini_d(char * in, size_t isize, char * out, size_t osize, void * buffer);
+size_t mmini_huffman_c(char * in, size_t isize, char * out, size_t osize, void * buffer);
+size_t mmini_huffman_d(char * in, size_t isize, char * out, size_t osize, void * buffer);
+size_t mmini_lzl_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t mmini_lzl_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif// FSBENCH_USE_MMINI
 #ifdef FSBENCH_USE_MURMUR
-void murmur_x86_32(char* in, size_t isize, char* out);
-void murmur_x86_128(char* in, size_t isize, char* out);
-void murmur_x64_128(char* in, size_t isize, char* out);
+void murmur_x86_32(char * in, size_t isize, char * out);
+void murmur_x86_128(char * in, size_t isize, char * out);
+void murmur_x64_128(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_MURMUR
 #ifdef FSBENCH_USE_QUICKLZZIP
-size_t qlzzip_c(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t qlzzip_c(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_QUICKLZZIP
 #ifdef FSBENCH_USE_RLE64
-size_t RLE64_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t RLE64_d(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t RLE32_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t RLE32_d(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t RLE16_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t RLE16_d(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t RLE8_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t RLE8_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t RLE64_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t RLE64_d(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t RLE32_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t RLE32_d(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t RLE16_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t RLE16_d(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t RLE8_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t RLE8_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif// FSBENCH_USE_RLE64
 #ifdef FSBENCH_USE_SANMAYCE_FNV
-void fnv1_jesteress(char* in, size_t isize, char* out);
-void fnv1_mantis(char* in, size_t isize, char* out);
-void fnv1_meiyan(char* in, size_t isize, char* out);
-void fnv1_tesla(char* in, size_t isize, char* out);
-void fnv1_tesla3(char* in, size_t isize, char* out);
-void fnv1_yorikke(char* in, size_t isize, char* out);
-void fnv1_yoshimitsu_triad(char* in, size_t isize, char* out);
-void fnv1_yoshimura(char* in, size_t isize, char* out);
+void fnv1_jesteress(char * in, size_t isize, char * out);
+void fnv1_mantis(char * in, size_t isize, char * out);
+void fnv1_meiyan(char * in, size_t isize, char * out);
+void fnv1_tesla(char * in, size_t isize, char * out);
+void fnv1_tesla3(char * in, size_t isize, char * out);
+void fnv1_yorikke(char * in, size_t isize, char * out);
+void fnv1_yoshimitsu_triad(char * in, size_t isize, char * out);
+void fnv1_yoshimura(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_SANMAYCE_FNV
 #ifdef FSBENCH_USE_SHRINKER
-size_t Shrinker_c(char* in, size_t isize, char* out, size_t osize, void* _);
-size_t Shrinker_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t Shrinker_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t Shrinker_d(char * in, size_t isize, char * out, size_t osize, void * _);
 size_t Shrinker_m(size_t input_size);
 #endif// FSBENCH_USE_SHRINKER
 #ifdef FSBENCH_USE_SIPHASH
-void siphash(char* in, size_t isize, char* out);
+void siphash(char * in, size_t isize, char * out);
 #endif// FSBENCH_USE_SIPHASH
 #ifdef FSBENCH_USE_SNAPPY
-size_t snappy_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t snappy_d(char*in,size_t isize, char* out, size_t osize, void* _);
+size_t snappy_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t snappy_d(char * in,size_t isize, char * out, size_t osize, void * _);
 size_t snappy_m(size_t input_size);
 #endif// FSBENCH_USE_SNAPPY
 #ifdef FSBENCH_USE_SPOOKY
-void spooky(char* in, size_t isize, char* out);
+void spooky(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_SPOOKY
 #ifdef FSBENCH_USE_XXHASH
-void xxhash(char* in, size_t isize, char* out);
-void xxhash_256(char* in, size_t isize, char* out);
+void xxhash(char * in, size_t isize, char * out);
+void xxhash_256(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_XXHASH
 #ifdef FSBENCH_USE_ZFS
-size_t LZJB_c(char*in,size_t isize, char* out, size_t osize, void* _);
-size_t LZJB_d(char*in,size_t isize, char* out, size_t osize, void* _);
-void fletcher2(char* in, size_t isize, char* out);
-void fletcher4(char* in, size_t isize, char* out);
+size_t LZJB_c(char * in,size_t isize, char * out, size_t osize, void * _);
+size_t LZJB_d(char * in,size_t isize, char * out, size_t osize, void * _);
+void fletcher2(char * in, size_t isize, char * out);
+void fletcher4(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_ZFS
 #ifdef FSBENCH_USE_ZLIB
-size_t zlib_c(char* in, size_t isize, char* out, size_t osize, void* mode);
-size_t zlib_d(char* in, size_t isize, char* out, size_t osize, void* _);
+size_t zlib_c(char * in, size_t isize, char * out, size_t osize, void * mode);
+size_t zlib_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif //FSBENCH_USE_ZLIB
 #ifdef FSBENCH_USE_ZOPFLI
-size_t zopfli_c(char* in, size_t isize, char* out, size_t osize, void* mode);
+size_t zopfli_c(char * in, size_t isize, char * out, size_t osize, void * mode);
 #endif //FSBENCH_USE_ZOPFLI
 
 // a pseudocodec that does nothing.
-size_t nop_c(char*in, size_t isize, char* out, size_t osize, void* _);
-size_t nop_d(char*in, size_t isize, char* out, size_t osize, void* _);
+size_t nop_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t nop_d(char * in, size_t isize, char * out, size_t osize, void * _);
 
 #ifdef FSBENCH_USE_BLZ
 
@@ -189,9 +189,9 @@ struct BriefLZ : Codec
 {
 private:
 
-    static size_t compressor(char* in, size_t isize, char* out, size_t osize, void* work);
-    static size_t decompressor(char* in, size_t isize, char* out, size_t osize, void* work);
-    char* workmem;
+    static size_t compressor(char * in, size_t isize, char * out, size_t osize, void * work);
+    static size_t decompressor(char * in, size_t isize, char * out, size_t osize, void * work);
+    char * workmem;
 
     static size_t max_compressed_size(size_t input_size);
 
@@ -203,13 +203,13 @@ public:
     params(0)
     {}
 
-    virtual void init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
+    virtual void init(const string & args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
     virtual void cleanup();
     string help() const;
-    void** eparams();
+    void ** eparams();
 
 protected:
-    void** params;
+    void ** params;
 };
 
 #endif// FSBENCH_USE_BLZ
@@ -225,15 +225,15 @@ private:
     struct DecompressionState
     {
         lzham_decompress_state_ptr decompression_state;
-        lzham_decompress_params* decompression_params;
+        lzham_decompress_params * decompression_params;
     };
 
     static const string default_mode;
     unsigned threads_no;
 
-    const string& default_args(const string& args);
-    static size_t compressor(char* in, size_t _isize, char* out, size_t _osize, void* _data);
-    static size_t decompressor(char* in, size_t _isize, char* out, size_t _osize, void* _data);
+    const string & default_args(const string & args);
+    static size_t compressor(char * in, size_t _isize, char * out, size_t _osize, void * _data);
+    static size_t decompressor(char * in, size_t _isize, char * out, size_t _osize, void * _data);
 public:
 
     LZHAM() :
@@ -241,17 +241,17 @@ public:
     compressor_params(0),
     decompressor_params(0)
     {}
-    virtual void init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
+    virtual void init(const string & args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
     virtual void cleanup();
 
     virtual string help() const;
 
-    void** eparams();
-    void** dparams();
+    void ** eparams();
+    void ** dparams();
 
 protected:
-    void** compressor_params;
-    void** decompressor_params;
+    void ** compressor_params;
+    void ** decompressor_params;
 };
 
 #endif
@@ -293,15 +293,15 @@ private:
         {}
     };
     static map<const string, LzoType*> LZO_TYPES;
-    static const map<const string, LzoType*>& lzo_types();
+    static const map<const string, LzoType*> & lzo_types();
 
-    static const LzoType* get_type(const string& args);
-    static size_t compressor(char*in, size_t isize, char*out, size_t osize, void* work);
-    static size_t decompressor(char*in, size_t isize, char*out, size_t osize, void* work);
-    static string default_args(const string& args);
+    static const LzoType * get_type(const string & args);
+    static size_t compressor(char * in, size_t isize, char * out, size_t osize, void * work);
+    static size_t decompressor(char * in, size_t isize, char * out, size_t osize, void * work);
+    static string default_args(const string & args);
 
-    char** work_ptrs;
-    char * work;
+    char ** work_ptrs;
+    char  * work;
 
     static lzo_compress static_lzo_compressor; // set by init() //FIXME: send it as a parameter instead of using statics
     static lzo_decompress static_lzo_decompressor;// set by init()
@@ -312,11 +312,11 @@ public:
     work_ptrs(0),
     work(0)
     {}
-    virtual void init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
+    virtual void init(const string & args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
     virtual void cleanup();
     string help() const;
-    void** eparams();
-    void** dparams();
+    void ** eparams();
+    void ** dparams();
 
 };
 #endif// FSBENCH_USE_LZO
@@ -331,8 +331,8 @@ struct LZSS_IM : Codec
         LZSSIM coder;
         int mode;
     };
-    static size_t compressor(char* in, size_t isize, char* out, size_t osize, void* p);
-    static size_t decompressor(char* in, size_t isize, char* out, size_t osize, void* _);
+    static size_t compressor(char * in, size_t isize, char * out, size_t osize, void* p);
+    static size_t decompressor(char * in, size_t isize, char * out, size_t osize, void * _);
     unsigned threads_no;
 public:
 
@@ -340,13 +340,13 @@ public:
     Codec("LZSS-IM", _LZSSIM_VERSION, compressor, decompressor),
     params(0)
     {}
-    virtual void init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
+    virtual void init(const string & args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
     virtual void cleanup();
-    void** eparams();
-    void** dparams();
+    void ** eparams();
+    void ** dparams();
 
 protected:
-    void** params;
+    void ** params;
 };
 #endif //FSBENCH_USE_LZSS_IM
 #ifdef FSBENCH_USE_LZV1
@@ -354,8 +354,8 @@ extern "C"
 {
 #include "lzv1.h" // for ush type
 }
-size_t LZV1_c(char* in, size_t isize, char* out, size_t osize, void* memory);
-size_t LZV1_d(char* in, size_t isize, char* out, size_t osize, void* memory);
+size_t LZV1_c(char * in, size_t isize, char * out, size_t osize, void * memory);
+size_t LZV1_d(char * in, size_t isize, char * out, size_t osize, void * memory);
 #endif //FSBENCH_USE_LZV1
 #ifdef FSBENCH_USE_NRV
 extern "C"
@@ -381,38 +381,38 @@ private:
         const string name;
         nrv_compress compressor;
         nrv_decompress decompressor;
-        NrvType(const string& name, nrv_compress compressor, nrv_decompress decompressor) :
+        NrvType(const string & name, nrv_compress compressor, nrv_decompress decompressor) :
         name(name),
         compressor(compressor),
         decompressor(decompressor)
         {}
     };
     static const NrvType nrv_types[];
-    static const NrvType* current_type; //set by init()  //FIXME: send it as a parameter instead of using statics
+    static const NrvType * current_type; //set by init()  //FIXME: send it as a parameter instead of using statics
 
     static const string default_mode;
-    const string& default_args(const string& args);
+    const string & default_args(const string & args);
 
-    static size_t compressor(char* in, size_t isize, char* out, size_t osize, void* mode);
-    static size_t decompressor(char* in, size_t isize, char* out, size_t osize, void* _);
-    static const string full_name(const string& type);
-    const NrvType* get_type(const string& type_name);
+    static size_t compressor(char * in, size_t isize, char * out, size_t osize, void * mode);
+    static size_t decompressor(char * in, size_t isize, char * out, size_t osize, void * _);
+    static const string full_name(const string & type);
+    const NrvType * get_type(const string & type_name);
 
 public:
 
-    Nrv(const string& type) :
+    Nrv(const string & type) :
     Codec(full_name(type), _NRV_VERSION, compressor, decompressor, no_blowup),
     params(0)
     {}
-    virtual void init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
+    virtual void init(const string & args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
     virtual void cleanup();
 
     virtual string help() const;
 
-    void** eparams();
+    void ** eparams();
 
 protected:
-    void** params;
+    void ** params;
 };
 #endif// FSBENCH_USE_NRV
 #ifdef FSBENCH_USE_QUICKLZ
@@ -426,8 +426,8 @@ struct QuickLZ : Codec
 {
 private:
 
-    typedef size_t (*qlz_compressor) (const void *source, char *destination, size_t size, qlz_state_compress *state);
-    typedef size_t (*qlz_decompressor)(const char *source, void *destination, qlz_state_decompress *state);
+    typedef size_t (*qlz_compressor) (const void * source, char * destination, size_t size, qlz_state_compress * state);
+    typedef size_t (*qlz_decompressor)(const char * source, void * destination, qlz_state_decompress * state);
 
     struct QuickLZType
     {
@@ -439,19 +439,19 @@ private:
         {}
     };
     static map<const string, QuickLZType*> QLZ_TYPES;
-    static const map<const string, QuickLZType*>& qlz_types();
+    static const map<const string, QuickLZType*> & qlz_types();
 
-    static const QuickLZType* get_type(const string& args);
-    static size_t compressor(char* in, size_t isize, char* out, size_t osize, void* work);
-    static size_t decompressor(char* in, size_t isize, char* out, size_t osize, void* work);
-    static string default_args(const string& args);
+    static const QuickLZType * get_type(const string & args);
+    static size_t compressor(char * in, size_t isize, char * out, size_t osize, void * work);
+    static size_t decompressor(char * in, size_t isize, char * out, size_t osize, void * work);
+    static string default_args(const string & args);
 
     static qlz_compressor static_qlz_compressor; // set by init()  //FIXME: send it as a parameter instead of using statics
     static qlz_decompressor static_qlz_decompressor;// set by init()
 
 public:
-    qlz_state_compress** qlz_compression_states;
-    qlz_state_decompress** qlz_decompression_states;
+    qlz_state_compress   ** qlz_compression_states;
+    qlz_state_decompress ** qlz_decompression_states;
     unsigned threads_no;
 
     QuickLZ() :
@@ -460,11 +460,11 @@ public:
     qlz_decompression_states(0)
     {}
 
-    virtual void init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
+    virtual void init(const string & args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
     virtual void cleanup();
     string help() const;
-    void** eparams();
-    void** dparams();
+    void ** eparams();
+    void ** dparams();
 };
 #endif //FSBENCH_USE_QUICKLZ
 #ifdef FSBENCH_USE_TOR
@@ -476,9 +476,9 @@ struct Tor : Codec
 private:
 
     static const string default_mode;
-    const string& default_args(const string& args);
-    static size_t compressor(char* in, size_t isize, char* out, size_t osize, void* mode);
-    static size_t decompressor(char* in, size_t isize, char* out, size_t osize, void* _);
+    const string & default_args(const string & args);
+    static size_t compressor(char * in, size_t isize, char * out, size_t osize, void * mode);
+    static size_t decompressor(char * in, size_t isize, char * out, size_t osize, void * _);
 
 public:
 
@@ -486,15 +486,15 @@ public:
     Codec("tornado", _TOR_VERSION, compressor, decompressor),
     params(0)
     {}
-    virtual void init(const string& args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
+    virtual void init(const string & args, unsigned threads_no, size_t isize, bool init_compressor, bool init_decompressor);
     virtual void cleanup();
 
     virtual string help() const;
 
-    void** eparams();
+    void ** eparams();
 
 protected:
-    void** params;
+    void ** params;
 };
 
 #endif// FSBENCH_USE_TOR
@@ -502,8 +502,8 @@ protected:
 struct Yappy : CodecWithIntModes
 {
 private:
-    static size_t compressor(char* in, size_t isize, char* out, size_t osize, void* mode);
-    static size_t decompressor(char* in, size_t isize, char* out, size_t osize, void* _);
+    static size_t compressor(char * in, size_t isize, char * out, size_t osize, void * mode);
+    static size_t decompressor(char * in, size_t isize, char * out, size_t osize, void * _);
 public:
     Yappy();
 };

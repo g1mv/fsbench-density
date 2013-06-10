@@ -22,20 +22,20 @@ class Scheduler
 public:
     struct WorkItem
     {
-        char* in;
-        char* out;
+        char * in;
+        char * out;
         size_t isize;
-        BlockInfo* metadata;
+        BlockInfo * metadata;
     };
     /**
      * 
      * @param wi
      * @return 0 on success, something else on failure
      */
-    int getChunk(WorkItem& wi);
-    Scheduler(char* in,
-              char* out,
-              BlockInfo* metadata,
+    int getChunk(WorkItem & wi);
+    Scheduler(char * in,
+              char * out,
+              BlockInfo * metadata,
               size_t isize,
               size_t block_size,
               size_t iters,
@@ -45,12 +45,12 @@ public:
 private:
     MUTEX lock;
 
-    char* in;
-    char* current_in;
-    char* out;
-    char* current_out;
-    BlockInfo* metadata;
-    BlockInfo* current_metadata;
+    char * in;
+    char * current_in;
+    char * out;
+    char * current_out;
+    BlockInfo * metadata;
+    BlockInfo * current_metadata;
     size_t size;
     size_t size_left;
     size_t block_size;
@@ -64,10 +64,10 @@ private:
     class Lock
     {
     public:
-        Lock(MUTEX& mutex);
+        Lock(MUTEX & mutex);
         ~Lock();
     private:
-        MUTEX& mutex;
+        MUTEX & mutex;
     };
 };
 

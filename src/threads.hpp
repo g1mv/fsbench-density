@@ -20,8 +20,8 @@
 #define MUTEX HANDLE
 
 // It's very simplified
-inline int pthread_create(THREAD_HANDLE *thread, const void *ignored,
-        THREAD_RETURN_TYPE (*start_routine)(void*), void *arg)
+inline int pthread_create(THREAD_HANDLE * thread, const void * ignored,
+        THREAD_RETURN_TYPE (*start_routine)(void*), void * arg)
 {
     uintptr_t handle = _beginthread(start_routine, 0, arg);
     if(handle == 0 || handle == (uintptr_t)-1L)
@@ -32,23 +32,23 @@ inline int pthread_create(THREAD_HANDLE *thread, const void *ignored,
     return 0;
 }
 // It's very simplified
-inline int pthread_join(THREAD_HANDLE thread, void **ignored)
+inline int pthread_join(THREAD_HANDLE thread, void ** ignored)
 {
     return WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0;
 }
-inline void create_mutex(MUTEX* mutex)
+inline void create_mutex(MUTEX * mutex)
 {
     *mutex = CreateMutex(0, 0, 0);
 }
-inline void destroy_mutex(MUTEX *mutex)
+inline void destroy_mutex(MUTEX * mutex)
 {
     CloseHandle(*mutex);
 }
-inline void lock_mutex(MUTEX *mutex)
+inline void lock_mutex(MUTEX * mutex)
 {
     WaitForSingleObject(*mutex, INFINITE);
 }
-inline void unlock_mutex(MUTEX *mutex)
+inline void unlock_mutex(MUTEX * mutex)
 {
     ReleaseMutex(*mutex);
 }
@@ -59,26 +59,26 @@ inline void unlock_mutex(MUTEX *mutex)
 #define THREAD_RETURN_TYPE void*
 #define THREAD_RETURN NULL
 #define MUTEX pthread_mutex_t
-inline void create_mutex(MUTEX *mutex)
+inline void create_mutex(MUTEX * mutex)
 {
     int ret = pthread_mutex_init(mutex, NULL);
     if(ret != 0)
         throw std::runtime_error("Failed to create a mutex");
 }
 
-inline void destroy_mutex(MUTEX *mutex)
+inline void destroy_mutex(MUTEX * mutex)
 {
     int ret = pthread_mutex_destroy(mutex);
     if(ret != 0)
         throw std::runtime_error("Failed to destroy a mutex");
 }
 
-inline void lock_mutex(MUTEX *mutex)
+inline void lock_mutex(MUTEX * mutex)
 {
     pthread_mutex_lock(mutex);
 }
 
-inline void unlock_mutex(MUTEX *mutex)
+inline void unlock_mutex(MUTEX * mutex)
 {
     pthread_mutex_unlock(mutex);
 }

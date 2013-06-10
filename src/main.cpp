@@ -44,12 +44,12 @@ using namespace std;
 // HELPERS
 ///////////////////////////
 
-vector<string> pretty_list_of_codecs()
+static vector<string> pretty_list_of_codecs()
 {
     vector<string> ret;
-    for (list<Codec*>::iterator it = CODECS.begin(); it != CODECS.end(); ++it)
+    for (list<Codec*>::const_iterator it = CODECS.begin(); it != CODECS.end(); ++it)
     {
-        const string& name = (*it)->name;
+        const string & name = (*it)->name;
         if (name.find('/') == string::npos)
             ret.push_back(name);
     }
@@ -57,7 +57,7 @@ vector<string> pretty_list_of_codecs()
     return ret;
 }
 
-void usage()
+static void usage()
 {
     cerr << PROGNAME " " PROGVERSION "\n\n";
     cerr << "usage1: " PROGNAME " help codec_name\n";
@@ -97,7 +97,7 @@ void usage()
 ///////////////////////////
 // MAIN
 ///////////////////////////
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
     // increase priority to the max to reduce variance
     setHighestPriority();
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
     {
         if (!case_insensitive_compare(argv[1], "help"))
         {
-            Codec* c = find_codec(argv[2]);
+            Codec * c = find_codec(argv[2]);
             if (c)
             {
                 cout << c->help();
@@ -249,7 +249,7 @@ int main(int argc, char** argv)
                     params = codec.substr(position + 1);
                     codec = codec.substr(0, position);
                 }
-                Codec* found = find_codec(codec);
+                Codec * found = find_codec(codec);
                 if (found)
                 {
                     codecs.push_back(CodecWithParams(*found, params));
@@ -289,20 +289,17 @@ int main(int argc, char** argv)
 
     try
     {
-        small_iters = test(codecs,
-                           in,
-                           iterations,
-                           small_iters,
-                           bsize,
-                           ssize,
-                           verify,
-                           warmup_iters,
-                           threads,
-                           csv,
-                           job_size);
+        Tester tester(codecs, in, bsize, threads);
+        small_iters = tester.test(iterations,
+                                  small_iters,
+                                  ssize,
+                                  verify,
+                                  warmup_iters,
+                                  csv,
+                                  job_size);
 
     }
-    catch (const Codec::InvalidParams &e)
+    catch (const Codec::InvalidParams & e)
     {
         cerr << "Invalid params!\n";
         cerr << e.what() << '\n';
@@ -313,7 +310,7 @@ int main(int argc, char** argv)
         cerr << "Out of memory\n";
         return 1;
     }
-    catch (const std::exception &e)
+    catch (const std::exception & e)
     {
         cerr << e.what();
         return 1;

@@ -30,8 +30,8 @@ using namespace std;
 // Codec class
 ///////////////////////////
 
-Codec::Codec(const std::string& name,
-             const std::string& version,
+Codec::Codec(const std::string & name,
+             const std::string & version,
              encoder_t encoder,
              decoder_t decoder,
              max_encoded_size_t max_size,
@@ -48,7 +48,7 @@ Codec::Codec(const std::string& name,
         real_max_compressed_size(max_size)
 {
 }
-void Codec::init(const string& args,
+void Codec::init(const string & args,
                  unsigned threads_no,
                  size_t isize,
                  bool init_encoder,
@@ -81,12 +81,12 @@ string Codec::introduction() const
     return oss.str();
 }
 
-Codec::InvalidParams::InvalidParams(const string& message) :
+Codec::InvalidParams::InvalidParams(const string & message) :
         message(message)
 {
 }
 
-const char* Codec::InvalidParams::what() const throw ()
+const char * Codec::InvalidParams::what() const throw ()
 {
     return this->message.c_str();
 }
@@ -98,11 +98,11 @@ size_t Codec::_max_compressed_size(size_t input_size)
     return input_size + input_size / 8 + 32;
 }
 
-void** Codec::eparams()
+void ** Codec::eparams()
 {
     return 0;
 }
-void** Codec::dparams()
+void ** Codec::dparams()
 {
     return 0;
 }
@@ -110,7 +110,7 @@ void** Codec::dparams()
 // MultifunctionCodec
 ///////////////////////////
 
-const CodecArgs& MultifunctionCodec::get_type(const string& args)
+const CodecArgs & MultifunctionCodec::get_type(const string & args)
 {
     for (size_t i = 0; i < len; ++i)
     {
@@ -119,22 +119,22 @@ const CodecArgs& MultifunctionCodec::get_type(const string& args)
     }
     throw InvalidParams(help());
 }
-const string& MultifunctionCodec::default_args(const string& args)
+const string & MultifunctionCodec::default_args(const string & args)
 {
     return args == "" ? default_arg : args;
 }
 
-MultifunctionCodec::MultifunctionCodec(const string& name,
-                                       const string& version,
-                                       const CodecArgs* allowed_args,
+MultifunctionCodec::MultifunctionCodec(const string & name,
+                                       const string & version,
+                                       const CodecArgs * allowed_args,
                                        size_t len,
-                                       const string& default_arg,
+                                       const string & default_arg,
                                        max_encoded_size_t max_size) :
         Codec(name, version, 0, 0, max_size), // encoder and decoder are filled by init()
         allowed_args(allowed_args), len(len), default_arg(default_arg)
 {
 }
-void MultifunctionCodec::init(const string& args,
+void MultifunctionCodec::init(const string & args,
                               unsigned threads_no,
                               size_t isize,
                               bool init_encoder,
@@ -145,7 +145,7 @@ void MultifunctionCodec::init(const string& args,
     UNUSED(init_encoder);
     UNUSED(init_decoder);
     this->args = default_args(args);
-    const CodecArgs& codec_args = get_type(this->args);
+    const CodecArgs & codec_args = get_type(this->args);
 
     this->encoder = codec_args.encoder;
     this->decoder = codec_args.decoder;
@@ -170,18 +170,18 @@ string MultifunctionCodec::help() const
 // CodecWithIntModes
 ///////////////////////////
 
-const string& CodecWithIntModes::default_args(const string& args) const
+const string & CodecWithIntModes::default_args(const string & args) const
 {
     return args == "" ? default_mode : args;
 }
 
-CodecWithIntModes::CodecWithIntModes(const string& name,
-                                     const string& version,
+CodecWithIntModes::CodecWithIntModes(const string & name,
+                                     const string & version,
                                      encoder_t encoder,
                                      decoder_t decoder,
                                      intptr_t min_mode,
                                      intptr_t max_mode,
-                                     const string& default_mode,
+                                     const string & default_mode,
                                      max_encoded_size_t max_size,
                                      transform_type encode_transform_type,
                                      transform_type decode_transform_type,
@@ -200,7 +200,7 @@ CodecWithIntModes::CodecWithIntModes(const string& name,
         params(0)
 {
 }
-void CodecWithIntModes::init(const string& args,
+void CodecWithIntModes::init(const string & args,
                              unsigned threads_no,
                              size_t isize,
                              bool init_encoder,
@@ -221,7 +221,7 @@ void CodecWithIntModes::init(const string& args,
     }
     if (mode < min_mode || mode > max_mode)
         throw InvalidParams(help());
-    this->params = new void*[threads_no];
+    this->params = new void *[threads_no];
     for (unsigned i = 0; i < threads_no; ++i)
     {
         this->params[i] = (void*) mode;
@@ -246,11 +246,11 @@ string CodecWithIntModes::help() const
     return ret;
 }
 
-void** CodecWithIntModes::eparams()
+void ** CodecWithIntModes::eparams()
 {
     return this->params;
 }
-void** CodecWithIntModes::dparams()
+void ** CodecWithIntModes::dparams()
 {
     return eparams();
 }
@@ -259,7 +259,7 @@ void** CodecWithIntModes::dparams()
 // CombinationCodec
 ///////////////////////////
 
-CombinationCodec::CombinationCodec(Codec& encoder, Codec& decoder) :
+CombinationCodec::CombinationCodec(Codec & encoder, Codec & decoder) :
         Codec(encoder.name + "/" + decoder.name,
               encoder.version + "/" + decoder.version,
               encoder.encoder,
@@ -270,7 +270,7 @@ CombinationCodec::CombinationCodec(Codec& encoder, Codec& decoder) :
 {
 }
 
-void CombinationCodec::init(const string& args,
+void CombinationCodec::init(const string & args,
                             unsigned threads_no,
                             size_t isize,
                             bool init_encoder,
@@ -319,11 +319,11 @@ void CombinationCodec::cleanup()
     decoderObject.cleanup();
 }
 
-void** CombinationCodec::eparams()
+void ** CombinationCodec::eparams()
 {
     return encoderObject.eparams();
 }
-void** CombinationCodec::dparams()
+void ** CombinationCodec::dparams()
 {
     return decoderObject.dparams();
 }
@@ -336,7 +336,7 @@ size_t CombinationCodec::max_encoded_size(size_t input_size)
 // PipelineCodec
 ///////////////////////////
 
-PipelineCodec::PipelineCodec(Codec& first_codec, Codec& second_codec) :
+PipelineCodec::PipelineCodec(Codec & first_codec, Codec & second_codec) :
         Codec(first_codec.name + "+" + second_codec.name,
               first_codec.version + "+" + second_codec.version,
               encode,
@@ -351,7 +351,7 @@ PipelineCodec::PipelineCodec(Codec& first_codec, Codec& second_codec) :
 {
 }
 
-void PipelineCodec::init(const string& args,
+void PipelineCodec::init(const string & args,
                          unsigned threads_no,
                          size_t isize,
                          bool init_encoder,
@@ -388,19 +388,19 @@ void PipelineCodec::init(const string& args,
     if (init_encoder)
     {
         this->encoder_params = new EncodeParams[threads_no];
-        this->encoder_params_ptrs = new void*[threads_no];
+        this->encoder_params_ptrs = new void *[threads_no];
     }
     if (init_encoder)
     {
         this->decoder_params = new DecodeParams[threads_no];
-        this->decoder_params_ptrs = new void*[threads_no];
+        this->decoder_params_ptrs = new void *[threads_no];
     }
 
     for (size_t i = 0; i < threads_no; ++i)
     {
         if (init_encoder)
         {
-            void** eparams = first_codec.eparams();
+            void ** eparams = first_codec.eparams();
             this->encoder_params[i].first_codec_params = eparams ? eparams[i] : 0;
             eparams = second_codec.eparams();
             this->encoder_params[i].second_codec_params = eparams ? eparams[i] : 0;
@@ -410,7 +410,7 @@ void PipelineCodec::init(const string& args,
         }
         if (init_decoder)
         {
-            void** dparams = first_codec.dparams();
+            void ** dparams = first_codec.dparams();
             this->decoder_params[i].first_codec_params = dparams ? dparams[i] : 0;
             dparams = second_codec.dparams();
             this->decoder_params[i].second_codec_params = dparams ? dparams[i] : 0;
@@ -430,9 +430,9 @@ size_t PipelineCodec::max_encoded_size(size_t input_size)
 {
     return second_codec.max_encoded_size(first_codec.max_encoded_size(input_size));
 }
-size_t PipelineCodec::encode(char* in, size_t isize, char* out, size_t osize, void* args)
+size_t PipelineCodec::encode(char * in, size_t isize, char * out, size_t osize, void * args)
 {
-    EncodeParams* params = *(EncodeParams**) args;
+    EncodeParams * params = *(EncodeParams**) args;
     size_t first_size = params->first_encoder->encoder(in,
                                                        isize,
                                                        out,
@@ -441,8 +441,8 @@ size_t PipelineCodec::encode(char* in, size_t isize, char* out, size_t osize, vo
     if (first_size == CODING_ERROR)
         return CODING_ERROR;
 
-    char* new_input = 0;
-    char* new_output = 0;
+    char * new_input = 0;
+    char * new_output = 0;
 
     switch (params->first_encoder->encode_transform_type)
     {
@@ -471,9 +471,9 @@ size_t PipelineCodec::encode(char* in, size_t isize, char* out, size_t osize, vo
                                                  // so I have to store it.
     return second_size + sizeof(first_size);
 }
-size_t PipelineCodec::decode(char* in, size_t isize, char* out, size_t osize, void* args)
+size_t PipelineCodec::decode(char * in, size_t isize, char * out, size_t osize, void * args)
 {
-    DecodeParams* params = *(DecodeParams**) args;
+    DecodeParams * params = *(DecodeParams**) args;
     size_t first_osize; /// output size for the second_decoder
     memcpy(&first_osize, in + isize - sizeof(first_osize), sizeof(first_osize));
     size_t ret = params->second_decoder->decoder(in,
@@ -525,11 +525,11 @@ void PipelineCodec::cleanup()
     }
 }
 
-void** PipelineCodec::eparams()
+void ** PipelineCodec::eparams()
 {
     return this->encoder_params_ptrs;
 }
-void** PipelineCodec::dparams()
+void ** PipelineCodec::dparams()
 {
     return this->decoder_params_ptrs;
 }
@@ -544,7 +544,7 @@ Codec::transform_type PipelineCodec::_get_combined_transform_type(Codec::transfo
     else
         return second == moving ? moving : buffered;
 }
-void BufferedCodec::init(const std::string& args,
+void BufferedCodec::init(const std::string & args,
                          unsigned threads_no,
                          size_t isize,
                          bool init_encoder,
@@ -556,8 +556,8 @@ void BufferedCodec::init(const std::string& args,
     if (init_encoder)
     {
         this->threads_no = threads_no;
-        this->buffers = new void*[threads_no];
-        this->params = new void*[threads_no];
+        this->buffers = new void *[threads_no];
+        this->params = new void *[threads_no];
         for (unsigned i = 0; i < threads_no; ++i)
         {
             this->buffers[i] = new char[bufsize + bufalignment - 1];
@@ -579,11 +579,11 @@ void BufferedCodec::cleanup()
         this->params = 0;
     }
 }
-void** BufferedCodec::dparams()
+void ** BufferedCodec::dparams()
 {
     return params;
 }
-void** BufferedCodec::eparams()
+void ** BufferedCodec::eparams()
 {
     return params;
 }

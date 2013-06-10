@@ -9,9 +9,9 @@
 
 using namespace std;
 
-Scheduler::Scheduler(char* in,
-                     char* out,
-                     BlockInfo* metadata,
+Scheduler::Scheduler(char * in,
+                     char * out,
+                     BlockInfo * metadata,
                      size_t isize,
                      size_t block_size,
                      size_t iters,
@@ -36,7 +36,7 @@ Scheduler::~Scheduler()
 {
     destroy_mutex(&lock);
 }
-int Scheduler::getChunk(Scheduler::WorkItem& wi)
+int Scheduler::getChunk(Scheduler::WorkItem & wi)
 {
     // grab a mutex
     Lock l = Lock(lock); // unlocks automatically
@@ -72,7 +72,7 @@ int Scheduler::getChunk(Scheduler::WorkItem& wi)
 
     return 0;
 }
-Scheduler::Lock::Lock(MUTEX& mutex) :
+Scheduler::Lock::Lock(MUTEX & mutex) :
         mutex(mutex)
 {
     lock_mutex(&mutex);
