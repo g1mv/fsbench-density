@@ -537,9 +537,9 @@ void BufferedCodec::init(const std::string &,
                          unsigned threads_no,
                          size_t,
                          bool init_encoder,
-                         bool)
+                         bool init_decoder)
 {
-    if (init_encoder)
+    if (init_encoder || init_decoder)
     {
         this->threads_no = threads_no;
         this->buffers = new void *[threads_no];

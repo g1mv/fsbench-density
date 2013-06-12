@@ -1,6 +1,6 @@
 /**
  * Generic helper functions
- * 
+ *
  * Written by m^2.
  * You can consider the code to be public domain.
  * If your country doesn't recognize author's right to relieve themselves of copyright,
@@ -27,6 +27,38 @@ extern "C"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
 #include <windows.h>
 #endif
+
+#include "common.hpp"
+
+
+/////////////////
+// Timing
+/////////////////
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
+#include <windows.h>
+#define INIT_TIMER(x) if(!QueryPerformanceFrequency(&x)) { cerr<<"QueryPerformance not present"; }
+#define GET_TIME(x) QueryPerformanceCounter(&x);
+#else
+#include <time.h>
+typedef struct timespec LARGE_INTEGER;
+#define INIT_TIMER(x)
+#define GET_TIME(x) if(clock_gettime(CLOCK_REALTIME, &x) == -1){ cerr<<"clock_gettime error"; }
+#endif
+
+static inline uint_least64_t ticks_to_msec(const LARGE_INTEGER & start_ticks,
+                                           const LARGE_INTEGER & end_ticks,
+                                           const LARGE_INTEGER & ticksPerSecond)
+{
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
+    return (end_ticks.QuadPart - start_ticks.QuadPart) / (ticksPerSecond.QuadPart / 1000);
+#else
+    UNUSED(ticksPerSecond);
+    return 1000 * (end_ticks.tv_sec - start_ticks.tv_sec)
+            + (end_ticks.tv_nsec - start_ticks.tv_nsec) / 1000000;
+#endif
+
+}
 
 int case_insensitive_compare(const std::string & s1, const std::string & s2);
 
@@ -88,7 +120,7 @@ static inline size_t round_up(T A, T B)
 {
     // rounds A up to the closest multiply of B
     // note: A has to be in range (-B, INT_MAX-B].
-    assert(A >= std::numeric_limits<T>::max() - B);
+    assert(A <= std::numeric_limits<T>::max() - B);
     assert(!std::numeric_limits<T>::is_signed || A > -B);
     T ret = (A / B) * B; // this rounds towards 0
     if (A > ret) // so we need to round up manually

@@ -48,6 +48,9 @@ using namespace std;
 #ifdef FSBENCH_USE_TINF
 #include "tinf/tinf.hpp"
 #endif//FSBENCH_USE_TINF
+#ifdef FSBENCH_USE_Z3LIB
+#include "z3lib/fsbench_z3lib.hpp"
+#endif//FSBENCH_USE_Z3LIB
 /////////////////////////////////
 // Global variables 
 // and helpers to manipulate them
@@ -260,6 +263,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_TINF
               new Codec("tinf", _TINF_VERSION, 0, FsBenchTinf::inflate, no_blowup),
 #endif
+#ifdef FSBENCH_USE_Z3LIB
+              new BufferedCodec("z3lib", _Z3LIB_VERSION, FsBenchZ3Lib::z3lib_c, FsBenchZ3Lib::z3lib_d, no_blowup, FsBenchZ3Lib::mem_size),
+#endif
 #ifdef FSBENCH_USE_NRV
               new Nrv("b"),
               new Nrv("d"),
@@ -296,6 +302,7 @@ Codec * codecs[] =
               new Checksum<32>("Blake2sp", _BLAKE2_VERSION, fsbench_blake2sp),
 #endif
 #ifdef FSBENCH_USE_CITYHASH
+              new Checksum<    sizeof(uint32_t)>("CityHash32", _CITYHASH_VERSION, CityHash32),
               new Checksum<    sizeof(uint64_t)>("CityHash64", _CITYHASH_VERSION, CityHash64),
               new Checksum<2 * sizeof(uint64_t)>("CityHash128", _CITYHASH_VERSION, CityHash128),
 #endif
@@ -499,6 +506,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(find_codec("zlib/tinf"), ""),
       make_pair(raw_find_codec("Tornado"), ""),
       make_pair(raw_find_codec("Yappy"), ""),
+      make_pair(raw_find_codec("z3lib"), ""),
       make_pair(raw_find_codec("zlib"), ""),
       make_pair(find_codec("zopfli/zlib"), "")
         };
@@ -527,6 +535,7 @@ static const pair<Codec*, const string> all_checksums[] =
           make_pair(raw_find_codec("Blake2bp"), ""),
           make_pair(raw_find_codec("Blake2s"), ""),
           make_pair(raw_find_codec("Blake2sp"), ""),
+          make_pair(raw_find_codec("CityHash32"), ""),
           make_pair(raw_find_codec("CityHash64"), ""),
           make_pair(raw_find_codec("CityHash128"), ""),
           make_pair(raw_find_codec("CrapWow"), ""),

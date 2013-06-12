@@ -6,7 +6,7 @@
 namespace FsBenchTinf
 {
 
-size_t inflate(char*in, size_t isize, char*out, size_t osize, void*_);
+size_t inflate(char * in, size_t isize, char * out, size_t osize, void *);
 
 } //FsBenchTinf
 

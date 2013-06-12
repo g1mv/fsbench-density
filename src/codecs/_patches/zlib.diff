@@ -1,0 +1,4 @@
+1756c1756
+< #if defined(STDC) || defined(Z_HAVE_STDARG_H)
+---
+> #if 0 && (defined(STDC) || defined(Z_HAVE_STDARG_H))

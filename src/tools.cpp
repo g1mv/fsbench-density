@@ -1,6 +1,6 @@
 /**
  * Generic helper functions
- * 
+ *
  * Written by m^2.
  * You can consider the code to be public domain.
  * If your country doesn't recognize author's right to relieve themselves of copyright,
@@ -98,11 +98,12 @@ ConsoleColour::~ConsoleColour()
     SetConsoleTextAttribute(hcon, old_colour);
 #else
     cout << "\033[0m";
+    cout.flush();
 #endif
 }
 /**
  * A checksum used to verify correctness of encoding / decoding process
- * 
+ *
  * Despite the name, it's not a crc.
  */
 uint32_t crc(char * data, size_t size, uint32_t crc)

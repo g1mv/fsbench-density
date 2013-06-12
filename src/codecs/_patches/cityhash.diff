@@ -1,0 +1,4 @@
+30c30
+< #include "config.h"
+---
+> //#include "config.h"

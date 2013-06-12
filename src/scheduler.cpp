@@ -6,6 +6,7 @@
  */
 #include "scheduler.hpp"
 #include <algorithm> 
+#include <iostream> 
 
 using namespace std;
 
@@ -14,8 +15,10 @@ Scheduler::Scheduler(char * in,
                      BlockInfo * metadata,
                      size_t isize,
                      size_t block_size,
-                     size_t iters,
-                     size_t min_work_size) :
+                     size_t min_work_size,
+                     LARGE_INTEGER & start_time_,
+                     LARGE_INTEGER ticks_per_second_,
+                     unsigned iter_time_) :
         in(in),
         current_in(in),
         out(out),
@@ -25,7 +28,10 @@ Scheduler::Scheduler(char * in,
         size(isize),
         size_left(isize),
         block_size(block_size),
-        iters_left(iters)
+        start_time(start_time_),
+        ticks_per_second(ticks_per_second_),
+        iter_time(iter_time_),
+        last_iter(false)
 {
     create_mutex(&lock);
     work_size = (min_work_size / block_size) * block_size;
@@ -41,7 +47,7 @@ int Scheduler::getChunk(Scheduler::WorkItem & wi)
     // grab a mutex
     Lock l = Lock(lock); // unlocks automatically
 
-    if (iters_left == 0)
+    if (last_iter && size_left == 0)
         return -1;
 
     size_t in_chunk_size = min(work_size, size_left);
@@ -56,11 +62,24 @@ int Scheduler::getChunk(Scheduler::WorkItem & wi)
 
     if (in_chunk_size == size_left) // we grabbed the last chunk of this iteration
     {
-        --iters_left;
-        current_in = in;
-        current_out = out;
-        current_metadata = metadata;
-        size_left = size;
+        if(!last_iter)
+        {
+            LARGE_INTEGER current_time;
+            GET_TIME(current_time);
+            uint_least64_t time_spent = ticks_to_msec(this->start_time, current_time, this->ticks_per_second);
+            if(time_spent >= this->iter_time)
+            {
+                last_iter = true;
+            }
+            current_in = in;
+            current_out = out;
+            current_metadata = metadata;
+            size_left = size;
+        }
+        else
+        {
+            size_left = 0;
+        }
     }
     else
     {

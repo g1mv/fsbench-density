@@ -8,6 +8,7 @@
 #define SCHEDULER_HPP_BhjgkfG8
 
 #include "threads.hpp"
+#include "tools.hpp"
 
 struct BlockInfo
 {
@@ -38,8 +39,10 @@ public:
               BlockInfo * metadata,
               size_t isize,
               size_t block_size,
-              size_t iters,
-              size_t min_work_size);
+              size_t min_work_size,
+              LARGE_INTEGER & start_time,
+              LARGE_INTEGER ticks_per_second,
+              unsigned iter_time);
     ~Scheduler();
 
 private:
@@ -54,9 +57,14 @@ private:
     size_t size;
     size_t size_left;
     size_t block_size;
-    size_t iters_left;
+    unsigned iter_time;
 
     size_t work_size;
+    
+    LARGE_INTEGER & start_time;
+    LARGE_INTEGER   ticks_per_second;
+    
+    bool   last_iter;
 
     /**
      * @brief Locks a given mutex when created and unlocks when destroyed.

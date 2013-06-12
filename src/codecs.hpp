@@ -3,6 +3,16 @@
  * You can consider the code to be public domain.
  * If your country doesn't recognize author's right to relieve themselves of copyright,
  * you can use it under the terms of WTFPL version 2.0 or later.
+ *
+ *
+ * To add a codec:
+ * 1. Implement a Codec class for it or - if applicable - functions required by one of abstract ones
+ * 2. Add sources to CMakeFiles.txt
+ * 3. Add codec version to codecs.hpp
+ * 4. Add codec to CODECS array in codecs.cpp
+ * 5. Add codec to all_compressors / all_checksums / all_ciphers in codecs.cpp
+ * 6. Update readme
+ * 7. Update changelog
  */
 #ifndef CODECS_HPP_BhjgkfG8
 #define CODECS_HPP_BhjgkfG8
@@ -14,7 +24,7 @@
 
 // some codecs have rough bounds checking
 // to overcome the problem I allocate some extra data
-#define OVERRUN_PAD 16
+#define OVERRUN_PAD 32
 
 // in    - input buffer
 // isize - input data size
@@ -162,10 +172,10 @@ Codec * find_codec(const std::string & name);
 #define _AR_VERSION         "2013-06-03"
 #define _BCL_VERSION        "1.2.0"
 #define _BLAKE2_VERSION     "20121223"
-#define _BLOSC_VERSION      "1.1.4"
+#define _BLOSC_VERSION      "1.2.3"
 #define _BLZ_VERSION        "1.0.5"
 #define _BZ2_VERSION        "1.0.6"
-#define _CITYHASH_VERSION   "1.0.3"
+#define _CITYHASH_VERSION   "1.1.0"
 #define _CRAPWOW_VERSION    "2012-06-07"
 #define _CRYPTOPP_VERSION   "5.6.1"
 #define _DOBOZ_VERSION      "2011-03-19"
@@ -183,7 +193,7 @@ Codec * find_codec(const std::string & name);
 #define _LZG_VERSION        "1.0.6"
 #define _LZHAM_VERSION      "SVN r96"
 #define _LZMAT_VERSION      "1.1"
-#define _LZO_VERSION        "2.05"
+#define _LZO_VERSION        "2.06"
 #define _LZSSIM_VERSION     "2008-07-31"
 #define _LZV1_VERSION       "0.5"
 #define _LZWC_VERSION       "0.4"
@@ -202,14 +212,15 @@ Codec * find_codec(const std::string & name);
 #define _SHA3_RND1_VERSION  "SHA3 rnd 1 64bit opt"
 #define _SHA3_RND2_VERSION  "SHA3 rnd 2 64bit opt"
 #define _SHRINKER_VERSION   "r6"
-#define _SNAPPY_VERSION     "1.0.5"
-#define _SPOOKY_VERSION     "2012-03-30"
+#define _SNAPPY_VERSION     "1.1.0"
+#define _SPOOKY_VERSION     "V2 2012-08-05"
 #define _TINF_VERSION       "1.00"
 #define _TOR_VERSION        "0.5"
 #define _XXHASH_VERSION     "r29"
 #define _XXHASH256_VERSION  "1"
 #define _YAPPY_VERSION      "v2"
 #define _ZFS_VERSION        "2010"
-#define _ZLIB_VERSION       "1.2.7"
-#define _ZOPFLI_VERSION     "2013-03-01"
+#define _Z3LIB_VERSION      "1.3"
+#define _ZLIB_VERSION       "1.2.8"
+#define _ZOPFLI_VERSION     "1.0.0"
 #endif // CODECS_HPP_BhjgkfG8

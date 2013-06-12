@@ -1,6 +1,9 @@
 /**
  * A portable threading interface
- * 
+ * It's based on pthreads, but very simplified,
+ * there are only a few fuctions and they don't support
+ * all the features of the original
+ *
  * Written by m^2.
  * You can consider the code to be public domain.
  * If your country doesn't recognize author's right to relieve themselves of copyright,
@@ -19,7 +22,6 @@
 #define THREAD_RETURN
 #define MUTEX HANDLE
 
-// It's very simplified
 inline int pthread_create(THREAD_HANDLE * thread, const void * ignored,
         THREAD_RETURN_TYPE (*start_routine)(void*), void * arg)
 {
@@ -31,7 +33,6 @@ inline int pthread_create(THREAD_HANDLE * thread, const void * ignored,
     *thread = (HANDLE)handle;
     return 0;
 }
-// It's very simplified
 inline int pthread_join(THREAD_HANDLE thread, void ** ignored)
 {
     return WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0;

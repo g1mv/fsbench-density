@@ -21,7 +21,6 @@ add:
 * reintroduce LZ4bz
 * http://bench.cr.yp.to/supercop.html (!)
 
-csv output: header and footer are in colour
 number of small iters calculated individually for each codec
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4

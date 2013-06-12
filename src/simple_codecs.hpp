@@ -1,6 +1,6 @@
 /**
  * Declarations of Codecs that are fairly simple to handle
- * 
+ *
  * Written by m^2.
  * You can consider the code to be public domain.
  * If your country doesn't recognize author's right to relieve themselves of copyright,
@@ -41,6 +41,7 @@ size_t bz2_c(char * in, size_t isize, char * out, size_t osize, void * mode);
 size_t bz2_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_BZ2
 #ifdef FSBENCH_USE_CITYHASH
+void CityHash32(char * in, size_t isize, char * out);
 void CityHash64(char * in, size_t isize, char * out);
 void CityHash128(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_CITYHASH

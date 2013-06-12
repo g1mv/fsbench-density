@@ -1,6 +1,6 @@
 /**
  * Implementations of Codecs that are fairly simple to handle
- * 
+ *
  * Written by m^2.
  * You can consider the code to be public domain.
  * If your country doesn't recognize author's right to relieve themselves of copyright,
@@ -154,6 +154,10 @@ size_t bz2_d(char * in, size_t isize, char * out, size_t osize, void *)
 #endif//FSBENCH_USE_BZ2
 #ifdef FSBENCH_USE_CITYHASH
 #include "CityHash/city.h"
+void CityHash32(char * in, size_t isize, char * out)
+{
+    *(uint64_t*) out = CityHash32((const char*)in, isize);
+}
 void CityHash64(char * in, size_t isize, char * out)
 {
     *(uint64_t*) out = CityHash64((const char*)in, isize);
@@ -623,7 +627,7 @@ size_t mmini_huffman_d(char * in, size_t isize, char * out, size_t osize, void *
     size_t ret = mmini_huffman_decompress((const unsigned char*)in, isize, (unsigned char*)out, osize, *(void**)buffer);
     return ret ? ret : CODING_ERROR;
 }
-#endif//FSBENCH_USE_MURMUR
+#endif//FSBENCH_USE_MMINI
 #ifdef FSBENCH_USE_MURMUR
 #include "MurmurHash3.h"
 void murmur_x86_32(char * in, size_t isize, char * out)
@@ -806,7 +810,7 @@ size_t snappy_m(size_t input_size)
 
 #endif// FSBENCH_USE_SNAPPY
 #ifdef FSBENCH_USE_SPOOKY
-#include "spooky.h"
+#include "SpookyV2.h"
 void spooky(char * in, size_t isize, char * out)
 {
     uint64_t d1=0, d2=0;
@@ -918,15 +922,15 @@ extern "C"
 }
 size_t zopfli_c(char * in, size_t isize, char * out, size_t osize, void * mode)
 {
-    Options options;
-    InitOptions(&options);
+    ZopfliOptions options;
+    ZopfliInitOptions(&options);
     options.verbose = 0;
     options.numiterations = *(intptr_t*)mode;
 
     unsigned char bit_pointer = 0;
     unsigned char * outbuf = 0;
     size_t out_size = 0;
-    Deflate(&options,
+    ZopfliDeflate(&options,
             2, // best compression
             1,// final block
             (const unsigned char*)in,

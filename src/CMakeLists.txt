@@ -4,58 +4,60 @@
 
 # Codecs
 # You can enable or disable compilation of individual codecs here
-set(USE_7Z                1)
+set(USE_7Z                0)
 set(USE_AR                0) # inefficient
 set(USE_BCL               0) # inefficient
 set(USE_BLAKE2            0) # doesn't compile with MSVC10. Requires SSE2, so you need to enable it below too.
 set(USE_BLOSC             0) # inefficient
 set(USE_BLZ               0) # inefficient
 set(USE_BZ2               0) # there are barely any competitors for it
-set(USE_CITYHASH          1)
+set(USE_CITYHASH          0)
 set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
 set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
 set(USE_DOBOZ             0) # inefficient
-set(USE_ECRYPT            1)
-set(USE_FASTCRYPTO        1)
+set(USE_ECRYPT            0)
+set(USE_FASTCRYPTO        0)
 set(USE_FASTLZ            0) # inefficient
 set(USE_GIPFELI           0) # rarely works...
 set(USE_HALIBUT           0) # inefficient
 set(USE_LODEPNG           0) # inefficient
 set(USE_LZ4               1)
-set(USE_LZF               1)
+set(USE_LZF               0)
 set(USE_LZFX              0) # inefficient
 set(USE_LZG               0) # inefficient
 set(USE_LZHAM             0) # known to cause problems on some platforms
-set(USE_LZMAT             1)
-set(USE_LZO               1)
+set(USE_LZMAT             0)
+set(USE_LZO               0)
 set(USE_LZSS_IM           0) # inefficient
 set(USE_LZV1              0) # inefficient
 set(USE_LZWC              0) # inefficient
 set(USE_LZX_COMPRESS      0) # inefficient, no decompressor
+set(USE_MINIHUFF          0)
+set(USE_MINIZ             0)
 set(USE_MMINI             0) # doesn't compile with MSVC10
-set(USE_MINIZ             1)
-set(USE_MURMUR            1)
+set(USE_MURMUR            0)
 set(USE_NRV               0) # inefficient
-set(USE_QUICKLZ           1)
+set(USE_QUICKLZ           0)
 set(USE_QUICKLZZIP        0) # quite good, but single-threaded. I may fix it one day.
-set(USE_RLE64             1)
-set(USE_SANMAYCE_FNV      1)
+set(USE_RLE64             0)
+set(USE_SANMAYCE_FNV      0)
 set(USE_SCZ               0) # single threaded and far too inefficient to be worth fixing...
 set(USE_SHA3_RND1         0) # didn't make it to the final...
 set(USE_SHA3_RND2         0) # didn't make it to the final...
-set(USE_SHA3_RND3         1)
+set(USE_SHA3_RND3         0)
 set(USE_SHA3_RND3_GROESTL 0) # doesn't compile with MSVC10
 set(USE_SHRINKER          0) # doesn't work on some platforms
-set(USE_SIPHASH           1)
-set(USE_SNAPPY            1)
-set(USE_SPOOKY            1)
+set(USE_SIPHASH           0)
+set(USE_SNAPPY            0)
+set(USE_SPOOKY            0)
 set(USE_TINF              0) # inefficient
 set(USE_TOR               0) # doesn't compile on FreeBSD, Debian, Timesys Linux
-set(USE_XXHASH            1)
-set(USE_YAPPY             1)
+set(USE_XXHASH            0)
+set(USE_YAPPY             0)
+set(USE_Z3LIB             0) # Nothing great
 set(USE_ZFS               0) # Nothing great
-set(USE_ZLIB              1)
-set(USE_ZOPFLI            1)
+set(USE_ZLIB              0)
+set(USE_ZOPFLI            0)
 
 # This script can feed certain compilers with additional optimisation flags aside from the usual -O2 or so. Other compilers use the defaults.
 # If you don't want the extra flags, set the variable below to 0
@@ -136,9 +138,9 @@ IF(OPTIMIZE_COMPILER_FLAGS)
     #gcc optimization
     set(GCC_FLAGS "${GCC_FLAGS} -fomit-frame-pointer -ffast-math -march=native -mtune=generic")
     set(GCC_LINKFLAGS "${GCC_LINKFLAGS} -s")
-    
+
     set(GXX_FLAGS "${GXX_FLAGS} ${GCC_FLAGS}")
-    
+
     #msvc optimization
     set(MSVC_FLAGS "${MSVC_FLAGS} /GF /GL /Gs /Gy /fp:fast /Ot")
     set(MSVC_LINK_FLAGS "${MSVC_LINK_FLAGS} /LTCG")
@@ -169,7 +171,7 @@ IF(USE_7Z)
         codecs/7z/CPP/7zip/Compress/DeflateDecoder.cpp
         codecs/7z/CPP/7zip/Compress/DeflateEncoder.cpp
         codecs/7z/CPP/7zip/Compress/LzOutWindow.cpp
-        
+
         # I didn't make the 2 below work
         #codecs/7z/CPP/7zip/Compress/Lzx86Converter.cpp
         #codecs/7z/CPP/7zip/Compress/LzxDecoder.cpp
@@ -494,16 +496,15 @@ IF(USE_SNAPPY)
     add_definitions(-DFSBENCH_USE_SNAPPY)
 ENDIF(USE_SNAPPY)
 IF(USE_SPOOKY)
-    set(OTHER_SRC ${OTHER_SRC} codecs/spooky.cpp)
+    set(OTHER_SRC ${OTHER_SRC} codecs/SpookyV2.cpp)
     add_definitions(-DFSBENCH_USE_SPOOKY)
 ENDIF(USE_SPOOKY)
 IF(USE_TINF)
-    include_directories (${FSBENCH_SOURCE_DIR}/codecs/tinf/src) 
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/tinf/src)
     set(OTHER_SRC ${OTHER_SRC} codecs/tinf/tinf.cpp codecs/tinf/src/tinflate.c)
     add_definitions(-DFSBENCH_USE_TINF)
 ENDIF(USE_TINF)
 IF(USE_TOR)
-
     IF(WIN32)
         add_definitions( -DFREEARC_WIN)
     ENDIF(WIN32)
@@ -526,6 +527,11 @@ IF(USE_ZFS)
     set(OTHER_SRC ${OTHER_SRC} codecs/zfs/zfs_fletcher.c codecs/zfs/zfs_lzjb2010.c)
     add_definitions(-DFSBENCH_USE_ZFS)
 ENDIF(USE_ZFS)
+IF(USE_Z3LIB)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/z3lib)
+    set(OTHER_SRC ${OTHER_SRC} codecs/z3lib/fsbench_z3lib.cpp codecs/z3lib/z3blib.c codecs/z3lib/z3dlib.c)
+    add_definitions(-DFSBENCH_USE_Z3LIB)
+ENDIF(USE_Z3LIB)
 
 
 set(SRC ${MAIN_SRC} ${7z_SRC} ${BCL_SRC} ${BZ2_SRC} ${CRYPTOPP_SRC} ${ECRYPT_SRC} ${LZHAM_SRC} ${LZO_SRC} ${NRV_SRC} ${ZLIB_SRC} ${ZOPFLI_SRC} ${OTHER_SRC})
@@ -562,7 +568,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXE_LINKER_FLAGS}")
 
 add_executable (fsbench ${SRC})
 IF (UNIX)
-    target_link_libraries (fsbench optimized -lrt -lpthread)
+    target_link_libraries (fsbench -lrt -lpthread)
 ENDIF(UNIX)
 
 

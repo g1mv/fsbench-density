@@ -1,4 +1,4 @@
 First, open CMakeLists.txt and check if you want to edit some options.
 
-Then, regular Cmake.
-If you're new to Cmake, read http://www.cmake.org/cmake/help/runningcmake.html
+Then, regular CMake.
+If you're new to CMake, read http://www.cmake.org/cmake/help/runningcmake.html

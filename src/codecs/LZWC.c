@@ -35,7 +35,7 @@ struct LZWNODE {
 };
 typedef struct LZWNODE LZWNODE;
 typedef struct LZWNODE* PLZWNODE;
-__inline PLZWNODE lzwnode_init(PLZWNODE nparent, char nval, unsigned short nnum) {
+static __inline PLZWNODE lzwnode_init(PLZWNODE nparent, char nval, unsigned short nnum) {
 	int i;
 	PLZWNODE ln = (PLZWNODE) malloc(sizeof(LZWNODE));
 	if(!ln) { return NULL; }
@@ -94,8 +94,8 @@ PLZWBASE lzwbase_init(int full) {
 
 size_t lzwc_compress(const unsigned char* input, size_t input_size, unsigned char* output, size_t output_size) {
 	//Initialize LZW
-    const unsigned char* input_end = input + input_size;
-    const unsigned char* output_end = output + output_size;
+	const unsigned char* input_end = input + input_size;
+	const unsigned char* output_end = output + output_size;
 	int c;
 	long long ib=0,ob=0;
 	PLZWBASE lzw = lzwbase_init(1);
@@ -111,8 +111,8 @@ size_t lzwc_compress(const unsigned char* input, size_t input_size, unsigned cha
 			}
 			//Write code
 			if(output_end - output < 2) { lzwbase_free(lzw); return 0; }
-            *output++ = (lzw->node->num >> 8);
-            *output++ = lzw->node->num;
+			*output++ = (lzw->node->num >> 8);
+			*output++ = lzw->node->num;
 			ob += 2;
 			//Reset
 			lzw->node = lzw->tree->subnodes[c];
@@ -126,17 +126,17 @@ size_t lzwc_compress(const unsigned char* input, size_t input_size, unsigned cha
 #endif
 	}
 	//Flush data
-    if(output_end - output < 2) { lzwbase_free(lzw); return 0; }
-    *output++ = lzw->node->num >> 8;
+	if(output_end - output < 2) { lzwbase_free(lzw); return 0; }
+	*output++ = lzw->node->num >> 8;
 	ob += 2;
 	//Return
 	lzwbase_free(lzw);
-	return 1;
+	return ob;
 }
 size_t lzwc_decompress(const unsigned char* input, size_t input_size, unsigned char* output, size_t output_size) {
 	//Initialize LZW
-    const unsigned char* input_end = input + input_size;
-    const unsigned char* output_end = output + output_size;
+	const unsigned char* input_end = input + input_size;
+	const unsigned char* output_end = output + output_size;
 	int c,d,i,p=0;
 	long long ib=0,ob=0;
 	LZWNODE* last = NULL;
@@ -145,8 +145,8 @@ size_t lzwc_decompress(const unsigned char* input, size_t input_size, unsigned c
 	if(!lzw) { return 0; }
 	//Compress
 	while(input < input_end - 1) {
-        c = *input++;
-        d = *input++;
+		c = *input++;
+		d = *input++;
 		d |= c << 8;
 		d &= 65535;
 		//Find chain

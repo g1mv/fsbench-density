@@ -14,8 +14,10 @@
  General Public License for more details at
  Visit <http://www.gnu.org/copyleft/gpl.html>.
 
- Modified by m^2.
- You can consider the mods to be public domain if you care to separate them.
+ Written by Przemyslaw Skibinski, heavily modified by m^2.
+ Parsing command line is the only part that bears any resemblence to the original,
+ therefore if it's copyrightable, the license above applies to it.
+ As for the rest, it's public domain.
  If your country doesn't recognize author's right to relieve themselves of copyright,
  you can use it under the terms of WTFPL version 2.0 or later.
  */
@@ -75,7 +77,7 @@ static void usage()
     cerr << "  -iX: number of iterations (default = " << DEFAULT_ITERATIONS << ")\n";
     cerr << "  -jX: job size (default = determined automatically)\n";
     cerr << "  -mX: minimal savings, i.e. disk sector size(default = " << DEFAULT_SSIZE << ")\n";
-    cerr << "  -sX: number of small iterations (default: determined automatically)\n";
+    cerr << "  -sX: minimum time taken by a single iteration (default: " << DEFAULT_ITER_TIME << ")\n";
     cerr << "  -tX: number of threads to use(default = " << DEFAULT_THREADS_NO << ")\n";
     cerr << "  -v: verify that decoding went fine\n";
     cerr << "  -wX: warmup iterations(default = " << DEFAULT_WARMUP_ITERS << ")\n";
@@ -109,7 +111,7 @@ int main(int argc, char ** argv)
     int threads = DEFAULT_THREADS_NO;
     int warmup_iters = DEFAULT_WARMUP_ITERS;
     bool csv = false; // should the output be written as csv or human readably?
-    unsigned small_iters = 0;
+    unsigned iter_time = DEFAULT_ITER_TIME;
     size_t job_size = 262144; // when compressing small blocks, each work item will contain multiple of them, so the size is no smaller than this
 
     list<CodecWithParams> codecs;
@@ -177,8 +179,8 @@ int main(int argc, char ** argv)
                 }
             break;
             case 's':
-                small_iters = atoi(argv[1] + 2);
-                if (small_iters <= 0)
+                iter_time = atoi(argv[1] + 2);
+                if (iter_time <= 0)
                 {
                     cerr << "number of small iterations must be > 0.\n";
                     return 1;
@@ -289,14 +291,14 @@ int main(int argc, char ** argv)
 
     try
     {
-        Tester tester(codecs, in, bsize, threads);
-        small_iters = tester.test(iterations,
-                                  small_iters,
-                                  ssize,
-                                  verify,
-                                  warmup_iters,
-                                  csv,
-                                  job_size);
+        Tester tester(codecs, &in, bsize, threads);
+        tester.test(iterations,
+                    iter_time,
+                    ssize,
+                    verify,
+                    warmup_iters,
+                    csv,
+                    job_size);
 
     }
     catch (const Codec::InvalidParams & e)
@@ -317,11 +319,11 @@ int main(int argc, char ** argv)
     }
     if (csv)
     {
-        cout << "Iterations" << iterations << ',' << small_iters << "\n";
+        cout << "Iterations" << iterations << "\n";
     }
     else
     {
-        cout << "done... (" << iterations << 'x' << small_iters << " iteration(s)).\n";
+        cout << "done... (" << iterations << " iteration(s)).\n";
     }
     return 0;
 }
