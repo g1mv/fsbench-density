@@ -224,6 +224,7 @@ int main(int argc, char ** argv)
                 codecs.insert(codecs.end(), ALL_COMPRESSORS.begin(), ALL_COMPRESSORS.end());
                 codecs.insert(codecs.end(), ALL_CHECKSUMS.begin(), ALL_CHECKSUMS.end());
                 codecs.insert(codecs.end(), ALL_CIPHERS.begin(), ALL_CIPHERS.end());
+                codecs.insert(codecs.end(), ALL_OTHERS.begin(), ALL_OTHERS.end());
             }
             else if (case_insensitive_compare(argv[1], "default") == 0)
             {
@@ -244,6 +245,10 @@ int main(int argc, char ** argv)
             else if (case_insensitive_compare(argv[1], "ciphers") == 0)
             {
                 codecs.insert(codecs.end(), ALL_CIPHERS.begin(), ALL_CIPHERS.end());
+            }
+            else if (case_insensitive_compare(argv[1], "others") == 0)
+            {
+                codecs.insert(codecs.end(), ALL_OTHERS.begin(), ALL_OTHERS.end());
             }
             else
             {

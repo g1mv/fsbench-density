@@ -430,7 +430,10 @@ Codec * codecs[] =
               new FsBenchECrypt::Sosemanuk(),
               new FsBenchECrypt::Trivium(),
 #endif
-              new Codec("nop", "0", nop_c, nop_d, no_blowup) };
+              new Codec("nop",     "0", nop_c,   nop_d,   no_blowup),
+              new Codec("bswap16", "0", bswap16, bswap16, no_blowup),
+              new Codec("bswap32", "0", bswap32, bswap32, no_blowup),
+              new Codec("bswap64", "0", bswap64, bswap64, no_blowup) };
 
 list<Codec*> CODECS = list<Codec*>(codecs, codecs + sizeof(codecs) / sizeof(Codec*));
 
@@ -612,3 +615,12 @@ static const pair<Codec*, const string> all_checksums[] =
           make_pair(raw_find_codec("fletcher4"), "")
         };
 MKLIST(ALL_CHECKSUMS, all_checksums);
+
+
+static const pair<Codec*, const string> all_others[] =
+    { make_pair(raw_find_codec("bswap16"), ""),
+      make_pair(raw_find_codec("bswap32"), ""),
+      make_pair(raw_find_codec("bswap64"), ""),
+      make_pair(raw_find_codec("nop"), "")
+        };
+MKLIST(ALL_OTHERS, all_others);

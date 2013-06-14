@@ -1,3 +1,6 @@
+0.14.1
+[+] added byte-swapping transforms (bswap16, bswap32, bswap64)
+
 0.14
 [+] added z3lib 1.3
 [+] added CityHash32

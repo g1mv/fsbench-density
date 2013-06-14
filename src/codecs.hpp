@@ -163,6 +163,7 @@ extern std::list<CodecWithParams> FAST_COMPRESSORS;
 extern std::list<CodecWithParams> ALL_COMPRESSORS;
 extern std::list<CodecWithParams> ALL_CHECKSUMS;
 extern std::list<CodecWithParams> ALL_CIPHERS;
+extern std::list<CodecWithParams> ALL_OTHERS;
 
 Codec * find_codec(const std::string & name);
 

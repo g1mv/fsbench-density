@@ -1609,3 +1609,46 @@ CodecWithIntModes("Yappy", _YAPPY_VERSION, compressor, decompressor, 1, 256, "10
     YappyFillTables();
 }
 #endif// FSBENCH_USE_YAPPY
+
+static inline uint16_t _bswap_16(uint16_t x) {
+  return (x>>8) | (x<<8);
+}
+
+static inline uint32_t _bswap_32(uint32_t x) {
+  return (_bswap_16(x&0xffff)<<16) | (_bswap_16(x>>16));
+}
+
+static inline uint64_t _bswap_64(uint64_t x) {
+  return (((uint64_t)_bswap_32(x&0xffffffffull))<<32) | (_bswap_32(x>>32));
+}
+
+size_t bswap16(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    char * end = in + isize - sizeof(uint16_t);
+    while (in < end)
+    {
+        *in = _bswap_16(*in);
+        in += sizeof(uint16_t);
+    }
+    return isize;
+}
+size_t bswap32(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    char * end = in + isize - sizeof(uint32_t);
+    while (in < end)
+    {
+        *in =  _bswap_32(*in);
+        in += sizeof(uint32_t);
+    }
+    return isize;
+}
+size_t bswap64(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    char * end = in + isize - sizeof(uint64_t);
+    while (in < end)
+    {
+        *in = _bswap_64(*in);
+        in += sizeof(uint64_t);
+    }
+    return isize;
+}

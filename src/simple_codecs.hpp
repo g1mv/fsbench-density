@@ -510,3 +510,7 @@ public:
     Yappy();
 };
 #endif// FSBENCH_USE_YAPPY
+
+size_t bswap16(char * in, size_t isize, char * out, size_t osize, void *);
+size_t bswap32(char * in, size_t isize, char * out, size_t osize, void *);
+size_t bswap64(char * in, size_t isize, char * out, size_t osize, void *);
