@@ -229,8 +229,9 @@ Codec * codecs[] =
               new Codec("Halibut-deflate", _HALIBUT_VERSION, halibut_c, halibut_d, no_blowup),
 #endif
 #ifdef FSBENCH_USE_LZ4
-              new Codec("LZ4", _LZ4_VERSION, LZ4_c, LZ4_d, no_blowup),
-              new Codec("LZ4hc", _LZ4_VERSION, LZ4hc_c, LZ4_d, no_blowup),
+              new Codec("LZ4", _LZ4_VERSION, LZ4_c, LZ4_d_fast, no_blowup),
+              new Codec("LZ4hc", _LZ4_VERSION, LZ4hc_c, LZ4_d_fast, no_blowup),
+              new Codec("LZ4safe", _LZ4_VERSION, 0, LZ4_d_safe, no_blowup),
 #endif
 #ifdef FSBENCH_USE_LZFX
               new Codec("LZFX", _LZFX_VERSION, LZFX_c, LZFX_d),
@@ -326,6 +327,8 @@ Codec * codecs[] =
 #endif
 #ifdef FSBENCH_USE_MURMUR
               new Checksum< sizeof(uint32_t)>("murmur3_x86_32", _MURMUR_VERSION, murmur_x86_32),
+              new Checksum<128/CHAR_BIT>("murmur3_x86_128", _MURMUR_VERSION, murmur_x86_128),
+              new Checksum<128/CHAR_BIT>("murmur3_x64_128", _MURMUR_VERSION, murmur_x64_128),
 #endif
 #ifdef FSBENCH_USE_SIPHASH
               new Checksum<8>("SipHash24", _SIPHASH_VERSION, siphash),
@@ -341,6 +344,9 @@ Codec * codecs[] =
               new Checksum<sizeof(uint64_t)>("FNV1a-Tesla3", _SANMAYCE_VERSION, fnv1_tesla3),
               new Checksum<sizeof(uint32_t)>("FNV1a-Yorikke", _SANMAYCE_VERSION, fnv1_yorikke),
               new Checksum<sizeof(uint32_t)>("FNV1a-YoshimitsuTRIAD", _SANMAYCE_VERSION, fnv1_yoshimitsu_triad),
+#   ifdef FSBENCH_SSE2
+              new Checksum<sizeof(uint32_t)>("FNV1a-YoshimitsuTRIADiiXMM", _SANMAYCE_VERSION, fnv1_yoshimitsu_triad_iixmm),
+#   endif
               new Checksum<sizeof(uint64_t)>("FNV1a-Yoshimura", _SANMAYCE_VERSION, fnv1_yoshimura),
 #endif
 #if defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3) || defined(FSBENCH_USE_SHA3_RND3_GROESTL)
@@ -466,7 +472,6 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("7z-deflate64"), ""),
       make_pair(raw_find_codec("ar"), ""),
       make_pair(raw_find_codec("bcl-huffman"), ""),
-      make_pair(raw_find_codec("bcl-lz"), ""),
       make_pair(raw_find_codec("bcl-lzfast"), ""),
       make_pair(raw_find_codec("bcl-rle"), ""),
       make_pair(raw_find_codec("blosc"), ""),
@@ -552,15 +557,17 @@ static const pair<Codec*, const string> all_checksums[] =
           make_pair(raw_find_codec("vmac"), ""),
           make_pair(raw_find_codec("SipHash24"), ""),
           make_pair(raw_find_codec("murmur3_x86_32"), ""),
+          make_pair(raw_find_codec("murmur3_x86_128"), ""),
+          make_pair(raw_find_codec("murmur3_x64_128"), ""),
           make_pair(raw_find_codec("SpookyHash"), ""),
           make_pair(raw_find_codec("FNV1a-Jesteress"), ""),
-          make_pair(raw_find_codec("FNV1a-Jesteress"), ""),
           make_pair(raw_find_codec("FNV1a-Mantis"), ""),
-          make_pair(raw_find_codec("FNV1a-Meiyian"), ""),
+          make_pair(raw_find_codec("FNV1a-Meiyan"), ""),
           make_pair(raw_find_codec("FNV1a-Tesla"), ""),
           make_pair(raw_find_codec("FNV1a-Tesla3"), ""),
           make_pair(raw_find_codec("FNV1a-Yorikke"), ""),
           make_pair(raw_find_codec("FNV1a-YoshimitsuTRIAD"), ""),
+          make_pair(raw_find_codec("FNV1a-YoshimitsuTRIADiiXMM"), ""),
           make_pair(raw_find_codec("FNV1a-Yoshimura"), ""),
           make_pair(raw_find_codec("Edon-R224"), ""),
           make_pair(raw_find_codec("Edon-R256"), ""),

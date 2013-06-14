@@ -11,16 +11,8 @@
 #define ABSTRACTCODECS_HPP_B9fgkfG8
 
 #include "codecs.hpp"
-#include "common.hpp"
+#include "misc.hpp"
 
-#if __cplusplus >= 201103L // C++ 2011
-#include <cstdint>
-#else
-extern "C"
-{
-#include <stdint.h>
-}
-#endif
 #include <cstring>
 #include <string>
 
@@ -151,7 +143,7 @@ public:
  * PipelineCodec
  *
  * Takes 2 codecs and runs them one after another
- * 
+ *
  * @TODO: major rework. There's no sensible handling of skippable / unskippable codecs
  *        Right now, skipping a codec is done by benchmark.cpp::encode().
  *        There should be a codec subclass, SkippableCodec that handles it.
@@ -270,8 +262,12 @@ public:
         checksum_t checksummer = *(checksum_t*) args;
         // there checksum of the original data is supposed to be stored right after the data
         size_t data_size = isize - digest_size;
-        char digest[digest_size];
-        checksummer(in, data_size, digest);
+        const size_t tmp_digest_size1 = digest_size / sizeof(uintmax_t);
+        const size_t tmp_digest_size =
+                tmp_digest_size1 * sizeof(uintmax_t) == digest_size ? tmp_digest_size1 :
+                                                                      tmp_digest_size1 + 1;
+        uintmax_t digest[tmp_digest_size];
+        checksummer(in, data_size, (char*)digest);
         if (memcmp(in + data_size, digest, digest_size) != 0)
         {
             return CODING_ERROR;
@@ -280,13 +276,13 @@ public:
     }
     /**
      * Initialises a checksum codec
-     * 
+     *
      * @param args
      * @param threads_no
      * @param isize
      * @param init_encoder
      * @param init_decoder
-     * 
+     *
      * @todo Do other codecs handle allocation correctly when called first with init_encoder and then init_decoder
      *       instead of just once with both set to true?
      * @todo docs

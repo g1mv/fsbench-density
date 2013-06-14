@@ -1,6 +1,6 @@
 #include "7z.hpp"
 #include "codecs.hpp"
-#include "common.hpp"
+#include "misc.hpp"
 
 #include "CPP/7zip/IStream.h"
 #include "CPP/7zip/Compress/DeflateDecoder.h"

@@ -76,9 +76,10 @@ size_t lodepng_c(char * in, size_t isize, char * out, size_t osize, void * mode)
 size_t lodepng_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LODEPNG
 #ifdef FSBENCH_USE_LZ4
-size_t LZ4_c (char * in, size_t isize, char * out, size_t osize, void * _);
-size_t LZ4hc_c (char * in, size_t isize, char * out, size_t osize, void * _);
-size_t LZ4_d (char * in, size_t isize, char * out, size_t osize, void * _);
+size_t LZ4_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t LZ4hc_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t LZ4_d_fast(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t LZ4_d_safe(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LZ4
 #ifdef FSBENCH_USE_LZF
 size_t LZF_ultra_c(char * in,size_t isize, char * out, size_t osize, void * _);

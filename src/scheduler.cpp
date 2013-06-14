@@ -5,6 +5,7 @@
  * you can use it under the terms of WTFPL version 2.0 or later.
  */
 #include "scheduler.hpp"
+
 #include <algorithm> 
 #include <iostream> 
 
@@ -47,8 +48,27 @@ int Scheduler::getChunk(Scheduler::WorkItem & wi)
     // grab a mutex
     Lock l = Lock(lock); // unlocks automatically
 
-    if (last_iter && size_left == 0)
-        return -1;
+    if (size_left == 0) // we grabbed the last chunk of this iteration
+    {
+        if (!last_iter)
+        {
+            LARGE_INTEGER current_time;
+            GET_TIME(current_time);
+            uint_least64_t time_spent = ticks_to_msec(this->start_time, current_time, this->ticks_per_second);
+            if (time_spent >= this->iter_time)
+            {
+                return -1;
+            }
+            current_in = in;
+            current_out = out;
+            current_metadata = metadata;
+            size_left = size;
+        }
+        else
+        {
+            return -1;
+        }
+    }
 
     size_t in_chunk_size = min(work_size, size_left);
     unsigned no_of_blocks = in_chunk_size / block_size;
@@ -60,34 +80,11 @@ int Scheduler::getChunk(Scheduler::WorkItem & wi)
     wi.out = current_out;
     wi.metadata = current_metadata;
 
-    if (in_chunk_size == size_left) // we grabbed the last chunk of this iteration
-    {
-        if(!last_iter)
-        {
-            LARGE_INTEGER current_time;
-            GET_TIME(current_time);
-            uint_least64_t time_spent = ticks_to_msec(this->start_time, current_time, this->ticks_per_second);
-            if(time_spent >= this->iter_time)
-            {
-                last_iter = true;
-            }
-            current_in = in;
-            current_out = out;
-            current_metadata = metadata;
-            size_left = size;
-        }
-        else
-        {
-            size_left = 0;
-        }
-    }
-    else
-    {
-        current_in += in_chunk_size;
-        current_out += no_of_blocks * block_size;
-        current_metadata += no_of_blocks;
-        size_left -= in_chunk_size;
-    }
+    current_in += in_chunk_size;
+    current_out += no_of_blocks * block_size;
+    current_metadata += no_of_blocks;
+    size_left -= in_chunk_size;
+
 
     return 0;
 }

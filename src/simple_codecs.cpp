@@ -6,7 +6,7 @@
  * If your country doesn't recognize author's right to relieve themselves of copyright,
  * you can use it under the terms of WTFPL version 2.0 or later.
  */
-#include "common.hpp"
+#include "misc.hpp"
 #include "simple_codecs.hpp"
 #include "tools.hpp"
 
@@ -17,14 +17,6 @@
 #include <memory.h> // TODO: Is it needed? If yes, is it C or C++?
 #include <stdexcept>
 
-#if __cplusplus >= 201103L // C++ 2011
-#include <cstdint>
-#else
-extern "C"
-{
-#include <stdint.h>
-}
-#endif // C++ 2011
 using namespace std;
 
 //////////////////////////////////////////////////////
@@ -69,7 +61,7 @@ namespace FsBenchAr
     {
         return malloc(n);
     }
-    
+
     size_t ar_c(char * in, size_t isize, char * out, size_t osize, void *)
     {
         meminfo mem;
@@ -154,6 +146,7 @@ size_t bz2_d(char * in, size_t isize, char * out, size_t osize, void *)
 #endif//FSBENCH_USE_BZ2
 #ifdef FSBENCH_USE_CITYHASH
 #include "CityHash/city.h"
+
 void CityHash32(char * in, size_t isize, char * out)
 {
     *(uint64_t*) out = CityHash32((const char*)in, isize);
@@ -420,9 +413,13 @@ size_t LZ4hc_c(char * in, size_t isize, char * out, size_t, void *)
 {
     return LZ4_compressHC(in, out, isize);
 }
-size_t LZ4_d (char * in, size_t, char * out, size_t osize, void *)
+size_t LZ4_d_fast (char * in, size_t, char * out, size_t osize, void *)
 {
-    return LZ4_uncompress(in, out, osize) > 0 ? osize : CODING_ERROR;
+    return LZ4_decompress_fast(in, out, osize) > 0 ? osize : CODING_ERROR;
+}
+size_t LZ4_d_safe (char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return LZ4_decompress_safe(in, out, isize, osize) > 0 ? osize : CODING_ERROR;
 }
 
 #endif//FSBENCH_USE_LZ4

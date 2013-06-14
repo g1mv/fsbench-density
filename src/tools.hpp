@@ -28,7 +28,7 @@ extern "C"
 #include <windows.h>
 #endif
 
-#include "common.hpp"
+#include "misc.hpp"
 
 
 /////////////////

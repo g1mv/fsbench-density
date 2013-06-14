@@ -9,8 +9,6 @@
 #ifndef BENCHMARK_HPP_BhjgkfG8
 #define BENCHMARK_HPP_BhjgkfG8
 
-#define __STDC_LIMIT_MACROS
-
 #include "codecs.hpp"
 #include "scheduler.hpp"
 #include "tools.hpp"
@@ -30,6 +28,7 @@ struct EncodeParams
     // which affects the subsequent parts of the encoding pipeline as well as decoding
     // but skipping of other transforms (checksumming, encryption) shouldn't be allowed
     Codec::transform_type transform_type;
+    unsigned long overhead_iters;
 };
 struct DecodeParams
 {
@@ -40,6 +39,7 @@ struct DecodeParams
     size_t ssize;
     bool verify;
     uintmax_t ret;
+    unsigned long overhead_iters;
 };
 
 class Tester
@@ -50,7 +50,8 @@ public:
            size_t bsize,
            unsigned desired_threads_no);
 
-    void test(unsigned iters,
+    void test(unsigned long iters,
+              unsigned long overhead_iters,
               unsigned iter_time,
               size_t ssize,
               bool verify,
@@ -82,12 +83,12 @@ private:
 // CONSTANTS
 ///////////////////////////
 
-const int DEFAULT_ITERATIONS = 3;
-// 1.6 GB
-const unsigned long DEFAULT_BSIZE = 1717986918;
+const int DEFAULT_ITERATIONS = 4;
+const int DEFAULT_OVERHEAD_ITERATIONS = 1;
+const unsigned long DEFAULT_BSIZE = 1717986918; // 1.6 GB
 const unsigned long DEFAULT_ITER_TIME = 500;
 const int DEFAULT_SSIZE = 1;
 const int DEFAULT_THREADS_NO = 1;
-const int DEFAULT_WARMUP_ITERS = 10;
+const int DEFAULT_WARMUP_ITERS = 20;
 
 #endif // BENCHMARK_HPP_BhjgkfG8

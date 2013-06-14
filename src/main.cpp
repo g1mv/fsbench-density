@@ -26,7 +26,7 @@
 // DEFINITIONS
 ///////////////////////////
 #define PROGNAME "fsbench"
-#define PROGVERSION "0.13"
+#define PROGVERSION "0.14"
 
 ///////////////////////////
 // INCLUDES
@@ -75,7 +75,8 @@ static void usage()
     cerr << "  -bX: filesystem block size(default = " << DEFAULT_BSIZE << ")\n";
     cerr << "  -c: write output as csv\n";
     cerr << "  -iX: number of iterations (default = " << DEFAULT_ITERATIONS << ")\n";
-    cerr << "  -jX: job size (default = determined automatically)\n";
+    cerr << "  -jX: job size (default = " << DEFAULT_OVERHEAD_ITERATIONS << ")\n";
+    cerr << "  -oX: number of overhead-reduction iterations (default: determined automatically)\n";
     cerr << "  -mX: minimal savings, i.e. disk sector size(default = " << DEFAULT_SSIZE << ")\n";
     cerr << "  -sX: minimum time taken by a single iteration (default: " << DEFAULT_ITER_TIME << ")\n";
     cerr << "  -tX: number of threads to use(default = " << DEFAULT_THREADS_NO << ")\n";
@@ -104,7 +105,8 @@ int main(int argc, char ** argv)
     // increase priority to the max to reduce variance
     setHighestPriority();
 
-    uint32_t iterations = DEFAULT_ITERATIONS;
+    unsigned long iterations = DEFAULT_ITERATIONS;
+    unsigned long overhead_iterations = DEFAULT_OVERHEAD_ITERATIONS;
     size_t bsize = DEFAULT_BSIZE;
     size_t ssize = DEFAULT_SSIZE;
     bool verify = false;
@@ -178,13 +180,16 @@ int main(int argc, char ** argv)
                     return 1;
                 }
             break;
-            case 's':
-                iter_time = atoi(argv[1] + 2);
-                if (iter_time <= 0)
+            case 'o':
+                overhead_iterations = atoi(argv[1] + 2);
+                if (overhead_iterations == 0)
                 {
-                    cerr << "number of small iterations must be > 0.\n";
+                    cerr << "number of overhead-reduction iterations must be > 0.\n";
                     return 1;
                 }
+            break;
+            case 's':
+                iter_time = atoi(argv[1] + 2);
             break;
             case 't':
                 threads = atoi(argv[1] + 2);
@@ -293,6 +298,7 @@ int main(int argc, char ** argv)
     {
         Tester tester(codecs, &in, bsize, threads);
         tester.test(iterations,
+                    overhead_iterations,
                     iter_time,
                     ssize,
                     verify,
@@ -319,11 +325,12 @@ int main(int argc, char ** argv)
     }
     if (csv)
     {
-        cout << "Iterations" << iterations << "\n";
+        cout << "Iterations," << iterations << "\n";
+        cout << "Overhead iterations," << overhead_iterations << "\n";
     }
     else
     {
-        cout << "done... (" << iterations << " iteration(s)).\n";
+        cout << "done... (" << iterations << "*X*" << overhead_iterations << ") iteration(s)).\n";
     }
     return 0;
 }

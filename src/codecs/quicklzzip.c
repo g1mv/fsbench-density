@@ -14,7 +14,7 @@ static unsigned int bitoffset2;
 static unsigned char *dst2;
 static unsigned char *hashtable[8192];
 
-__inline out(unsigned int data, unsigned int len)
+static __inline out(unsigned int data, unsigned int len)
 {
 	unsigned int *dst = (unsigned int *)(dst2 + (bitoffset2 >> 3));
 	unsigned int bo = (bitoffset2 & 0x7);
@@ -22,7 +22,7 @@ __inline out(unsigned int data, unsigned int len)
 	bitoffset2 += len;
 }
 
-__inline unsigned int revbits(unsigned int n, int numbits)
+static __inline unsigned int revbits(unsigned int n, int numbits)
 {
 	static const unsigned char rev5[32] = {0, 16, 8, 24, 4, 20, 12, 28, 2, 18, 10, 26, 6, 22, 14, 30, 1, 17, 9, 25, 5, 21, 13, 29, 3, 19, 11, 27, 7, 23, 15, 31};
 	unsigned int i, result = 0;
@@ -41,7 +41,7 @@ __inline unsigned int revbits(unsigned int n, int numbits)
 	}
 }
 
-__inline encode_offset(unsigned int offset)
+static __inline encode_offset(unsigned int offset)
 {
 	static unsigned int o;
 	static unsigned int is_init = 0;
@@ -77,7 +77,7 @@ __inline encode_offset(unsigned int offset)
  
 }
 
-__inline encode_literal(unsigned int lit)
+static __inline encode_literal(unsigned int lit)
 {
 	static const unsigned short int encoding[256] = {
 		12, 140, 76, 204, 44, 172, 108, 236, 28, 156, 92, 220, 60, 188, 124, 252, 2, 130, 66, 194, 34, 162,
@@ -99,7 +99,7 @@ __inline encode_literal(unsigned int lit)
 		out(encoding[lit], 9);
 }
 
-__inline encode_matchlen(unsigned int matchlen)
+static __inline encode_matchlen(unsigned int matchlen)
 {
 	unsigned int extra, i, code;
     static const unsigned short lens[29] = {

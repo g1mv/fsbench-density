@@ -1,35 +1,28 @@
 #include "scz.hpp"
+#include "misc.hpp"
 
 extern "C"
 {
 #include "scz.h"
 }
 
-#if __cplusplus >= 201103L // C++ 2011
-    #include <cstdint>
-#else
-extern "C"
-{
-    #include <stdint.h>
-}
-#endif // C++ 2011
 #include <algorithm>
 #include <cstdlib>
 #include <memory.h>
 
-size_t Scz::compress(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t Scz::compress(char * in, size_t isize, char * out, size_t, void * mode)
 {
 
     // scz theoretically supports buffers larger than SCZ_MAX_BUF, but as far as I can see, it's broken
     // to overcome this, I just split the data into small pieces that I feed the codec with
 
     size_t total_out = 0;
-    
+
     intptr_t bufsize = *(intptr_t*)mode;
 
     while(isize > 0)
     {
-        char *tmp_buf;
+        char * tmp_buf;
         int compressed_size;
         size_t chunk_size = std::min(bufsize, (intptr_t)isize);
 
@@ -42,7 +35,7 @@ size_t Scz::compress(char* in, size_t isize, char* out, size_t osize, void* mode
 
         *(int32_t*) out = compressed_size;
         out += sizeof(uint32_t);
-        
+
         total_out += compressed_size + sizeof(int32_t); // I'm not sure if it's right, but in the output size I include my metadata size
         in        += chunk_size;
         isize     -= chunk_size;
@@ -50,15 +43,15 @@ size_t Scz::compress(char* in, size_t isize, char* out, size_t osize, void* mode
     }
     return total_out;
 }
-size_t Scz::decompress(char* in, size_t isize, char* out, size_t osize, void* mode)
+size_t Scz::decompress(char * in, size_t, char * out, size_t osize, void * mode)
 {
     size_t osize_left = osize;
-    
+
     intptr_t bufsize = *(intptr_t*)mode;
-    
+
     while(osize_left > 0)
     {
-        char *tmp_buf;
+        char * tmp_buf;
         int decompressed_size;
 
         size_t chunk_size = std::min(bufsize, (intptr_t)osize_left);

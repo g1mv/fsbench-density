@@ -8,8 +8,9 @@
 ///////////////////////////
 // INCLUDES
 ///////////////////////////
+#include "misc.hpp"
+
 #include "benchmark.hpp"
-#include "common.hpp"
 #include "threads.hpp"
 #include "tools.hpp"
 
@@ -156,6 +157,8 @@ static void printTime(uint_least64_t cmili,
                       uint_least64_t encoder_input_size,
                       uint_least64_t encoder_output_size,
                       uint_least64_t decoder_output_size,
+                      unsigned citers,
+                      unsigned diters,
                       bool csv)
 {
     //because of timer inaccuracy some jobs may take 0 ms. And I divide by dmili later...
@@ -163,15 +166,15 @@ static void printTime(uint_least64_t cmili,
 
     if (csv)
     {
-        cout << cmili << "," << dmili << "," << encoder_input_size << "," << encoder_output_size
-                << "," << decoder_output_size << endl;
+        cout << cmili << "," << encoder_input_size << "," << encoder_output_size << "," << citers
+             << "," << dmili<< "," << decoder_output_size << "," << diters << endl;
     }
     else
     {
         ConsoleColour cc(RESULT_COLOUR);
-        // I suck at iostream
+
         char compression_rate_buf[8];
-        sprintf(compression_rate_buf, "%.8f", (float) encoder_input_size / encoder_output_size);
+        sprintf(compression_rate_buf, "%.3f", (float) encoder_input_size / encoder_output_size);
         int len = strlen(compression_rate_buf);
         string compression_rate;
         for (int i = 0; i < 6 - len; ++i)
@@ -181,7 +184,8 @@ static void printTime(uint_least64_t cmili,
         streamsize old_width = cout.width(11);
         try
         {
-            cout << compression_rate << "     ";
+            cout << std::right << encoder_output_size / citers;
+            cout << " (x" << compression_rate << ")     ";
             string decoding_speed_str =
                     decoder_output_size ? speed_string(decoder_output_size, dmili) :
                                         string("-");
@@ -206,8 +210,8 @@ static void printHeaders(bool csv)
 {
     if(csv)
     {
-        // TODO
-        cout << "Codec,version,args,E.time (ms),D.time (ms),E. size, source size" << endl;
+        cout << "Codec,version,args,E.time (ms),E. input size,E. output size,E. iters,"
+             << "D. time(ms),D. output size,D. iters" << endl;
     }
     else
     {
@@ -264,17 +268,17 @@ static void check_decoding(uint32_t input_crc,
 
 /**
  * Encodes input chunks
- * 
+ *
  * An input array is a series of chunks
  * A chunk consists of 2 parts: data to be encoded and some extra space
  * Codecs can use the extra space as they want, in particular quite a few access data out of bound,
  * so this is some extra security.
- * 
+ *
  * Produces 2 outputs:
  *  - encoded data. An array of encoded chunks laid out one after another.
  *    It can be returned in either input or output buffer
  *  - metadata. What is in what chunk, encoded size etc.
- * 
+ *
  * @return compressed data size, that is - it ignores chunk_size pieces
  */
 static THREAD_RETURN_TYPE encode(EncodeParams * params)
@@ -285,19 +289,23 @@ static THREAD_RETURN_TYPE encode(EncodeParams * params)
     Scheduler::WorkItem wi;
     while (params->scheduler->getChunk(wi) == 0)
     {
-        char * p = wi.out;
+        char * op = wi.out;
         size_t processed_bytes = 0;
         unsigned i = 0;
         for (; processed_bytes < wi.isize; processed_bytes += params->workbsize, ++i)
         {
             size_t chunk_size = min(wi.isize - processed_bytes, params->bsize);
-            size_t ret = params->encoder(wi.in + processed_bytes,
-                                         chunk_size,
-                                         p,
-                                         round_up(chunk_size - params->ssize,
-                                                  params->ssize),
-                                         params->other);
-
+            size_t ret = CODING_ERROR;
+            size_t block_size = round_up(chunk_size - params->ssize, params->ssize);
+            char * ip = wi.in + processed_bytes;
+            for (unsigned long j=0; j<params->overhead_iters; ++j)
+            {
+                ret = params->encoder(ip,
+                                      chunk_size,
+                                      op,
+                                      block_size,
+                                      params->other);
+            }
             bool failed_to_encode = ret == CODING_ERROR;
 
             size_t real_size = round_up(ret, params->ssize);
@@ -325,7 +333,7 @@ static THREAD_RETURN_TYPE encode(EncodeParams * params)
 
                     // Note: it's needed only for moving transforms, but doesn't hurt otherwise
                     // FIXME: What if a skippable transform failed and modified its input buffer?
-                    memcpy(p, wi.in + processed_bytes, chunk_size);
+                    memcpy(op, wi.in + processed_bytes, chunk_size);
                 }
             }
             else
@@ -344,12 +352,12 @@ static THREAD_RETURN_TYPE encode(EncodeParams * params)
                     // if a codec cheats by reporting size smaller than what it actually needs,
                     // this will detect it
                     if (params->transform_type == Codec::moving)
-                        memset(p + ret, 0, params->workbsize - ret);
+                        memset(op + ret, 0, params->workbsize - ret);
                     else
                         memset(wi.in + processed_bytes + ret, 0, params->workbsize - ret);
                 }
             }
-            p += params->workbsize;
+            op += params->workbsize;
         }
     }
     params->input_size  = total_in;
@@ -359,7 +367,7 @@ static THREAD_RETURN_TYPE encode(EncodeParams * params)
 
 static THREAD_RETURN_TYPE decode(DecodeParams * params)
 {
-    uintmax_t total_out = 0; // summing up across small iterations can yield a large number
+    uintmax_t total_out = 0;
 
     Scheduler::WorkItem wi;
     while (params->scheduler->getChunk(wi) >= 0)
@@ -375,11 +383,15 @@ static THREAD_RETURN_TYPE decode(DecodeParams * params)
             if (wi.metadata[i].successfully_encoded)
             {
                 size_t ochunk_size = wi.metadata[i].decoded_size;
-                size_t ret = params->decoder(ip,
-                                             ichunk_size,
-                                             op,
-                                             ochunk_size,
-                                             params->other);
+                size_t ret = CODING_ERROR;
+                for (unsigned long j=0; j<params->overhead_iters; ++j)
+                {
+                    ret = params->decoder(ip,
+                                          ichunk_size,
+                                          op,
+                                          ochunk_size,
+                                          params->other);
+                }
 
                 if (ret == CODING_ERROR)
                     throw runtime_error("Decoding failed!");
@@ -398,7 +410,6 @@ static THREAD_RETURN_TYPE decode(DecodeParams * params)
                 {
                     memcpy(op, ip, ichunk_size);
                 }
-                job_out += ichunk_size;
             }
             op += params->workbsize;
             ip += params->workbsize;
@@ -422,7 +433,8 @@ static inline void prepareEncoderData(Codec & codec,
                                       size_t ssize,
                                       size_t workbsize,
                                       bool verify,
-                                      Scheduler * scheduler)
+                                      Scheduler * scheduler,
+                                      unsigned long overhead_iters)
 {
     void ** codec_eparams = codec.eparams();
     for (size_t i = 0; i < threads_no; ++i)
@@ -436,6 +448,7 @@ static inline void prepareEncoderData(Codec & codec,
         params[i].scheduler = scheduler;
         params[i].can_be_skipped = codec.can_be_skipped;
         params[i].transform_type = codec.encode_transform_type;
+        params[i].overhead_iters = overhead_iters;
     }
 }
 
@@ -445,7 +458,8 @@ static inline void prepareDecoderData(Codec & codec,
                                       size_t ssize,
                                       size_t workbsize,
                                       bool verify,
-                                      Scheduler * scheduler)
+                                      Scheduler * scheduler,
+                                      unsigned long overhead_iters)
 {
     void ** codec_dparams = codec.dparams();
     for (size_t i = 0; i < threads_no; ++i)
@@ -456,6 +470,7 @@ static inline void prepareDecoderData(Codec & codec,
         params[i].ssize = ssize;
         params[i].verify = verify;
         params[i].scheduler = scheduler;
+        params[i].overhead_iters = overhead_iters;
     }
 }
 // CPU warmup
@@ -484,7 +499,6 @@ static size_t file_size(ifstream & file)
 // prints a warning when something seems wrong with the way tests are performed
 static void warn_if_needed(unsigned threads_no,
                            unsigned desired_threads_no,
-                           size_t input_size,
                            size_t bsize,
                            size_t blocks)
 {
@@ -495,9 +509,6 @@ static void warn_if_needed(unsigned threads_no,
         cerr << "         Only " << threads_no << " thread(s) will be used.\n";
         cerr << "         To resolve the issue, specify a lower block size.\n\n";
     }
-
-    if (input_size < 16 * MB * threads_no)
-        cerr << "\nWARNING: This file is too small, use at least 16 MB per thread.\n\n";
 
     if (bsize > DEFAULT_BSIZE)
     {
@@ -548,7 +559,7 @@ static void run_test(THREAD_HANDLE * threads,
 
 /**
  * The main testing function
- * 
+ *
  * @param codecs: a list of codecs to be tested
  * @param input_file: file to be used as a compression source
  * @param desired_bsize: data will be divided into blocks of bsize bytes and each block will be compressed independently.
@@ -575,7 +586,7 @@ Tester::Tester(const list<CodecWithParams> & codecs,
     this->threads_no = min((size_t) desired_threads_no, this->blocks_no);
 
     // user warnings
-    warn_if_needed(this->threads_no, desired_threads_no, this->input_size, this->bsize, this->blocks_no);
+    warn_if_needed(this->threads_no, desired_threads_no, this->bsize, this->blocks_no);
 
     this->workbuf_block_size = this->bsize; // I need some space for tests
     for (list<CodecWithParams>::const_iterator it = this->codecs.begin(); it != this->codecs.end(); ++it)
@@ -599,16 +610,11 @@ Tester::Tester(const list<CodecWithParams> & codecs,
         message += "+" + to_string(this->blocks_no * sizeof(BlockInfo)) + " bytes.";
         throw runtime_error(message);
     }
-
     // aligned buffers
-    this->inbuf = (char*) (
-            ((uintptr_t) this->_inbuf & ~(ALIGNMENT - 1)) ?
-                ((uintptr_t) this->_inbuf & ~(ALIGNMENT - 1)) + ALIGNMENT :
-                (uintptr_t) this->_inbuf & ~(ALIGNMENT - 1));
-    this->workbufs[0] = (char*) (
-            ((uintptr_t) this->_workbuf & ~(ALIGNMENT - 1)) ?
-                ((uintptr_t) this->_workbuf & ~(ALIGNMENT - 1)) + ALIGNMENT :
-                (uintptr_t) this->_workbuf & ~(ALIGNMENT - 1));
+    unsigned misalignment = (uintptr_t)this->_inbuf & (ALIGNMENT - 1);
+    this->inbuf = this->_inbuf + ((ALIGNMENT - misalignment) % ALIGNMENT);
+    misalignment = (uintptr_t)this->_workbuf & (ALIGNMENT - 1);
+    this->workbufs[0] = this->_workbuf + ((ALIGNMENT - misalignment) % ALIGNMENT);
     this->workbufs[1] = this->workbufs[0] + this->workbuf_size; // workbuf_size is a multiply of ALIGNMENT, so this one is aligned too
 
     input_file->read(this->inbuf, this->input_size);
@@ -632,8 +638,9 @@ Tester::~Tester()
 
 /**
  * The main testing function
- * 
+ *
  * @param iters: number of measurements to be taken. The function reports the best of them.
+ * @param overhead_iters: number of times each block is encoded in a loop
  * @param iter_time: desired time of a single iteration, in ms
  * @param ssize: Sector size - the smallest simulated I/O size. Output size of each block will be rounded up to ssize.
  * @param verify: If true, check if decoding produced correct output.
@@ -641,13 +648,14 @@ Tester::~Tester()
  * @param csv: output data as csv
  * @param job_size: scheduler produces data in chunks. job_size is a suggested size of such chunk (in bytes).
  */
-void Tester::test(unsigned iters,
-                      unsigned iter_time,
-                      size_t ssize,
-                      bool verify,
-                      unsigned warmup_iters,
-                      bool csv,
-                      size_t job_size)
+void Tester::test(unsigned long iters,
+                  unsigned long overhead_iters,
+                  unsigned iter_time,
+                  size_t ssize,
+                  bool verify,
+                  unsigned warmup_iters,
+                  bool csv,
+                  size_t job_size)
 {
     LARGE_INTEGER cstart_ticks, dstart_ticks, cend_ticks, dend_ticks;
 
@@ -682,6 +690,8 @@ void Tester::test(unsigned iters,
         intmax_t best_encoder_input_size  = -1;
         intmax_t best_encoder_output_size = -1;
         intmax_t best_decoder_output_size = -1; // amount of data decompressed successfully. On incompressible files expected to be 0
+        unsigned best_citers = 0;
+        unsigned best_diters = 0;
 
         size_t input_buffer = -1; // index of workbufs array
         size_t output_buffer = -1; // index of workbufs array
@@ -715,7 +725,8 @@ void Tester::test(unsigned iters,
                                ssize,
                                this->workbuf_block_size,
                                verify,
-                               &compression_scheduler);
+                               &compression_scheduler,
+                               overhead_iters);
 
             // ready...set...go!
             GET_TIME(cstart_ticks);
@@ -753,7 +764,8 @@ void Tester::test(unsigned iters,
                                ssize,
                                this->workbuf_block_size,
                                verify,
-                               &decompression_scheduler);
+                               &decompression_scheduler,
+                               overhead_iters);
 
             // ready...set...go!
             GET_TIME(dstart_ticks);
@@ -772,18 +784,26 @@ void Tester::test(unsigned iters,
                 encoder_output_size += params[j].output_size;
                 decoder_output_size += dparams[j].ret;
             }
+            encoder_input_size  *= overhead_iters;
+            encoder_output_size *= overhead_iters;
+            decoder_output_size *= overhead_iters;
+
             double cspeed = (double)encoder_input_size  / ctime;
             double dspeed = (double)decoder_output_size / dtime;
-            if(cspeed > best_cspeed)
+            if (cspeed > best_cspeed)
             {
+                best_cspeed = cspeed;
                 best_ctime = ctime;
                 best_encoder_input_size  = encoder_input_size;
                 best_encoder_output_size = encoder_output_size;
+                best_citers = encoder_input_size / this->input_size;
             }
-            if(dspeed > best_dspeed)
+            if (dspeed > best_dspeed)
             {
+                best_dspeed = dspeed;
                 best_dtime = dtime;
                 best_decoder_output_size = decoder_output_size;
+                best_diters = decoder_output_size / this->input_size;
             }
 
             if (!csv) // update the best result after every iteration
@@ -793,6 +813,8 @@ void Tester::test(unsigned iters,
                           best_encoder_input_size,
                           best_encoder_output_size,
                           best_decoder_output_size,
+                          best_citers,
+                          best_diters,
                           csv);
                 cout << '\r';
             }
@@ -803,6 +825,8 @@ void Tester::test(unsigned iters,
                       best_encoder_input_size,
                       best_encoder_output_size,
                       best_decoder_output_size,
+                      best_citers,
+                      best_diters,
                       csv);
         else
             cout << endl;
@@ -817,6 +841,7 @@ void Tester::test(unsigned iters,
     } // end loop over codecs
     printHeaders(csv);
 
+    // TODO: exception safety
     delete[] params;
     delete[] dparams;
     if (threads)

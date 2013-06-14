@@ -57,13 +57,14 @@ private:
     size_t size;
     size_t size_left;
     size_t block_size;
-    unsigned iter_time;
 
     size_t work_size;
-    
+
     LARGE_INTEGER & start_time;
     LARGE_INTEGER   ticks_per_second;
-    
+
+    unsigned iter_time;
+
     bool   last_iter;
 
     /**
