@@ -6,56 +6,56 @@
 # You can enable or disable compilation of individual codecs here
 set(USE_7Z                1)
 set(USE_AR                0) # inefficient. And I've seen an infinite loop
-set(USE_BCL               1) # inefficient
-set(USE_BLAKE2            1) # doesn't compile with MSVC10. Requires SSE2, so you need to enable it below too.
-set(USE_BLOSC             1) # inefficient
-set(USE_BLZ               1) # inefficient
+set(USE_BCL               0) # inefficient
+set(USE_BLAKE2            0) # doesn't compile with MSVC10. Requires SSE2, so you need to enable it below too.
+set(USE_BLOSC             0) # inefficient
+set(USE_BLZ               0) # inefficient
 set(USE_BZ2               0) # there are barely any competitors for it
 set(USE_CITYHASH          1)
-set(USE_CRAPWOW           1) # weak and while fast, there are much faster ones
+set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
 set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
-set(USE_DOBOZ             1) # inefficient
-set(USE_ECRYPT            0)
+set(USE_DOBOZ             0) # inefficient
+set(USE_ECRYPT            1)
 set(USE_FASTCRYPTO        1)
-set(USE_FASTLZ            1) # inefficient
+set(USE_FASTLZ            0) # inefficient
 set(USE_GIPFELI           0) # rarely works...
-set(USE_HALIBUT           1) # inefficient
-set(USE_LODEPNG           1) # inefficient
+set(USE_HALIBUT           0) # inefficient
+set(USE_LODEPNG           0) # inefficient
 set(USE_LZ4               1)
 set(USE_LZF               1)
-set(USE_LZFX              1) # inefficient
-set(USE_LZG               1) # inefficient
+set(USE_LZFX              0) # inefficient
+set(USE_LZG               0) # inefficient
 set(USE_LZHAM             0) # known to cause problems on some platforms
 set(USE_LZMAT             1)
 set(USE_LZO               1)
-set(USE_LZSS_IM           1) # inefficient
-set(USE_LZV1              1) # inefficient
+set(USE_LZSS_IM           0) # inefficient
+set(USE_LZV1              0) # inefficient
 set(USE_LZWC              0) # inefficient
 set(USE_LZX_COMPRESS      0) # inefficient, no decompressor
 set(USE_MINIHUFF          1)
 set(USE_MINIZ             1)
 set(USE_MMINI             0) # doesn't compile with MSVC10
 set(USE_MURMUR            1)
-set(USE_NRV               1) # inefficient
+set(USE_NRV               0) # inefficient
 set(USE_QUICKLZ           1)
-set(USE_QUICKLZZIP        1) # quite good, but single-threaded. I may fix it one day.
+set(USE_QUICKLZZIP        0) # quite good, but single-threaded. I may fix it one day.
 set(USE_RLE64             1)
 set(USE_SANMAYCE_FNV      1)
-set(USE_SCZ               1) # single threaded and far too inefficient to be worth fixing...
+set(USE_SCZ               0) # single threaded and far too inefficient to be worth fixing...
 set(USE_SHA3_RND1         0) # didn't make it to the final...
 set(USE_SHA3_RND2         0) # didn't make it to the final...
 set(USE_SHA3_RND3         0)
 set(USE_SHA3_RND3_GROESTL 0) # doesn't compile with MSVC10
-set(USE_SHRINKER          1) # doesn't work on some platforms
-set(USE_SIPHASH           0)
+set(USE_SHRINKER          0) # doesn't work on some platforms
+set(USE_SIPHASH           1)
 set(USE_SNAPPY            1)
 set(USE_SPOOKY            1)
-set(USE_TINF              1) # inefficient
+set(USE_TINF              0) # inefficient
 set(USE_TOR               0) # doesn't compile on FreeBSD, Debian, Timesys Linux
 set(USE_XXHASH            1)
 set(USE_YAPPY             1)
-set(USE_Z3LIB             1) # Nothing great
-set(USE_ZFS               1) # Nothing great
+set(USE_Z3LIB             0) # Nothing great
+set(USE_ZFS               0) # Nothing great
 set(USE_ZLIB              1)
 set(USE_ZOPFLI            1)
 
