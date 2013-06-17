@@ -1,5 +1,7 @@
 0.14.1
 [+] added byte-swapping transforms (bswap16, bswap32, bswap64)
+[!] added missing zconf.h
+[!] minor fixes
 
 0.14
 [+] added z3lib 1.3
