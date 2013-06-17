@@ -44,7 +44,7 @@ set(USE_SANMAYCE_FNV      1)
 set(USE_SCZ               0) # single threaded and far too inefficient to be worth fixing...
 set(USE_SHA3_RND1         0) # didn't make it to the final...
 set(USE_SHA3_RND2         0) # didn't make it to the final...
-set(USE_SHA3_RND3         0)
+set(USE_SHA3_RND3         1)
 set(USE_SHA3_RND3_GROESTL 0) # doesn't compile with MSVC10
 set(USE_SHRINKER          0) # doesn't work on some platforms
 set(USE_SIPHASH           1)
@@ -110,6 +110,9 @@ IF(${ARCH} STREQUAL "x86")
 ENDIF(${ARCH} STREQUAL "x86")
 
 IF(${ARCH} STREQUAL "AMD64")
+    IF(USE_SSE2)
+        add_definitions( -DFSBENCH_SSE2) 
+    ENDIF(USE_SSE2)
     add_definitions(-DFREEARC_INTEL_BYTE_ORDER -DFREEARC_64BIT)
     add_definitions(-D__x86_64__)
 ENDIF(${ARCH} STREQUAL "AMD64")

@@ -430,10 +430,10 @@ Codec * codecs[] =
               new FsBenchECrypt::Sosemanuk(),
               new FsBenchECrypt::Trivium(),
 #endif
-              new Codec("nop",     "0", nop_c,   nop_d,   no_blowup),
-              new Codec("bswap16", "0", bswap16, bswap16, no_blowup),
-              new Codec("bswap32", "0", bswap32, bswap32, no_blowup),
-              new Codec("bswap64", "0", bswap64, bswap64, no_blowup) };
+              new Codec("nop",     "0", nop_c,   nop_d,   no_blowup, Codec::in_place, Codec::in_place),
+              new Codec("bswap16", "0", c_bswap16, c_bswap16, no_blowup, Codec::in_place, Codec::in_place),
+              new Codec("bswap32", "0", c_bswap32, c_bswap32, no_blowup, Codec::in_place, Codec::in_place),
+              new Codec("bswap64", "0", c_bswap64, c_bswap64, no_blowup, Codec::in_place, Codec::in_place) };
 
 list<Codec*> CODECS = list<Codec*>(codecs, codecs + sizeof(codecs) / sizeof(Codec*));
 

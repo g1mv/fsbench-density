@@ -7,7 +7,7 @@ diff src/city.cc CityHash/city.cc
 63c63
 < #else
 ---
-> #elif defined(__linux__)
+> #elif defined(__GLIBC__)
 66a67,70
 > #else
 > 

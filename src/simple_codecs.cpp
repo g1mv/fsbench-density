@@ -708,6 +708,12 @@ void fnv1_yoshimitsu_triad(char * in, size_t isize, char * out)
 {
     *(uint32_t*) out = FNV1A_Hash_YoshimitsuTRIAD(in, isize);
 }
+#ifdef FSBENCH_SSE2
+void fnv1_yoshimitsu_triad_iixmm(char * in, size_t isize, char * out)
+{
+    *(uint32_t*) out = FNV1A_Hash_YoshimitsuTRIADiiXMM(in, isize);
+}
+#endif
 void fnv1_yoshimura(char * in, size_t isize, char * out)
 {
     *(uint64_t*) out = FNV1A_Hash_Yoshimura(in, isize);
@@ -1622,7 +1628,7 @@ static inline uint64_t _bswap_64(uint64_t x) {
   return (((uint64_t)_bswap_32(x&0xffffffffull))<<32) | (_bswap_32(x>>32));
 }
 
-size_t bswap16(char * in, size_t isize, char * out, size_t osize, void *)
+size_t c_bswap16(char * in, size_t isize, char *, size_t, void *)
 {
     char * end = in + isize - sizeof(uint16_t);
     while (in < end)
@@ -1632,7 +1638,7 @@ size_t bswap16(char * in, size_t isize, char * out, size_t osize, void *)
     }
     return isize;
 }
-size_t bswap32(char * in, size_t isize, char * out, size_t osize, void *)
+size_t c_bswap32(char * in, size_t isize, char *, size_t, void *)
 {
     char * end = in + isize - sizeof(uint32_t);
     while (in < end)
@@ -1642,7 +1648,7 @@ size_t bswap32(char * in, size_t isize, char * out, size_t osize, void *)
     }
     return isize;
 }
-size_t bswap64(char * in, size_t isize, char * out, size_t osize, void *)
+size_t c_bswap64(char * in, size_t isize, char *, size_t, void *)
 {
     char * end = in + isize - sizeof(uint64_t);
     while (in < end)
