@@ -713,6 +713,10 @@ void fnv1_yoshimitsu_triad_iixmm(char * in, size_t isize, char * out)
 {
     *(uint32_t*) out = FNV1A_Hash_YoshimitsuTRIADiiXMM(in, isize);
 }
+void fnv1_penumbra(char * in, size_t isize, char * out)
+{
+    *(uint32_t*) out = FNV1A_Hash_penumbra(in, isize);
+}
 #endif
 void fnv1_yoshimura(char * in, size_t isize, char * out)
 {

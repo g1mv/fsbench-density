@@ -85,6 +85,7 @@ fletcher4                  | ?? (used in ZFS)                            | 2010 
 FNV1a-Jesteress            | Georgi Marinov                              | 2012-06-09            | yes      | www.sanmayce.com/Fastest_Hash/index.html
 FNV1a-Mantis               | Georgi Marinov                              | 2012-06-09            | yes      | www.sanmayce.com/Fastest_Hash/index.html
 FNV1a-Meiyan               | Georgi Marinov                              | 2012-06-09            | yes      | www.sanmayce.com/Fastest_Hash/index.html
+FNV1a-Penumbra             | Georgi Marinov                              | 2013-06-16            | yes      | www.sanmayce.com/Fastest_Hash/index.html
 FNV1a-Tesla                | Georgi Marinov                              | v2                    | yes      | www.sanmayce.com/Fastest_Hash/index.html
 FNV1a-Tesla3               | Georgi Marinov                              | 2013-03-13            | yes      | www.sanmayce.com/Fastest_Hash/index.html
 FNV1a-Yorikke              | Georgi Marinov                              | 2013-05-12            | yes      | www.sanmayce.com/Fastest_Hash/index.html

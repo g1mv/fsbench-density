@@ -344,10 +344,11 @@ Codec * codecs[] =
               new Checksum<sizeof(uint64_t)>("FNV1a-Tesla3", _SANMAYCE_VERSION, fnv1_tesla3),
               new Checksum<sizeof(uint32_t)>("FNV1a-Yorikke", _SANMAYCE_VERSION, fnv1_yorikke),
               new Checksum<sizeof(uint32_t)>("FNV1a-YoshimitsuTRIAD", _SANMAYCE_VERSION, fnv1_yoshimitsu_triad),
+              new Checksum<sizeof(uint64_t)>("FNV1a-Yoshimura", _SANMAYCE_VERSION, fnv1_yoshimura),
 #   ifdef FSBENCH_SSE2
               new Checksum<sizeof(uint32_t)>("FNV1a-YoshimitsuTRIADiiXMM", _SANMAYCE_VERSION, fnv1_yoshimitsu_triad_iixmm),
+              new Checksum<sizeof(uint32_t)>("FNV1a-penumbra", _SANMAYCE_VERSION, fnv1_penumbra),
 #   endif
-              new Checksum<sizeof(uint64_t)>("FNV1a-Yoshimura", _SANMAYCE_VERSION, fnv1_yoshimura),
 #endif
 #if defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3) || defined(FSBENCH_USE_SHA3_RND3_GROESTL)
 #   define QUOTE(x) #x
@@ -566,6 +567,7 @@ static const pair<Codec*, const string> all_checksums[] =
           make_pair(raw_find_codec("FNV1a-Jesteress"), ""),
           make_pair(raw_find_codec("FNV1a-Mantis"), ""),
           make_pair(raw_find_codec("FNV1a-Meiyan"), ""),
+          make_pair(raw_find_codec("FNV1a-Penumbra"), ""),
           make_pair(raw_find_codec("FNV1a-Tesla"), ""),
           make_pair(raw_find_codec("FNV1a-Tesla3"), ""),
           make_pair(raw_find_codec("FNV1a-Yorikke"), ""),

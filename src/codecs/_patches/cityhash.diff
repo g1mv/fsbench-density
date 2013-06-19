@@ -11,7 +11,7 @@ diff src/city.cc CityHash/city.cc
 66a67,70
 > #else
 > 
-> #include "byteswap.h"
+> #include "citybyteswap.h"
 > 
 diff src/city.h CityHash/city.h
 65a66

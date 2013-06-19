@@ -1,3 +1,7 @@
+0.14.2
+[+] added FNV1a-penumbra
+[!] fixed compilation issues on some Linuces
+
 0.14.1
 [+] added byte-swapping transforms (bswap16, bswap32, bswap64)
 [!] added missing zconf.h

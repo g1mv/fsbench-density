@@ -145,8 +145,9 @@ void fnv1_tesla(char * in, size_t isize, char * out);
 void fnv1_tesla3(char * in, size_t isize, char * out);
 void fnv1_yorikke(char * in, size_t isize, char * out);
 void fnv1_yoshimitsu_triad(char * in, size_t isize, char * out);
-void fnv1_yoshimitsu_triad_iixmm(char * in, size_t isize, char * out);
 void fnv1_yoshimura(char * in, size_t isize, char * out);
+void fnv1_yoshimitsu_triad_iixmm(char * in, size_t isize, char * out);
+void fnv1_penumbra(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_SANMAYCE_FNV
 #ifdef FSBENCH_USE_SHRINKER
 size_t Shrinker_c(char * in, size_t isize, char * out, size_t osize, void * _);
