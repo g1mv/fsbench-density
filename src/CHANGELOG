@@ -1,0 +1,209 @@
+0.14.3
+[!] fixed integer underflow
+
+0.14.2
+[+] added FNV1a-penumbra
+[!] fixed compilation issues on some Linuces
+
+0.14.1
+[+] added byte-swapping transforms (bswap16, bswap32, bswap64)
+[!] added missing zconf.h
+[!] minor fixes
+
+0.14
+[+] added z3lib 1.3
+[+] added CityHash32
+[+] added 128-bit variants of murmur hash
+[+] added support for safe lz4 decoder. Use LZ4 for the fast one (like before) and LZ4safe for the safe one
+[~] removed bcl-lz from the list of all codecs. It's so extremely slow it was disturbing testing. And lzfast is still there.
+[~] the number of small_iters is not fixed; duration is
+[~] updated CityHash64/128 to 1.1.0
+[~] updated zlib to 1.2.8
+[~] updated snappy to 1.1.0
+[~] updated lzo to 2.06
+[~] updated blosc to 1.2.3
+[~] updated zopfli to 1.0.0
+[~] updated SpookyHash to V2 2012-08-05
+[~] updated LZ4 to r97
+[~] cleanup
+[!] restoring default console colour would fail on some systems
+[!] several minor bugs
+
+0.13.4
+[+] added umac, vmac
+[+] added ar
+[~] cleanup
+[~] improved printing of results
+[!] added uhash, vhash, umac, vmac to the list of checksums
+[!] Hopefully fixed compilation issues on some Unices 
+
+0.13.3
+[+] added uhash, vhash
+[!] disabled FNV1a-YosimitsuTriadiiXMM unless SSL2 is explicitly enabled
+
+0.13.2
+[+] added more Sanmayce's hashes
+[~] updated LZ4 to r95
+[~] updated xxhash to r29
+[-] removed LZ4bz because I don't want to handle the burden of maintaining the patch since Yann just totally changed packaging of LZ4
+[!] portability issues
+
+0.13.1
+[~] minor cleanup and refactoring
+[~] updated Blake2 to 20130131
+[!] blake2s, blake2sp have 256-bit digests
+[!] compilation errors on some platforms
+
+0.13
+[+] support for pipelining compression->encryption->checksumming (and other pipelines too)
+[+] added a couple of SHA3 candidate hashes
+[+] added gipfeli
+[+] added siphash
+[+] added blake2
+[+] added LZ4bz - an incompatible mod of LZ4 proposed by Bulat Ziganshin
+[+] added mmini (only LZ77 for now)
+[+] added zopfli
+[+] added new Sanmayce's hashes
+[~] updated LZ4 to r85, now I use LZ4_compress_limitedOutput function
+[~] removed LZ4 option to use more memory, it was too hard to maintain
+[~] updated xxhash to r5
+[~] updated lodepng to 20120729
+[~] cleanup, minor fixes and refactoring
+[~] eclipse integration
+[~] initial doxygen integration
+[~] fossil integration
+[!] updated Tornado to the latest mercurial version to fix a clang issue
+[!] numerous portability issues
+[!] memory leak in zlib and miniz handlers
+[!] insignificant memory leak in the main testing function
+[!] md5 has 128 bits, not 160
+
+0.12
+[+] updated Shrinker to r6
+[+] updated fnv1a-Tesla to v2
+[+] updated xxhash256 to v1
+[+] added ECrypt ciphers
+
+0.11
+[+] added xxhash
+[+] added Sanmayce's hashes
+[+] added SpookyHash
+[+] added MurmurHash
+[+] added CityHash
+[+] added crypto++'s hashes
+[+] added zfs' fletcher2 and fletcher4 hashes
+[+] added CrapWow hash
+[+] refactoring to enable in-place transforms (i.e. ciphers, hashes)
+[~] always use aligned buffers
+[~] removed bzip2 from the default installation (it doesn't have any real competition in FSBench ATM)
+[~] removed shrinker from the default installation (doesn't work on my linux)
+[~] added crypto++ to the default build
+[~] use crc instead of memcmp to detect incorrect (de)compression
+[~] reworked buffer management
+[~] code cleanup
+
+0.10
+[+] added QuickLZ zip
+[+] added Halibut's deflate
+[+] colourful output
+[~] updated zlib to 1.2.7
+[~] updated LZ4 (and LZ4hc that was merged with it) to r66
+[~] removed LZ4 modes that used LZ4_COMPRESSMIN of 4096, it didn't really work different from 1
+[~] code cleanup
+[!] compilation errors on some systems
+
+0.10h
+[+] now you can combine encoder and decoder from different libraries, i.e. miniz encoder with zlib decoder
+[+] you can now select which codecs to compile
+[+] added 7-zip's deflate and deflate64
+[+] added crypto++'s deflate
+[+] added tinf
+[+] added lodepng
+[+] added scz
+[+] added Basic Compression Library (bcl)
+[+] added bzip2
+[+] added an efficiency metric to the output: (input_size-compressed_size)/time
+[~] disabled compilation of many codecs in the default configuration, edit CMakeLists.txt to enable them
+[~] major revamp of output formatting to allow longer codec names
+[~] renamed lzx to lzx_compress to make the name unambigous
+[~] made zlib / miniz use deflate instead of zlib. They may work slightly faster because of dropped checksum calculations.
+[~] because of portability issues, LZHAM is now optional
+[~] use memcpy instead of LZ4 to determine the number of small iters; now the code takes number of threads into account too
+[~] code cleanup
+[!] fixes to enable compile-time removal of codecs
+[!] fixed a miniz compilation issue on mingw32 (it tried to use __forceinline that didn't work there)
+[!] Yappy decompression produced incorrect output without SSL
+
+0.10g
+[+] added blosc
+[~] better warnings
+[!] GBytes were missing from the list of units
+
+0.10f
+[+] added protection from codecs that report too small output size
+[~] updated Shrinker to r5
+[~] shrinker's compressed size listing now includes the metadata that I had to add to make it support a wider range of block sizes (4 bytes / ~128 MB block)
+[!] cleanup of error messages
+[!] replaced cstdio with fstream to enable testing with large files on Windows x64
+[!] changed some int types to avoid potential troubles
+[!] fixed shrinker decompression errors (that could happen to some other codecs too)
+
+0.10e
+[+] added lzss by Encode
+[~] display speed in KB/s if needed
+[~] real-time printing of results
+[~] reduced default block size to avoid possible troubles with codecs that don't support big ones
+[!] fixes to enable files > 2 GB on Windows 64.
+
+0.10d
+[+] added LZFX
+[+] added LZX (without decompressor)
+[+] added Shrinker
+[-] removed lzp1. It crashed on calgary.tar created with 7-zip 9.22. After a short analysis I decided that debugging would cost too much to be worth it.
+[~] major refactoring and other improvements
+[~] dynamic work scheduling. Up to now threads got roughly equally sized pieces. Sometimes one piece would take much longer than others thus skewing results in favor of codecs with more predictable performance.
+[~] added QuickLZ to the list of default codecs
+[~] use memcpy instead of LZ4 for warmup. It touches more memory, which is good for fairness with codecs that are weaker than LZ4.
+[~] when calculating decompression speed, take into account amount of data that was really decompressed
+[~] improved measurement accuracy
+[!] the algorithm often considered an incompressible last block of a file to be compressible
+[!] some *nix compatibility fixes
+[!] fixed UCL, LZO and LZMAT crashes caused by a bug in my code (repeated in 3 places)
+
+0.10c
+[+] added Doboz
+[~] code cleanup and minor improvements
+[!] LZHAM's default mode didn't work...
+
+0.10b:
+[+] added lzg
+[~] code cleanup
+[!] removed leftover debug code
+
+0.10a:
+[+] added LZHAM
+[+] added even more LZO modes
+[+] added RLE64
+[+] added LZV1
+[+] added LZP1
+[+] added miniz
+[~] updated LZ4hc to r12
+[~] updated LZ4 to r59
+
+0.9:
+[+] added BriefLZ
+[+] added fastlz
+[+] added a couple of lzo modes
+[+] added tornado
+[+] added Yappy
+[+] automated architecture detection in cmake (just 32/64 bitness. I don't have anything but x86 / AMD64 to test anyway)
+[+] added changelog
+[-] removed unused LZHAM sources. I intend to readd LZHAM alpha 8, but currently there was no sense to keep it.
+[-] removed LZRW*. These have only historical value.
+[~] improved docs
+[~] updated LZ4 to r59
+[!] modified LZMAT's integer types to fix compilation errors on mingw64
+[!] ported BriefLZ to AMD64
+[!] fixed a bug: when compiling with gcc with optimized flags, c++ code would get just plain -O3 and no other fireworks
+[!] fixed nrv* compilation with MSVC9
+[!] fixed displaying of incorrect memcpy speed

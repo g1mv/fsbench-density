@@ -1,0 +1,79 @@
+small_iters problem: in-place and buffered codecs that overwrite their input (all but checksums) encode the given data only during the 1st small_iter. Possible solutions:
+* drop si; instead of N si have N copies of data stored in RAM
+* forbid si>1 for codecs where it doesn't work
+* add memcpy where it's needed (very bad for checksums because they are too fast)
+* (partial, but good solution) make input buffer the same as other ones; a series of blocks.
+  * if the 1st codec is moving, start with it and then keep iterating between workbufs
+  * after it's done, make sure that inbuf contents haven't changed 
+
+update LZWC
+memcpy codec
+add the AES implementation used by vmac/umac
+add mmini-lzh
+add http://code.google.com/p/variablelengthstringhashing/
+* with a fast PRNG (xorshift?)
+* with a fast crypto PRNG
+* with a static precomputed random sequence
+add:
+* https://github.com/zfy0701/Parallel-LZ77
+* https://github.com/matuba/LZSS
+* https://github.com/Wuestenschiff/myLz77
+* https://github.com/m3h/lz77
+* https://github.com/Cereal84/LZ77/tree/master/source
+* https://github.com/ky1000ky2000/lz77/tree/master/lz77
+* https://github.com/stevesan/lz77
+* http://encode.ru/threads/1562-Urban-Compressor
+* http://encode.ru/threads/1619-TinyLZP-A-very-simple-LZP-compressor
+* http://mattmahoney.net/dc/text.html#3062
+* reintroduce LZ4bz
+* (!!!!!!!!!!!!) http://bench.cr.yp.to/supercop.html (!!!!!!!!!!!!)
+* http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html -- sshzlib.c
+* http://www.mikekohn.net/file_formats/kunzip.php
+* http://sourceforge.net/projects/gziplite/
+* http://plan9.bell-labs.com/sources/plan9/sys/src/libflate/
+* SynLZ: http://synopse.info/fossil/dir?ci=tip 
+* http://freecode.com/projects/compress
+* http://code.google.com/p/arx/source/browse/
+* https://code.google.com/p/fast-hash/
+* https://code.google.com/p/ngramhashing/
+* https://github.com/floodyberry/poly1305-donna
+* https://code.google.com/p/crcutil/
+* http://cessu.blogspot.com/2008/11/hashing-with-sse2-revisited-or-my-hash.html
+* http://encode.ru/threads/1289-CRUSH-0-01-is-here!
+* https://github.com/centaurean/sharc
+* https://github.com/richox/zlite
+
+Allow more than 1 option passed to a codec, i.e. tor:10:ht4
+Don't use a fixed number of iters; watch variance and keep repeating until confidence is good enough.
+Allow testing on misaligned buffers
+Allow testing of decompressors only (for example for systems that don't have enough resources to compress)
+Streaming coding: for codecs that enable to encode / decode 1 piece at the time, enable pipelining such codecs, so data always stays in Lx cache
+Rewrite command line parsing. https://github.com/rofl0r/gettext-tiny ?
+
+
+Is VHASH handing OK?
+Sample from Bulat:
+void  VHASH_128 ( const void * key,  int len, unsigned long seed, void * out )
+{
+    ALIGN(4) unsigned char mykey[] = "abcdefghijklmnop";
+    ALIGN(16) static vmac_ctx_t ctx;
+    ALIGN(16) static unsigned char buf[(8<<20)+16];
+    static int inited = 0;
+    uint64_t res, tagl;
+    if (!inited) {vmac_set_key(mykey, &ctx); inited = 1;}
+
+
+    if (len>=sizeof(buf)-16)  {printf("\n%d bytes to vhash!\n",len); abort();}
+    memcpy(buf,key,len);
+    memset(buf+len,0,16);
+    res = vhash(buf, len, &tagl, &ctx);
+
+
+    ((uint64_t*)out)[0] = res;
+#if (VMAC_TAG_LEN == 128)
+    ((uint64_t*)out)[1] = tagl;
+#endif
+} 
+
+VHASH can be faster, according to Bulat, all that's needed is a define:
+#define VMAC_NHBYTES 4096 

@@ -1,0 +1,18 @@
+Only in CityHash: byteswap.h
+diff src/city.cc CityHash/city.cc
+30c30
+< #include "config.h"
+---
+> //#include "config.h"
+63c63
+< #else
+---
+> #elif defined(__GLIBC__)
+66a67,70
+> #else
+> 
+> #include "citybyteswap.h"
+> 
+diff src/city.h CityHash/city.h
+65a66
+> typedef uint16_t uint16;
