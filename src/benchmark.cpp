@@ -173,7 +173,7 @@ static void printTime(uint_least64_t cmili,
     {
         ConsoleColour cc(RESULT_COLOUR);
 
-        char compression_rate_buf[8];
+        char compression_rate_buf[32];
         sprintf(compression_rate_buf, "%.3f", (float) encoder_input_size / encoder_output_size);
         int len = strlen(compression_rate_buf);
         string compression_rate;
