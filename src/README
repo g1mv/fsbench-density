@@ -163,8 +163,8 @@ FastLZ                              | Ariya Hidayat                             
 gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala                 | 2011-10-19 | no       | https://code.google.com/p/gipfeli
 Halibut - deflate                   | Simon Tatham                                     | SVN r9550  | no       | http://www.chiark.greenend.org.uk/~sgtatham/halibut
 lodepng - deflate                   | Lode Vandevenne                                  | 20120729   | no       | http://lodev.org/lodepng
-LZ4                                 | Yann Collet                                      | r97        | yes      | https://code.google.com/p/lz4
-LZ4hc                               | Yann Collet                                      | r97        | yes      | https://code.google.com/p/lz4
+LZ4                                 | Yann Collet                                      | r114       | yes      | https://code.google.com/p/lz4
+LZ4hc                               | Yann Collet                                      | r114       | yes      | https://code.google.com/p/lz4
 LZF                                 | Marc Alexander Lehmann                           | 3.6        | yes      | http://oldhome.schmorp.de/marc/liblzf.html
 LZFX                                | Andrew Collette                                  | r16        | no       | https://code.google.com/p/lzfx
 LZG                                 | Marcus Geelnard                                  | 1.0.6      | no       | http://liblzg.bitsnbites.eu
