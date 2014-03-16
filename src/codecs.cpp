@@ -430,10 +430,12 @@ Codec * codecs[] =
               new FsBenchECrypt::Sosemanuk(),
               new FsBenchECrypt::Trivium(),
 #endif
-              new Codec("nop",     "0", nop_c,   nop_d,   no_blowup, Codec::in_place, Codec::in_place),
+              new Codec("nop",     "0", nop_c,     nop_d,     no_blowup, Codec::in_place, Codec::in_place),
               new Codec("bswap16", "0", c_bswap16, c_bswap16, no_blowup, Codec::in_place, Codec::in_place),
               new Codec("bswap32", "0", c_bswap32, c_bswap32, no_blowup, Codec::in_place, Codec::in_place),
-              new Codec("bswap64", "0", c_bswap64, c_bswap64, no_blowup, Codec::in_place, Codec::in_place) };
+              new Codec("bswap64", "0", c_bswap64, c_bswap64, no_blowup, Codec::in_place, Codec::in_place),
+              new Codec("memcpy",  "0", c_memcpy,  c_memcpy,  no_blowup, Codec::moving,   Codec::moving),
+              new Codec("memmove", "0", c_memmove, c_memmove, no_blowup, Codec::moving,   Codec::moving) };
 
 list<Codec*> CODECS = list<Codec*>(codecs, codecs + sizeof(codecs) / sizeof(Codec*));
 
@@ -621,6 +623,8 @@ static const pair<Codec*, const string> all_others[] =
     { make_pair(raw_find_codec("bswap16"), ""),
       make_pair(raw_find_codec("bswap32"), ""),
       make_pair(raw_find_codec("bswap64"), ""),
+      make_pair(raw_find_codec("memcpy"),  ""),
+      make_pair(raw_find_codec("memmove"), ""),
       make_pair(raw_find_codec("nop"), "")
         };
 MKLIST(ALL_OTHERS, all_others);

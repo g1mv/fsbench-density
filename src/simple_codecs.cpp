@@ -1654,3 +1654,13 @@ size_t c_bswap64(char * in, size_t isize, char *, size_t, void *)
     }
     return isize;
 }
+size_t c_memcpy(char * in, size_t isize, char *out, size_t, void *)
+{
+    memcpy(out, in, isize);
+    return isize;
+}
+size_t c_memmove(char * in, size_t isize, char *out, size_t, void *)
+{
+    memmove(out, in, isize);
+    return isize;
+}
