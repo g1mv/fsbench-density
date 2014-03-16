@@ -1,6 +1,10 @@
-// (c) Bulat Ziganshin <Bulat.Ziganshin@gmail.com>
+// LZ77 model
+//
+// (c) Bulat Ziganshin
 // (c) Joachim Henke
-// LZ77 model *************************************************************************************
+// (c) Igor Pavlov
+// This code is provided on the GPL license.
+// If you need a commercial license to use the code, please write to Bulat.Ziganshin@gmail.com
 
 typedef uint   HashVal;      // Result of hashing function
 typedef uint32 PtrVal;       // Pointers to buf stored in HTable
@@ -44,7 +48,7 @@ static inline bool ChangePair (uint smallDist, uint bigDist)
 }
 
 // Hash function hashing 4..7 bytes
-inline uint hashx (int len, BYTE *p, UINT HashShift, UINT HashMask = ~0)
+static inline uint hashx (int len, BYTE *p, UINT HashShift, UINT HashMask = ~0)
 {
     switch(len)
     {
@@ -52,11 +56,25 @@ inline uint hashx (int len, BYTE *p, UINT HashShift, UINT HashMask = ~0)
     case 5:  return ((value32(p)*123456791 + value32(p+1)*789567123) >> HashShift) & HashMask;
     case 6:  return ((value32(p)*123456791 + value32(p+2)*789567123) >> HashShift) & HashMask;
     case 7:  return ((value32(p)*123456791 + value32(p+3)*789567123) >> HashShift) & HashMask;
+    default: CHECK (FREEARC_ERRCODE_INTERNAL,  TRUE,  (s,"Fatal error: Unsupported len==%d in the hashx()", len));  return 0;
     }
 }
 
-// Check match at q:len
-inline int accept_match (int len, BYTE *p, BYTE *q, void *bufend)
+// Check match len/distance for greedy/lazy parsing (distances for small matches need to be limited)
+static inline bool accept_len_dist (int len, DISTANCE dist)
+{
+    switch(len)
+    {
+    case 4:  return dist <  48*kb;
+    case 5:  return dist < 192*kb;
+    case 6:  return dist <   1*mb;
+    case 7:  return dist <  12*mb;
+    default: return true;
+    }
+}
+
+// Check match at q:len for greedy/lazy parsing (distances for small matches need to be limited)
+static inline int accept_match (int len, BYTE *p, BYTE *q, void *bufend)
 {
     switch(len)
     {
@@ -66,7 +84,34 @@ inline int accept_match (int len, BYTE *p, BYTE *q, void *bufend)
     case 7:  return p-q<12*mb  && p<=bufend && val32equ(p, q) && val24equ(p+4, q+4)              ? 7 : 0;
     case 8:  return               p<=bufend && val32equ(p, q) && val32equ(p+4, q+4)              ? 8 : 0;
     case 9:  return               p<=bufend && val32equ(p, q) && val32equ(p+4, q+4) && p[8]==q[8]? 9 : 0;
+    case 10: return               p<=bufend && val32equ(p, q) && val32equ(p+4, q+4) && val16equ(p+8, q+8)? 10 : 0;
+    default: CHECK (FREEARC_ERRCODE_INTERNAL,  TRUE,  (s,"Fatal error: Unsupported len==%d in the accept_match()", len));  return 0;
     }
+}
+
+// Check match at q:len for optimal parsing
+static inline bool accept_optimal_match (int len, BYTE *p, BYTE *q, void *bufend)
+{
+    switch(len)
+    {
+    case 4:  return p<=bufend && val32equ(p, q)                                    ;
+    case 5:  return p<=bufend && val32equ(p, q) && p[4]==q[4]                      ;
+    case 6:  return p<=bufend && val32equ(p, q) && val16equ(p+4, q+4)              ;
+    case 7:  return p<=bufend && val32equ(p, q) && val24equ(p+4, q+4)              ;
+    case 8:  return p<=bufend && val32equ(p, q) && val32equ(p+4, q+4)              ;
+    case 9:  return p<=bufend && val32equ(p, q) && val32equ(p+4, q+4) && p[8]==q[8];
+    case 10: return p<=bufend && val32equ(p, q) && val32equ(p+4, q+4) && val16equ(p+8, q+8);
+    default: CHECK (FREEARC_ERRCODE_INTERNAL,  TRUE,  (s,"Fatal error: Unsupported len==%d in the accept_optimal_match()", len));  return FALSE;
+    }
+}
+
+// Returns number of matched bytes up to maxLen
+UINT check_match_len (BYTE *p, BYTE *q, UINT maxLen)
+{
+    UINT len = 0;
+    while (val32equ(p+len, q+len))  {len+=4;  if (len>=maxLen) return maxLen;}
+    while (p[len]==q[len] && len<maxLen)  len++;
+    return len;
 }
 
 
@@ -86,7 +131,7 @@ struct BaseMatchFinder
     // Empty contructor
     BaseMatchFinder() {};
     // This contructor is common for several Match Finder classes.
-    BaseMatchFinder (BYTE *buf, int hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width);
+    BaseMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width);
     // Returns error code if there is any problem in MF work
     int error();
     // Called on initialization and when next data chunk read into NON-SLIDING buffer
@@ -94,13 +139,17 @@ struct BaseMatchFinder
     // Called after data was shifted 'shift' bytes backwards in SLIDING WINDOW buf[]
     void shift (BYTE *buf, int shift);
     // Minimal length of matches returned by this Match Finder
-    uint min_length()     {return 4;}
+    static uint min_length()  {return 4;}
+    // Fill the `matches` buffer with len/dist of all found matches
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)    {return matches;}
     // Returns pointer of last match found (length is returned by find_matchlen() itself)
     byte *get_matchptr()  {return q;}
     // hash function
     uint hash (uint x)    {return ((x*123456791) >> HashShift) & HashMask;}
     // Invalidate previously found match
     void invalidate_match ()   {}
+    // Prefetch MF data associated with provided `p`
+    void prefetch_hash (BYTE *p)    {}
 #ifdef FREEARC_64BIT
     // Convert 32-bit value, stored in HTable, into pointer
     BYTE *toPtr(PtrVal n) {return base+n;}
@@ -115,7 +164,7 @@ struct BaseMatchFinder
 
 // This contructor is common for several match finder classes.
 // It allocs and inits HTable and inits Hash* fields
-BaseMatchFinder::BaseMatchFinder (BYTE *buf, int hashsize, int _hash_row_width, uint, int)
+BaseMatchFinder::BaseMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int _hash_row_width, uint, int)
 {
     base      = buf;
     hash_row_width = _hash_row_width;
@@ -153,8 +202,8 @@ void BaseMatchFinder::shift (BYTE *buf, int shift)
 
 struct MatchFinder1 : BaseMatchFinder
 {
-    MatchFinder1 (BYTE *buf, int hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
-        : BaseMatchFinder (buf, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
+    MatchFinder1 (BYTE *buf, uint dictsize, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
+        : BaseMatchFinder (buf, dictsize, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
                      {clear_hash(buf);}
     ~MatchFinder1 () {BigFree(HTable);}
 
@@ -190,8 +239,8 @@ struct MatchFinder1 : BaseMatchFinder
 
 struct MatchFinder2 : BaseMatchFinder
 {
-    MatchFinder2 (BYTE *buf, int hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
-        : BaseMatchFinder (buf, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
+    MatchFinder2 (BYTE *buf, uint dictsize, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
+        : BaseMatchFinder (buf, dictsize, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
                      {clear_hash(buf);}
     ~MatchFinder2 () {BigFree(HTable);}
 
@@ -240,10 +289,44 @@ struct MatchFinder2 : BaseMatchFinder
 template <uint N>
 struct MatchFinderN : BaseMatchFinder
 {
-    MatchFinderN (BYTE *buf, int hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
-        : BaseMatchFinder (buf, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
+    MatchFinderN (BYTE *buf, uint dictsize, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
+        : BaseMatchFinder (buf, dictsize, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
                      {clear_hash(buf);}
     ~MatchFinderN () {BigFree(HTable);}
+
+    // Fill the `matches` buffer with len/dist of all found matches
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)
+    {
+        UINT h = hashx (N, p, HashShift, HashMask);
+        UINT maxLen = MINLEN-1;
+        PtrVal x1, x0 = HTable[h];  HTable[h] = fromPtr(p);
+        BYTE *q = toPtr(x0);
+        // Start with checking the first element of the hash row
+        if (val32equ(p, q)) {
+            UINT len;
+            for (len=4; p+len+4<=bufend && val32equ(p+len, q+len); len+=4);
+            for (     ; p+len  < bufend && p[len] == q[len];       len++);
+            if (len >= MINLEN) {
+                *matches++ = maxLen = len;
+                *matches++ = p-q;
+            }
+        }
+        // Check remaining elements, searching for longer match,
+        // and shift entire row toward end
+        for (int j=1; j<hash_row_width; j++, x0=x1) {
+            x1=HTable[h+j];  HTable[h+j]=x0;
+            BYTE *q = toPtr(x1);
+            if (p[maxLen] == q[maxLen]) {
+                UINT len;
+                for (len=0;  p+len<bufend && p[len]==q[len];  len++);
+                if (len >= maxLen) {
+                    *matches++ = maxLen = len;
+                    *matches++ = p-q;
+                }
+            }
+        }
+        return matches;
+    }
 
     uint find_matchlen (byte *p, void *bufend, UINT prevlen)
     {
@@ -251,13 +334,11 @@ struct MatchFinderN : BaseMatchFinder
         UINT len = MINLEN-1;
         PtrVal x1, x0 = HTable[h];  HTable[h] = fromPtr(p);
         q = toPtr(x0);
-        // Start with checking first element of hash row
+        // Start with checking the first element of the hash row
         if (val32equ(p, q)) {
             for (len=MINLEN; p+len+4<=bufend && val32equ(p+len, q+len); len+=4);
             for (          ; p+len  < bufend && p[len] == q[len];       len++);
-            if (len==4 && p-q>=48*kb  ||
-                len==5 && p-q>=192*kb ||
-                len==6 && p-q>=1*mb)
+            if (!accept_len_dist(len,p-q))
               len = MINLEN-1;
         }
         // Check remaining elements, searching for longer match,
@@ -268,11 +349,7 @@ struct MatchFinderN : BaseMatchFinder
             if (val32equ(p+len+1-MINLEN, q1+len+1-MINLEN)) {
                 UINT len1;
                 for (len1=0;  p+len1<bufend && p[len1]==q1[len1];  len1++);
-                if (len1==4 && p-q1>=48*kb  ||
-                    len1==5 && p-q1>=192*kb ||
-                    len1==6 && p-q1>=1*mb)
-                  len1 = MINLEN-1;
-                if (len1 > len  &&  !(len1==len+1 && ChangePair(p-q, p-q1)) )
+                if (len1 > len  &&  !(len1==len+1 && ChangePair(p-q, p-q1))  &&  accept_len_dist(len1,p-q1))
                     len=len1, q=q1;
             }
         }
@@ -292,6 +369,8 @@ struct MatchFinderN : BaseMatchFinder
         for (int i=2; i<len-1; i+=step)    update_hash1 (p+i);
         if (len>3)                         update_hash1 (p+len-1);
     }
+    // Minimal length of matches returned by this Match Finder
+    static uint min_length()  {return N;}
 };
 
 
@@ -304,10 +383,29 @@ struct MatchFinderN : BaseMatchFinder
 template <uint N>
 struct ExactMatchFinder : BaseMatchFinder
 {
-    ExactMatchFinder (BYTE *buf, int hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
-        : BaseMatchFinder (buf, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
+    ExactMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
+        : BaseMatchFinder (buf, dictsize, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
                          {clear_hash(buf);}
     ~ExactMatchFinder () {BigFree(HTable);}
+
+    // Fill the `matches` buffer with len/dist of all found matches
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)
+    {
+        UINT h = hashx (N, p, HashShift, HashMask);
+        PtrVal x1, x0 = fromPtr(p);
+        // Check hash row elements, searching for N-byte match,
+        // and shift entire row toward end
+        for (int j=0; j<hash_row_width; j++, x0=x1) {
+            x1=HTable[h+j];  HTable[h+j]=x0;
+            BYTE *q = toPtr(x1);
+            if (accept_optimal_match (N, p, q, bufend)) {
+                *matches++ = N;
+                *matches++ = p-q;
+                return matches;
+            }
+        }
+        return matches;
+    }
 
     uint find_matchlen (byte *p, void *bufend, UINT prevlen)
     {
@@ -318,9 +416,9 @@ struct ExactMatchFinder : BaseMatchFinder
         for (int j=0; j<hash_row_width; j++, x0=x1) {
             x1=HTable[h+j];  HTable[h+j]=x0;
             BYTE *q1 = toPtr(x1);
-            if (p-q1 > 48*kb)
+            if (!accept_len_dist (N, p-q1))
                 return MINLEN-1;
-            if (val32equ(p, q1) && p+N <= bufend) {
+            if (accept_optimal_match (N, p, q1, bufend)) {
                 q=q1; return N;
             }
         }
@@ -338,6 +436,8 @@ struct ExactMatchFinder : BaseMatchFinder
         for (int i=2; i<len-1; i+=step)    update_hash1 (p+i);
         if (len>3)                         update_hash1 (p+len-1);
     }
+    // Minimal length of matches returned by this Match Finder
+    static uint min_length()  {return N;}
 };
 
 
@@ -357,28 +457,116 @@ struct ExactMatchFinder : BaseMatchFinder
 template <uint N>  // N is minimum match length (4..7)
 struct CachingMatchFinder : BaseMatchFinder
 {
-    CachingMatchFinder (BYTE *buf, int hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width)
-        : BaseMatchFinder (buf, hashsize, _hash_row_width*2, auxhash_size, auxhash_row_width)
-    {
-        hash_row_width = _hash_row_width;
-        clear_hash(buf);
-    }
+    int hash_row_width2, hash_row_width_up;
+
+    CachingMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width);
     ~CachingMatchFinder() {BigFree(HTable);}
 
     void clear_hash (BYTE *buf);
     void shift (BYTE *buf, int shift);
+    uint key (BYTE *p)  {return value32(p+N-1);}   // Key value stored in hash for each string
 
-    // Key value stored in hash for each string
-    uint key (BYTE *p)
+    // Prefetch MF data associated with provided `p`
+    void prefetch_hash (BYTE *p)
     {
-        return value32(p+N-1);
+        // Hash key of string for which we will perform match search
+        UINT h = hashx(N,p,HashShift);
+        // Pointers to the current hash element and end of hash row
+        PtrVal *table = HTable+h*hash_row_width2,  *tabend = table + hash_row_width2;
+        for (;  table < tabend;  table += CACHE_ROW/sizeof(*table))
+            prefetch (*table);
     }
+
+// Read next ptr/key from hash and save here previous pair (shifted from previous position)
+#define next_pair()                                       \
+            PtrVal x0=x1;  x1 = *table;  *table++ = x0;   \
+            UINT   v0=v1;  v1 = *table;  *table++ = v0;   \
+            UINT t = v1 ^ key(p);
+
+#define SAVE_MATCH(len,dist)  (*matches++ = (len),  *matches++ = (dist))
+
+    // Fill the `matches` buffer with len/dist of all found matches
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)
+    {
+        UINT len;                         // Length of largest string already found
+        UINT h = hashx(N,p,HashShift);    // Hash key of the string for which we perform the match search
+        // Pointers to the current hash element and end of hash row
+        PtrVal *table = HTable+h*hash_row_width2, *tabend = table + hash_row_width2;
+        // x1/v1 keeps last match candidate and its key (we init them with values which would be saved in the first hash slot)
+        PtrVal x1 = fromPtr(p);
+        UINT   v1 = key(p);
+        BYTE  *q1;
+
+        // Check hash elements, searching for longest match,
+        // while shifting entire row contents towards end
+        // (there are five loops here - one used before any match is found,
+        //  three are used when a match of size 4/5/6 already found,
+        //  and one used when match of size 7+ already found)
+//len0:
+        while (table!=tabend) {
+            next_pair();
+            if ((t&0xff) == 0) {
+                q1 = toPtr(x1);
+                     if (t==0        && accept_optimal_match(N+3,p,q1,bufend))    goto len7;
+                else if (t&0xff00    && accept_optimal_match(N,  p,q1,bufend))    {SAVE_MATCH(N,  p-q1);  goto len4;}
+                else if (t&0xff0000  && accept_optimal_match(N+1,p,q1,bufend))    {SAVE_MATCH(N+1,p-q1);  goto len5;}
+                else if (               accept_optimal_match(N+2,p,q1,bufend))    {SAVE_MATCH(N+2,p-q1);  goto len6;}
+            }
+        }
+        return matches;
+
+len4:   while (table!=tabend) {
+            next_pair();
+            if ((t&0xffff) == 0) {
+                q1 = toPtr(x1);
+                     if (t==0        && accept_optimal_match(N+3,p,q1,bufend))    goto len7;
+                else if (t&0xff0000  && accept_optimal_match(N+1,p,q1,bufend))    {SAVE_MATCH(N+1,p-q1);  goto len5;}
+                else if (               accept_optimal_match(N+2,p,q1,bufend))    {SAVE_MATCH(N+2,p-q1);  goto len6;}
+            }
+        }
+        return matches;
+
+len5:   while (table!=tabend) {
+            next_pair();
+            if ((t&0xffffff) == 0) {
+                q1 = toPtr(x1);
+                     if (t==0        && accept_optimal_match(N+3,p,q1,bufend))    goto len7;
+                else if (               accept_optimal_match(N+2,p,q1,bufend))    {SAVE_MATCH(N+2,p-q1);  goto len6;}
+            }
+        }
+        return matches;
+
+len6:   while (table!=tabend) {
+            next_pair();
+            q1 = toPtr(x1);
+            if (t==0 && accept_optimal_match(N+3,p,q1,bufend))    goto len7;
+        }
+        return matches;
+
+len7:   len = N+3;
+        for (; p+len<bufend && val32equ(p+len, q1+len); len+=4);
+        for (; p+len<bufend && p[len] == q1[len];       len++);
+        SAVE_MATCH(len,p-q1);
+
+        while (table!=tabend) {
+            next_pair();
+            BYTE *q1 = toPtr(x1);
+            if (t == 0 && p[len] == q1[len] && val32equ(p, q1)) {
+                UINT len1 = 4;
+                for (; p+len1<bufend && val32equ(p+len1, q1+len1); len1+=4);
+                for (; p+len1<bufend && p[len1] == q1[len1];       len1++);
+                if (len1>len)  SAVE_MATCH(len=len1,p-q1);
+            }
+        }
+        return matches;
+    }
+
     uint find_matchlen (byte *p, void *bufend, UINT prevlen)
     {
-        UINT len;                  // Length of largest string already found
-        UINT h = hash(value(p));   // Hash key of string for which we perform match search
+        UINT len;                         // Length of largest string already found
+        UINT h = hashx(N,p,HashShift);    // Hash key of string for which we perform match search
         // Pointers to the current hash element and end of hash row
-        PtrVal *table = HTable+h, *tabend = table + hash_row_width*2;
+        PtrVal *table = HTable+h*hash_row_width2, *tabend = table + hash_row_width2;
         // x1/v1 keeps last match candidate and its key (we init them with values which would be saved in the first hash slot)
         PtrVal x1 = fromPtr(p);
         UINT   v1 = key(p);
@@ -388,11 +576,6 @@ struct CachingMatchFinder : BaseMatchFinder
         // (there are five loops here - one used before any match is found,
         //  three are used when a match of size 4/5/6 already found,
         //  and one used when match of size 7+ already found)
-// Read next ptr/key from hash and save here previous pair (shifted from previous position)
-#define next_pair()                                       \
-            PtrVal x0=x1;  x1 = *table;  *table++ = x0;   \
-            UINT   v0=v1;  v1 = *table;  *table++ = v0;   \
-            UINT t = v1 ^ key(p);
 //len0:
         while (table!=tabend) {
             next_pair();
@@ -452,15 +635,17 @@ len7:   q = toPtr(x1);
             }
         }
         return len;
-#undef next_pair
     }
+
+#undef next_pair
+#undef SAVE_MATCH
 
     // Update half of hash row corresponding to string pointed by p
     // (hash updated via this procedure only when skipping match contents)
     void update_hash1 (BYTE *p)
     {
-        UINT h = hash(value(p));
-        for (int j=hash_row_width; j-=2; )
+        UINT h = hashx(N,p,HashShift)*hash_row_width2;    // Hash key of string at p
+        for (int j=hash_row_width_up; j-=2; )
             HTable[h+j]   = HTable[h+j-2],
             HTable[h+j+1] = HTable[h+j-1];
         HTable[h]   = fromPtr(p);
@@ -474,19 +659,37 @@ len7:   q = toPtr(x1);
         for (int i=2; i<len-1; i+=step)    update_hash1 (p+i);
         if (len>3)                         update_hash1 (p+len-1);
     }
+    // Minimal length of matches returned by this Match Finder
+    static uint min_length()  {return N;}
 };
+
+template <uint N>
+CachingMatchFinder<N>::CachingMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width)
+{
+    base      = buf;
+    hash_row_width = _hash_row_width;
+    // Simulate 2gb:256 hash with 2040mb:255 one :)
+    if (hashsize==2*gb  &&  hash_row_width == 1<<lb(hash_row_width))
+        --hash_row_width;
+    hash_row_width2 = hash_row_width*2;
+    hash_row_width_up = hash_row_width + (hash_row_width % 2);  // increment odd values by 1
+
+    UINT rows = 1 << lb(hashsize / (sizeof(*HTable) * hash_row_width2));
+    HashSize  = rows * hash_row_width2;
+    HTable    = (PtrVal*) BigAlloc (HashSize * sizeof(*HTable));
+
+    HashShift = 32 - lb(rows);
+    HashMask  = ~0;
+    if (error() == FREEARC_OK)
+        clear_hash (buf);
+}
 
 template <uint N>
 void CachingMatchFinder<N>::clear_hash (BYTE *buf)
 {
-    if (HTable)
-    {
-        for (int i=0; i<HashSize; i+=2)
-        {
-            HTable[i]   = fromPtr(buf+1);
-            HTable[i+1] = key(buf+1);
-        }
-    }
+    for (int i=0; i<HashSize; i+=2)
+        HTable[i]   = fromPtr(buf+1),
+        HTable[i+1] = key(buf+1);
 }
 
 template <uint N>
@@ -495,6 +698,7 @@ void CachingMatchFinder<N>::shift (BYTE *buf, int shift)
     for (int i=0; i<HashSize; i+=2)
         HTable[i]  =  HTable[i] > fromPtr(buf+shift)?  HTable[i]-shift  :  fromPtr(buf+1);
 }
+
 
 
 // *****************************************************************************************************
@@ -507,17 +711,26 @@ struct CycledCachingMatchFinder : BaseMatchFinder
     BYTE* Head;
     UINT  HeadSize;
 
-    CycledCachingMatchFinder (BYTE *buf, uint hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width);
-    ~CycledCachingMatchFinder()  {BigFree(Head); BigFree(HTable);}
+    CycledCachingMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width);
+    ~CycledCachingMatchFinder()  {BigFree(HTable);  BigFree(Head);}
+    int error()  {return HTable==NULL || Head==NULL?  FREEARC_ERRCODE_NOT_ENOUGH_MEMORY : FREEARC_OK;}    // Returns error code if there is any problem in MF work
 
     void clear_hash (BYTE *buf);
     void shift (BYTE *buf, int shift);
+    uint key (BYTE *p)  {return value32(p+N-1);}   // Key value stored in hash for each string
 
-    // Key value stored in hash for each string
-    uint key (BYTE *p)
+    // Fill the `matches` buffer with len/dist of all found matches
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)
     {
-        return value32(p+N-1);
+        UINT len = find_matchlen (p, bufend, 0);
+               q = get_matchptr();
+        if (len >= MINLEN) {
+            *matches++ = len;
+            *matches++ = p-q;
+        }
+        return matches;
     }
+
     uint find_matchlen (byte *p, void *bufend, UINT prevlen)
     {
         UINT len;                         // Length of largest string already found
@@ -626,11 +839,11 @@ len7:   len = MINLEN-1;
             update_hash1 (p+i);
     }
     // Minimal length of matches returned by this Match Finder
-    uint min_length()     {return N;}
+    static uint min_length()  {return N;}
 };
 
 template <uint N>
-CycledCachingMatchFinder<N>::CycledCachingMatchFinder (BYTE *buf, uint hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width)
+CycledCachingMatchFinder<N>::CycledCachingMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int _hash_row_width, uint auxhash_size, int auxhash_row_width)
 {
     base      = buf;
     hash_row_width = _hash_row_width;
@@ -641,19 +854,20 @@ CycledCachingMatchFinder<N>::CycledCachingMatchFinder (BYTE *buf, uint hashsize,
     HeadSize  = 1 << lb(hashsize / (sizeof(*HTable) * hash_row_width * 2));
     Head      = (BYTE*)  BigAlloc (HeadSize * sizeof(*Head));
 
-    HashSize  = HeadSize * hash_row_width * 2 ;
+    HashSize  = HeadSize * hash_row_width * 2;
     HTable    = (PtrVal*) BigAlloc (HashSize * sizeof(*HTable));
 
     HashShift = 32 - lb(HeadSize);
     HashMask  = ~0;
-    clear_hash (buf);
+    if (error() == FREEARC_OK)
+        clear_hash (buf);
 }
 
 template <uint N>
 void CycledCachingMatchFinder<N>::clear_hash (BYTE *buf)
 {
-    if (HTable)  iterate_var(i,HashSize)  HTable[i]=0;
-    if (Head)    iterate_var(i,HeadSize)  Head[i]=0;
+    iterate_var(i,HashSize)  HTable[i]=0;
+    iterate_var(i,HeadSize)  Head  [i]=0;
 }
 
 template <uint N>
@@ -662,6 +876,152 @@ void CycledCachingMatchFinder<N>::shift (BYTE *buf, int shift)
     for (int i=0; i<HashSize; i+=2)
         HTable[i]  =  HTable[i] > fromPtr(buf+shift)?  HTable[i]-shift  :  0;
 }
+
+
+
+// ****************************************************************************
+// Binary Tree match finder from LZMA/LzFind.c (c) Igor Pavlov ****************
+// ****************************************************************************
+
+template <uint N>
+struct BinaryTreeMatchFinder : BaseMatchFinder
+{
+    static const UINT kEmptyHashValue = 0;
+    UINT  DictSize;     // Size of the match search window
+    UINT *BinaryTree;   // Binary trees of matches having the same hash value
+    int   MaxDepth;     // Maximum depth of search in the binary tree
+    BYTE *LastBufEnd;   // Last `bufend` value passed to find_matchlen() used by update_hash()
+
+    BinaryTreeMatchFinder (BYTE *buf, uint dictsize, uint hashsize, int maxdepth, uint auxhash_size, int auxhash_row_width)
+        : BaseMatchFinder (buf, dictsize, hashsize, 1, auxhash_size, auxhash_row_width),  DictSize(dictsize),  MaxDepth(maxdepth)
+    {
+        BinaryTree = (UINT*) BigAlloc (2 * sizeof(UINT) * DictSize);  // for every dictionary position, we save pointers to the left and right "sons" as UINT indexes
+        if (error() == FREEARC_OK)
+            clear_hash(buf);
+    }
+    ~BinaryTreeMatchFinder()
+    {
+        BigFree(BinaryTree);
+        BigFree(HTable);
+    }
+    // Returns error code if there is any problem in MF work
+    int error()  {return BinaryTree==NULL?  FREEARC_ERRCODE_NOT_ENOUGH_MEMORY : BaseMatchFinder::error();}
+
+    // Called on initialization and when next data chunk read into NON-SLIDING buffer
+    void clear_hash (BYTE *buf);
+    // Called after data was shifted 'shift' bytes backward in SLIDING WINDOW buf[]
+    void shift (BYTE *buf, int shift);
+    // Minimal length of matches returned by this Match Finder
+    static uint min_length()  {return N;}
+
+    // Fill the `matches` buffer with len/dist of all found matches
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)
+    {
+        int  depth  = MaxDepth;                // Limit to amount of matches checked
+        UINT maxLen = MINLEN-1;                // Length of largest string found so far
+        UINT h      = hashx(N,p,HashShift);    // Hash key of string for which we perform match search
+        UINT n      = UINT(HTable[h]);         // Index of the current match checked (relative to `base`)
+        HTable[h]   = PtrVal(p-base);
+        UINT *ptr1  = & BinaryTree[size_t(p-base)*2],  *ptr0 = ptr1 + 1;
+        UINT len0 = 0,  len1 = 0,  lenLimit = (byte*)bufend-p;
+        for (;;)
+        {
+          if (depth-- == 0  ||  n == kEmptyHashValue)    { *ptr0 = *ptr1 = kEmptyHashValue;  break; }
+          UINT *pair = & BinaryTree[size_t(n)*2];  prefetch(*pair);
+          BYTE *q    = base+n;
+          UINT  len  = mymin (len0, len1);
+          if (q[len] == p[len])
+          {
+            if (++len != lenLimit && q[len] == p[len])
+              while (++len != lenLimit)
+                if (q[len] != p[len])
+                  break;
+            if (len > maxLen)
+            {
+              *matches++ = maxLen = len;
+              *matches++ = p-q;
+              if (len == lenLimit) { *ptr1 = pair[0];  *ptr0 = pair[1];  break; }
+            }
+          }
+          if (q[len] < p[len])    *ptr1 = n,  ptr1 = pair + 1,  n = *ptr1,  len1 = len;
+          else                    *ptr0 = n,  ptr0 = pair,      n = *ptr0,  len0 = len;
+        }
+        return matches;
+    }
+
+    uint find_matchlen (byte *p, void *bufend, UINT prevlen)
+    {
+        int  depth  = MaxDepth;                // Limit to amount of matches checked
+        UINT maxLen = MINLEN-1;                // Length of largest string found so far
+        UINT h      = hashx(N,p,HashShift);    // Hash key of string for which we perform match search
+        UINT n      = UINT(HTable[h]);         // Index of the current match checked (relative to `base`)
+        HTable[h]   = PtrVal(p-base);
+        UINT *ptr1  = & BinaryTree[size_t(p-base)*2],  *ptr0 = ptr1 + 1;
+        UINT len0 = 0,  len1 = 0,  lenLimit = (byte*)bufend-p;  LastBufEnd = (byte*)bufend;
+        if (bufend <= p  ||  lenLimit <= maxLen)  { *ptr0 = *ptr1 = kEmptyHashValue;  return maxLen; }
+        for (;;)
+        {
+          if (depth-- == 0  ||  n == kEmptyHashValue)    { *ptr0 = *ptr1 = kEmptyHashValue;  break; }
+          UINT *pair = & BinaryTree[size_t(n)*2];  prefetch(*pair);
+          BYTE *q1   = base+n;
+          UINT  len  = mymin (len0, len1);
+          if (q1[len] == p[len])
+          {
+            if (++len != lenLimit && q1[len] == p[len])
+              while (++len != lenLimit)
+                if (q1[len] != p[len])
+                  break;
+            if (len > maxLen)
+            {
+              if (accept_len_dist(len,p-q1)  &&  !(len==maxLen+1 && ChangePair(p-q, p-q1))) {
+                maxLen = len;
+                q = q1;
+              }
+              if (len == lenLimit) { *ptr1 = pair[0];  *ptr0 = pair[1];  break; }
+            }
+          }
+          if (q1[len] < p[len])    *ptr1 = n,  ptr1 = pair + 1,  n = *ptr1,  len1 = len;
+          else                     *ptr0 = n,  ptr0 = pair,      n = *ptr0,  len0 = len;
+        }
+        return maxLen;
+    }
+
+    // Update hash row corresponding to string pointed by p
+    // (hash updated via this procedure only when skipping match contents)
+    void update_hash1 (BYTE *p, UINT maxLen = 256*kb)
+    {
+        void *bufend = (LastBufEnd > p  &&  LastBufEnd-p > maxLen)?  p + maxLen  :  LastBufEnd;
+        find_matchlen (p, bufend, MINLEN-1);
+    }
+    // Skip match starting from p with length len and update hash with strings using given step
+    void update_hash (BYTE *p, UINT len, UINT step)
+    {
+        step  =  mymax (step, len/2503);   // optimization to avoid O(n^2) time behavior after a very long match
+        if (len>1)                         update_hash1 (p+1);
+        for (int i=2; i<len-1; i+=step)    update_hash1 (p+i);
+        if (len>3)                         update_hash1 (p+len-1);
+    }
+};
+
+
+// Called when next data chunk read into NON-SLIDING buffer
+template <uint N>
+void BinaryTreeMatchFinder<N>::clear_hash (BYTE *buf)
+{
+    if (HTable)  iterate_var(i,HashSize)  HTable[i] = PtrVal(kEmptyHashValue);
+    // No need to initialize the BinaryTree[]
+}
+
+// Called after data was shifted 'shift' bytes backwards in SLIDING WINDOW buf[].
+// We make appropriate corrections in HTable and BinaryTree, reducing and moving
+// values and replacing pointers to data shifted out with kEmptyHashValue.
+template <uint N>
+void BinaryTreeMatchFinder<N>::shift (BYTE *buf, int shift)
+{
+    iterate_var(i,HashSize)                             HTable    [i]         = PtrVal( UINT(HTable[i]) > shift?  UINT(HTable[i])-shift  :  kEmptyHashValue);
+    for (size_t i=shift*2; i<size_t(DictSize)*2; i++)   BinaryTree[i-shift*2] =          BinaryTree[i]  > shift?   BinaryTree[i] -shift  :  kEmptyHashValue;
+}
+
 
 
 // ****************************************************************************
@@ -675,8 +1035,8 @@ struct LazyMatching
     uint nextlen;
     BYTE *prevq, *nextq;
 
-    LazyMatching (BYTE *buf, int hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
-        : mf (buf, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
+    LazyMatching (BYTE *buf, uint dictsize, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
+        : mf (buf, dictsize, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
     {
         nextlen = 0;
     }
@@ -692,8 +1052,8 @@ struct LazyMatching
         nextq -= shift;
     }
 
+    static uint min_length()  {return MatchFinder::min_length();}
     int  error()          {return mf.error();}
-    uint min_length()     {return mf.min_length();}
     byte *get_matchptr()  {return prevq;}
 
     uint find_matchlen (byte *p, void *bufend, UINT _prevlen)
@@ -765,17 +1125,38 @@ struct Hash3
     UINT HashSize, HashSize2;
     BYTE **HTable, **HTable2, *q;
 
-    Hash3 (BYTE *buf, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width);
+    Hash3 (BYTE *buf, uint dictsize, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width);
     ~Hash3();
     int  error();
     void clear_hash  (BYTE *buf);         // Clear all hash tables
     void clear_hash3 (BYTE *buf);         // Clear only its own hash tables
     void shift (BYTE *buf, int shift);
 
-    uint min_length()     {return 2;}
+    static uint min_length()  {return 2;}
     byte *get_matchptr()  {return q;}
     uint hash (uint x)    {return (x*234567913) >> (32-HASH3_LOG);}
     uint hash2(uint x)    {return (x*123456791) >> (32-HASH2_LOG);}
+
+    // Prefetch MF data associated with provided `p` (we suppose that Hash3 own data are small and therefore are already cached)
+    void prefetch_hash (BYTE *p)    {mf.prefetch_hash(p);}
+
+    // Fill the `matches` buffer with len/dist of all found matches
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)
+    {
+        UINT h = hash2(value16(p));
+        BYTE *q = HTable2[h];  HTable2[h] = p;
+        if (p+2<=bufend && val16equ(p, q)) {
+            *matches++ = 2;
+            *matches++ = p-q;
+        }
+        h = hash(value24(p));
+        q = HTable[h];  HTable[h] = p;
+        if (p+3<=bufend && val24equ(p, q)) {
+            *matches++ = 3;
+            *matches++ = p-q;
+        }
+        return mf.find_all_matches (p, bufend, matches);
+    }
 
     uint find_matchlen (byte *p, void *bufend, UINT prevlen)
     {
@@ -828,8 +1209,8 @@ struct Hash3
 
 template <class MatchFinder, int HASH3_LOG, int HASH2_LOG, bool FULL_UPDATE>
 Hash3<MatchFinder, HASH3_LOG, HASH2_LOG, FULL_UPDATE>
-  :: Hash3 (BYTE *buf, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
-   :  mf (buf, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
+  :: Hash3 (BYTE *buf, uint dictsize, uint hashsize, int hash_row_width, uint auxhash_size, int auxhash_row_width)
+   :  mf (buf, dictsize, hashsize, hash_row_width, auxhash_size, auxhash_row_width)
 {
     HashSize  = 1 << HASH3_LOG;
     HashSize2 = 1 << HASH2_LOG;
@@ -889,10 +1270,20 @@ struct CombineMF
     BYTE *q;
 
     // Constructor just saves references to two matchfinders being combined
-    CombineMF (BYTE *buf, uint hash_size, int hash_row_width, uint auxhash_size, int auxhash_row_width) :
-        mf1(buf, hash_size, hash_row_width, 0, 0),
-        mf2(buf, auxhash_size, auxhash_row_width, 0, 0)
+    CombineMF (BYTE *buf, uint dictsize, uint hash_size, int hash_row_width, uint auxhash_size, int auxhash_row_width) :
+        mf1(buf, dictsize,    hash_size,    hash_row_width, 0, 0),
+        mf2(buf, dictsize, auxhash_size, auxhash_row_width, 0, 0)
         {};
+
+    // Prefetch MF data associated with provided `p` (we suppose that mf2 data are small and therefore are already cached)
+    void prefetch_hash (BYTE *p)    {mf1.prefetch_hash(p);}
+
+    // Fill the `matches` buffer with len/dist from mf2 (shorter matches), then mf1 (longer matches)
+    DISTANCE *find_all_matches (byte *p, void *bufend, DISTANCE *matches)
+    {
+        matches = mf2.find_all_matches (p, bufend, matches);
+        return mf1.find_all_matches (p, bufend, matches);
+    }
 
     // Just try mf1, then mf2 and return best match found
     uint find_matchlen (byte *p, void *bufend, UINT prevlen)
@@ -945,8 +1336,8 @@ struct CombineMF
         mf2.invalidate_match();
     }
 
-    int  error()          {return mymin (mf1.error(),      mf2.error());     }
-    uint min_length()     {return mymin (mf1.min_length(), mf2.min_length());}
+    static uint min_length()  {return mymin (MatchFinder1::min_length(), MatchFinder2::min_length());}
+    int  error()          {return mymin (mf1.error(), mf2.error());}
     byte *get_matchptr()  {return q;}
 };
 

@@ -50,7 +50,7 @@ set(USE_SIPHASH           1)
 set(USE_SNAPPY            1)
 set(USE_SPOOKY            1)
 set(USE_TINF              0) # inefficient
-set(USE_TOR               0) # doesn't compile on FreeBSD, Debian, Timesys Linux
+set(USE_TOR               1)
 set(USE_XXHASH            1)
 set(USE_YAPPY             1)
 set(USE_Z3LIB             0) # Nothing great

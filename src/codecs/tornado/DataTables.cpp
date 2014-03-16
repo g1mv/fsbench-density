@@ -1,6 +1,10 @@
-// (c) Bulat Ziganshin <Bulat.Ziganshin@gmail.com>
+// Code for data tables preprocessing (subtracting) which improves compression
+//
+// (c) Bulat Ziganshin
 // (c) Joachim Henke
-// GPL'ed code for data tables preprocessing (subtracting) which improves compression
+// This code is provided on the GPL license.
+// If you need a commercial license to use the code, please write to Bulat.Ziganshin@gmail.com
+
 #include "Compression.h"
 
 // Maximum size of one table row at compression
@@ -108,8 +112,8 @@ static bool check_for_data_table (int N, int &type, int &items, byte *p, byte *b
         diff_table (type, p, items);
         table_end = p+type*items;
         table_count++;  table_sumlen += type*items;
-        stat (printf("%08x-%08x %d*%d\n", int(p-buf+offset), int(p-buf+offset+type*items), type, items));
-        //stat (printf ("\n%d: Start %x, end %x, length %d      ", type, int(p-buf+offset), int(table_end-buf+offset), items));
+        stat_only (printf("%08x-%08x %d*%d\n", int(p-buf+offset), int(p-buf+offset+type*items), type, items));
+        //stat_only (printf ("\n%d: Start %x, end %x, length %d      ", type, int(p-buf+offset), int(table_end-buf+offset), items));
         return TRUE;
     }
 
@@ -278,4 +282,3 @@ void DataTables::shift (BYTE *old_pos, BYTE *new_pos)
         memcpy (p->table_start, old, new_pos - p->table_start);
     }
 }
-

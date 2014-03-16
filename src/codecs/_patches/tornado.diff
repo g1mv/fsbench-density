@@ -1,0 +1,130 @@
+diff -C3 ../src/Common.cpp ./Common.cpp
+*** ../src/Common.cpp	2014-03-08 23:53:22.000000000 +0100
+--- ./Common.cpp	2014-03-16 18:15:10.007366076 +0100
+***************
+*** 2,7 ****
+--- 2,10 ----
+  #include <stdlib.h>
+  #include "Common.h"
+  #include "Compression.h"
++ #if defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__minix)
++ #  include <sys/sysctl.h>
++ #endif
+  
+  // Для обработки ошибок во вложенных процедурах - longjmp сигнализирует процедуре верхнего уровня о произошедшей ошибке
+  int jmpready = FALSE;
+***************
+*** 25,31 ****
+  #define alloc_debug_printf(x)
+  #endif
+  
+! void *MyAlloc(size_t size) throw()
+  {
+    if (size == 0)
+      return 0;
+--- 28,34 ----
+  #define alloc_debug_printf(x)
+  #endif
+  
+! void *FAMyAlloc(size_t size) throw()
+  {
+    if (size == 0)
+      return 0;
+***************
+*** 33,39 ****
+    return ::malloc(size);
+  }
+  
+! void MyFree(void *address) throw()
+  {
+    if (address != 0)
+      alloc_debug_printf((stderr, "  Free; count = %10d\n", --g_allocCount));
+--- 36,42 ----
+    return ::malloc(size);
+  }
+  
+! void FAMyFree(void *address) throw()
+  {
+    if (address != 0)
+      alloc_debug_printf((stderr, "  Free; count = %10d\n", --g_allocCount));
+***************
+*** 666,672 ****
+--- 669,684 ----
+  
+  uint64 GetAvailablePhysicalMemory (void)
+  {
++ #if defined(_SC_AVPHYS_PAGES)
+    return uint64(sysconf(_SC_AVPHYS_PAGES)) * sysconf(_SC_PAGE_SIZE);
++ #elif defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__minix)
++   unsigned long page_count = 0;
++   size_t page_count_size = sizeof(page_count);
++   sysctlbyname("hw.availpages", &page_count, &page_count, NULL, 0);
++   return page_count * sysconf(_SC_PAGE_SIZE);
++ #else
++ #  error "There's no support for memory stats on your system."
++ #endif
+  }
+  
+  int GetProcessorsCount (void)
+diff -C3 ../src/Common.h ./Common.h
+*** ../src/Common.h	2014-03-08 23:53:22.000000000 +0100
+--- ./Common.h	2014-03-16 18:15:31.911363388 +0100
+***************
+*** 41,47 ****
+  #endif
+  
+  #if defined(FREEARC_INTEL_BYTE_ORDER)
+! #if _BIG_ENDIAN
+  #error "You're compiling for Motorola byte order, but FREEARC_INTEL_BYTE_ORDER was defined."
+  #endif
+  #elif defined(FREEARC_MOTOROLA_BYTE_ORDER)
+--- 41,47 ----
+  #endif
+  
+  #if defined(FREEARC_INTEL_BYTE_ORDER)
+! #if _BIG_ENDIAN == 1
+  #error "You're compiling for Motorola byte order, but FREEARC_INTEL_BYTE_ORDER was defined."
+  #endif
+  #elif defined(FREEARC_MOTOROLA_BYTE_ORDER)
+***************
+*** 624,631 ****
+  #define throw()
+  #endif
+  
+! void *MyAlloc(size_t size) throw();
+! void MyFree(void *address) throw();
+  extern bool AllocTopDown;
+  #ifdef FREEARC_WIN
+  enum LPType {DEFAULT, FORCE, DISABLE, TRY};
+--- 624,631 ----
+  #define throw()
+  #endif
+  
+! void *FAMyAlloc(size_t size) throw();
+! void FAMyFree(void *address) throw();
+  extern bool AllocTopDown;
+  #ifdef FREEARC_WIN
+  enum LPType {DEFAULT, FORCE, DISABLE, TRY};
+***************
+*** 635,644 ****
+  void *BigAlloc (int64 size, LPType LargePageMode=DEFAULT) throw();
+  void BigFree(void *address) throw();
+  #else
+! #define MidAlloc(size) MyAlloc(size)
+! #define MidFree(address) MyFree(address)
+! #define BigAlloc(size) MyAlloc(size)
+! #define BigFree(address) MyFree(address)
+  #endif // !FREEARC_WIN
+  
+  
+--- 635,644 ----
+  void *BigAlloc (int64 size, LPType LargePageMode=DEFAULT) throw();
+  void BigFree(void *address) throw();
+  #else
+! #define MidAlloc(size) FAMyAlloc(size)
+! #define MidFree(address) FAMyFree(address)
+! #define BigAlloc(size) FAMyAlloc(size)
+! #define BigFree(address) FAMyFree(address)
+  #endif // !FREEARC_WIN
+  
+  

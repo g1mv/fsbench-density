@@ -1,6 +1,4 @@
-// (c) Bulat Ziganshin <Bulat.Ziganshin@gmail.com>
-// (c) Joachim Henke
-// GPL'ed code for various streams and entropy codecs:
+// Code for various streams and entropy codecs:
 //   - in/out byte streams
 //   - in/out bit streams
 //   - fast & elegant huffman tree builder
@@ -9,6 +7,11 @@
 // Here semi-adaptive means that statistics collected on previous symbols are
 // used to encode new ones, but encoding tables are updated with some intervals
 // (after each 10k-20k symbols encoded)
+//
+// (c) Bulat Ziganshin
+// (c) Joachim Henke
+// This code is provided on the GPL license.
+// If you need a commercial license to use the code, please write to Bulat.Ziganshin@gmail.com
 
 // Selects either encoder or decoder
 enum CodecDirection {Encoder, Decoder};
@@ -30,6 +33,7 @@ struct OutputByteStream
     BYTE          *last_qwrite;  // Value of output pointer for last quasi-write call
     BYTE          *anchor;    // Marked position in output buffer. Shifted synchronous to buffer contents
     UINT          chunk;      // How many bytes should be written at least in each "write" call
+    uint64        shifted_out;   // Bytes shifted out of buffer after saved by write callback
     int           errcode;
 
     // chunk - how many bytes should be written each time, at least
@@ -40,6 +44,7 @@ struct OutputByteStream
         // Add 512 bytes for LZ77_ByteCoder (its LZSS scheme needs to overwrite old flag words) and 4096 for rounding written chunks
         last_qwrite = output = buf = (byte*) BigAlloc (chunk+pad+512+4096);
         errcode = buf==NULL?  FREEARC_ERRCODE_NOT_ENOUGH_MEMORY : FREEARC_OK;
+        shifted_out = 0;
     }
     ~OutputByteStream()       {BigFree(buf);}
     // Returns error code if there was any problems in stream work
@@ -59,6 +64,8 @@ struct OutputByteStream
     void put24  (uint32 c)    {setvalue32(output, c); advance(3);}
     void put32  (uint32 c)    {setvalue32(output, c); advance(4);}
     void put64  (uint64 c)    {setvalue64(output, c); advance(8);}
+    // Number of bytes already written to coder
+    uint64 outsize()          {return shifted_out + (output-buf);}
     // Writes len bytes pointed by ptr
     void putbuf (void *ptr, uint len);
     // Set context for order-1 coders
@@ -91,6 +98,7 @@ void OutputByteStream::flush()
            memcpy (buf, buf+n, output-(buf+n));
            output -= n;                     // Shift write pointer
            anchor -= n;                     // Shift data placed in buffer anchor too
+           shifted_out += n;
         }
     }
     last_qwrite=output;
@@ -100,12 +108,13 @@ void OutputByteStream::flush()
 struct InputByteStream
 {
     CALLBACK_FUNC *callback;    // Function that reads data from the instream
-    void     *auxdata;
+    void          *auxdata;
     UINT          bufsize;
     byte          *buf;         // Buffer (MAXELEM additional bytes are allocated for get64, see below)
     byte          *input;       // Current reading pos in buf[]
     byte          *read_point;  // Fence before next read callback
 //  byte          *dataend;     // End of real data in buf[]
+    uint64        shifted_out;  // Bytes shifted out of buffer after saved by write callback
     int           errcode;      // Value returned by last "read" callback
 
     // In order to improve speed, we use MAXELEM bytes at the buffer beginning
@@ -135,9 +144,12 @@ struct InputByteStream
         if (input >= read_point) {
            memcpy (buf, buf+bufsize, MAXELEM);
            if (error()==FREEARC_OK)   errcode = callback ("read", buf+MAXELEM, bufsize, auxdata);
-           input  -= bufsize;
+           input       -= bufsize;
+           shifted_out += bufsize;
         }
     }
+    // Number of bytes already consumed by decoder
+    uint64 insize()  {return (shifted_out + (input - buf)) - MAXELEM;}
 
     // Reads 8-64 bits from the buffer
     uint   getc   ()  {fill(); return *input++;}
@@ -474,6 +486,9 @@ struct HuffmanEncoder : OutputBitStream
         huf.Inc (x);
         putbits (huf.bits[x], huf.code[x]);
     }
+
+    // Bits required to encode the single code
+    PRICE price(UINT x, int extra_bits)  {return huf.bits[x] + extra_bits;}
 };
 
 // Decode symbols using huffman coder
@@ -507,7 +522,7 @@ struct HuffmanDecoder : InputBitStream
 template <int ORDER1_CONTEXTS, int EOB>
 struct HuffmanEncoderOrder1 : OutputBitStream
 {
-    HuffmanTree  *huf;           // Huffman trees used to encode symbols
+    HuffmanTree  *huf;                           // Huffman trees used to encode symbols
     int          remainder[ORDER1_CONTEXTS];     // Count symbols remaining before huffman tree rebuild
 
     HuffmanEncoderOrder1 (CALLBACK_FUNC *callback, void *auxdata, UINT chunk, UINT pad, int n)
@@ -658,6 +673,7 @@ struct TCounter
 {
     UINT n, remainder;
     UINT cnt[NUM], cum[NUM], livecnt[NUM], index[INDEXES];
+    PRICE prices[NUM];
 
     TCounter (unsigned _n = NUM);
 
@@ -715,6 +731,9 @@ void TCounter<type> :: Rescale ()
         if (type==Decoder)
             while (cum[s]+cnt[s]-1 >= RANGE/INDEXES*ind)
                 index[ind++] = s;
+        // Calculate encoding price in bits
+        if (type==Encoder)
+            prices[s] = PRICE_SCALE( log2( double(RANGE) / cnt[s] ));
     }
     debug (printf("total %d\n",total));
 }
@@ -751,6 +770,9 @@ struct ArithCoder : TRangeCoder
         x>>=15, n-=15;
         Encode (mask(x,n), 1, n);
     }
+
+    // (Scaled) bits required to encode the single code
+    PRICE price (UINT x, int extra_bits)  {return c.prices[x] + PRICE_BITS(extra_bits);}
 };
 
 
@@ -790,4 +812,3 @@ struct ArithDecoder : TRangeDecoder
         }
     }
 };
-

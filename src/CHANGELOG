@@ -3,6 +3,7 @@
 [!] fixed a segfault with nop codec
 [~] updated lz4 to r114
 [~] updated LZJB to the latest FreeBSD version
+[~] updated tornado to 0.6
 [-] removed xxhash256, it's dangerously weak
 
 0.14.2

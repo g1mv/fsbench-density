@@ -216,7 +216,7 @@ Codec * find_codec(const std::string & name);
 #define _SNAPPY_VERSION     "1.1.0"
 #define _SPOOKY_VERSION     "V2 2012-08-05"
 #define _TINF_VERSION       "1.00"
-#define _TOR_VERSION        "0.5"
+#define _TOR_VERSION        "0.6"
 #define _XXHASH_VERSION     "r29"
 #define _XXHASH256_VERSION  "1"
 #define _YAPPY_VERSION      "v2"

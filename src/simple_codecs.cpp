@@ -1567,7 +1567,7 @@ void Tor::init(const string & args, unsigned threads_no, size_t, bool init_compr
             throw InvalidParams(help());
         }
 
-        if(mode < 1 || mode > 11)
+        if(mode < 1 || mode > 16)
         throw InvalidParams(help());
         this->params = new void *[threads_no];
         for(unsigned i=0; i<threads_no; ++i)
