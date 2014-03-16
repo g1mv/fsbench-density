@@ -123,8 +123,8 @@ IF(MSVC) # Cmake doesn't use the strongest optimisation flags here, so I fix it 
     string(REPLACE "/O2" "/Ox" CMAKE_CXX_FLAGS_RELEASE
     "${CMAKE_CXX_FLAGS_RELEASE}")
 ENDIF(MSVC)
-set(GCC_FLAGS "-fno-tree-vectorize -Wall -Wextra -static") # the code crashes when I compile it with mingw 4.5.2 and w/out -fno-tree-vectorize
-                                                   # with mingw64 4.6.2 it's fine. Don't know what's up. FIXME.
+set(GCC_FLAGS "-fno-tree-vectorize -static") # the code crashes when I compile it with mingw 4.5.2 and w/out -fno-tree-vectorize
+                                             # with mingw64 4.6.2 it's fine. Don't know what's up. FIXME.
 set(GXX_FLAGS ${GCC_FLAGS})
 set(MSVC_FLAGS "/W4")
 
@@ -545,6 +545,7 @@ set(SRC ${MAIN_SRC} ${7z_SRC} ${BCL_SRC} ${BZ2_SRC} ${CRYPTOPP_SRC} ${ECRYPT_SRC
 
 
 IF(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
+    set_source_files_properties(${MAIN_SRC} PROPERTIES COMPILE_FLAGS "-Wall -Wextra")
     set(CXX_FLAGS ${GXX_FLAGS})
     set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${GCC_LINKFLAGS})
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
