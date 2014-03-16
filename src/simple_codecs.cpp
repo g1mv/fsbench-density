@@ -830,18 +830,10 @@ void spooky(char * in, size_t isize, char * out)
 extern "C"
 {
 #include "xxhash.h"
-#include "xxhash256.h"
 }
 void xxhash(char * in, size_t isize, char * out)
 {
     *(unsigned int*) out = XXH32(in, isize, 0);
-}
-void xxhash_256(char * in, size_t isize, char * out)
-{
-    uint64_t * seed_out = (uint64_t*)out;
-    seed_out[0] = seed_out[1] = seed_out[2] = seed_out[3] = 0;
-
-    XXH_256(in, isize, seed_out);
 }
 #endif//FSBENCH_USE_XXHASH
 #ifdef FSBENCH_USE_ZFS

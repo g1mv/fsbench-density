@@ -123,7 +123,6 @@ vhash                      | Ted Krovetz, Wei Dai                        | 2007-
 umac                       | Ted Krovetz                                 | 2007-04-17            | yes      | www.fastcrypto.com
 vmac                       | Ted Krovetz, Wei Dai                        | 2007-04-17            | yes      | www.fastcrypto.com
 xxhash                     | Yann Collet                                 | r29                   | yes      | https://code.google.com/p/xxhash
-xxhash256                  | Yann Collet, m^2                            | 1                     | yes      | https://extrememoderate.wordpress.com/2012/06/10/xxhash256-update
 
 
 Ciphers:
