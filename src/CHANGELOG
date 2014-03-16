@@ -2,6 +2,7 @@
 [!] fixed integer underflow
 [!] fixed a segfault with nop codec
 [~] updated lz4 to r114
+[~] updated LZJB to the latest FreeBSD version
 [-] removed xxhash256, it's dangerously weak
 
 0.14.2

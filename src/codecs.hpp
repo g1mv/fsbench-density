@@ -220,7 +220,7 @@ Codec * find_codec(const std::string & name);
 #define _XXHASH_VERSION     "r29"
 #define _XXHASH256_VERSION  "1"
 #define _YAPPY_VERSION      "v2"
-#define _ZFS_VERSION        "2010"
+#define _ZFS_VERSION        "FreeBSD r263244"
 #define _Z3LIB_VERSION      "1.3"
 #define _ZLIB_VERSION       "1.2.8"
 #define _ZOPFLI_VERSION     "1.0.0"
