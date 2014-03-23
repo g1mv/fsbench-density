@@ -2,7 +2,7 @@
 [+] added memcpy, memmove codecs
 [~] updated lz4 to r114
 [~] updated LZJB to the latest FreeBSD version
-[~] updated tornado to 0.6
+[~] updated tornado to 0.6a
 [-] removed xxhash256, it's dangerously weak
 [!] fixed integer underflow
 [!] fixed a segfault with nop codec

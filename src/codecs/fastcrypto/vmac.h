@@ -45,7 +45,9 @@
  
 #if VMAC_USE_STDINT && !_MSC_VER /* Try stdint.h if non-Microsoft          */
 #ifdef  __cplusplus
+#ifndef __STDC_CONSTANT_MACROS
 #define __STDC_CONSTANT_MACROS
+#endif
 #endif
 #include <stdint.h>
 #elif (_MSC_VER)                  /* Microsoft C does not have stdint.h    */

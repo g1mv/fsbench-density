@@ -7,7 +7,7 @@ small_iters problem: in-place and buffered codecs that overwrite their input (al
   * after it's done, make sure that inbuf contents haven't changed 
 
 update LZWC
-memcpy codec
+get rid of iostream.
 add the AES implementation used by vmac/umac
 add mmini-lzh
 add http://code.google.com/p/variablelengthstringhashing/

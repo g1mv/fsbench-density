@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include "Common.h"
 #include "Compression.h"
-#if defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__minix)
-#  include <sys/sysctl.h>
-#endif
 
 // Для обработки ошибок во вложенных процедурах - longjmp сигнализирует процедуре верхнего уровня о произошедшей ошибке
 int jmpready = FALSE;
@@ -214,6 +211,12 @@ char *str_replace (char *orig, char *from, char *to)
   else    return strdup_msg (orig);
 }
 
+// If the string param contains a double, return it - otherwise set error=1
+double parseDouble(char *param, int *error)
+{
+  return atof(param) ;
+}
+
 // If the string param contains an integer, return it - otherwise set error=1
 MemSize parseInt (char *param, int *error)
 {
@@ -251,7 +254,8 @@ MemSize parseMem (char *param, int *error, char spec)
 // Returns a string with the amount of memory
 void showMem (MemSize mem, char *result)
 {
-       if (mem%gb==0) sprintf (result, "%.0lfgb", double(mem/gb));
+       if (mem   ==0) sprintf (result, "0b");
+  else if (mem%gb==0) sprintf (result, "%.0lfgb", double(mem/gb));
   else if (mem%mb==0) sprintf (result, "%.0lfmb", double(mem/mb));
   else if (mem%kb==0) sprintf (result, "%.0lfkb", double(mem/kb));
   else                sprintf (result, "%.0lfb",  double(mem));
@@ -260,6 +264,8 @@ void showMem (MemSize mem, char *result)
 // Returns a string with the amount of memory
 void showMem64 (uint64 mem, char *result)
 {
+       if (mem   ==0) sprintf (result, "0b");
+  else
   if(mem%terabyte==0) sprintf (result, "%.0lftb", double(mem/terabyte));
   else if (mem%gb==0) sprintf (result, "%.0lfgb", double(mem/gb));
   else if (mem%mb==0) sprintf (result, "%.0lfmb", double(mem/mb));
@@ -661,6 +667,7 @@ void EndCompressionThreadPriority (int old_priority)
 
 #include <unistd.h>
 #include <sys/resource.h>
+#include <sys/sysctl.h>
 
 uint64 GetPhysicalMemory (void)
 {
