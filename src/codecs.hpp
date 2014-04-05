@@ -223,5 +223,6 @@ Codec * find_codec(const std::string & name);
 #define _ZFS_VERSION        "FreeBSD r263244"
 #define _Z3LIB_VERSION      "1.3"
 #define _ZLIB_VERSION       "1.2.8"
+#define _ZLING_VERSION      "20140324"
 #define _ZOPFLI_VERSION     "1.0.0"
 #endif // CODECS_HPP_BhjgkfG8

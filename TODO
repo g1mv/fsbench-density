@@ -41,11 +41,9 @@ add:
 * http://cessu.blogspot.com/2008/11/hashing-with-sse2-revisited-or-my-hash.html
 * http://encode.ru/threads/1289-CRUSH-0-01-is-here!
 * http://libssc.net/
-* https://github.com/richox/zlite
 * http://encode.ru/threads/1874-Alba (seems poor)
 * entropy coders, http://encode.ru/threads/1890-Benchmarking-Entropy-Coders lists some
 * https://github.com/Bulat-Ziganshin/DataSmoke
-* https://github.com/richox/libzling
 * BWT(s) variants
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4

@@ -51,6 +51,9 @@ using namespace std;
 #ifdef FSBENCH_USE_Z3LIB
 #include "z3lib/fsbench_z3lib.hpp"
 #endif//FSBENCH_USE_Z3LIB
+#ifdef FSBENCH_USE_ZLING
+#include "zling/fsbench_zling.hpp"
+#endif//FSBENCH_USE_ZLING
 /////////////////////////////////
 // Global variables 
 // and helpers to manipulate them
@@ -200,6 +203,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_ZLIB
               new CodecWithIntModes("zlib", _ZLIB_VERSION, zlib_c, zlib_d, 1, 9, "6", no_blowup),
 #endif
+#ifdef FSBENCH_USE_ZLING
+              new CodecWithIntModes("zling", _ZLING_VERSION, FsBenchZling::zling_c, FsBenchZling::zling_d, 0, 4, "0", no_blowup),
+#endif
 #ifdef FSBENCH_USE_ZOPFLI
               // I say no_blowup because while zopfli doesn't control its overhead,
               // it uses auxiliary arrays, so won't write outside of the regular ones
@@ -297,14 +303,14 @@ Codec * codecs[] =
               new Yappy,
 #endif
 #ifdef FSBENCH_USE_BLAKE2
-              new Checksum<64>("Blake2b", _BLAKE2_VERSION, fsbench_blake2b),
+              new Checksum<64>("Blake2b",  _BLAKE2_VERSION, fsbench_blake2b),
               new Checksum<64>("Blake2bp", _BLAKE2_VERSION, fsbench_blake2bp),
-              new Checksum<32>("Blake2s", _BLAKE2_VERSION, fsbench_blake2s),
+              new Checksum<32>("Blake2s",  _BLAKE2_VERSION, fsbench_blake2s),
               new Checksum<32>("Blake2sp", _BLAKE2_VERSION, fsbench_blake2sp),
 #endif
 #ifdef FSBENCH_USE_CITYHASH
-              new Checksum<    sizeof(uint32_t)>("CityHash32", _CITYHASH_VERSION, CityHash32),
-              new Checksum<    sizeof(uint64_t)>("CityHash64", _CITYHASH_VERSION, CityHash64),
+              new Checksum<    sizeof(uint32_t)>("CityHash32",  _CITYHASH_VERSION, CityHash32),
+              new Checksum<    sizeof(uint64_t)>("CityHash64",  _CITYHASH_VERSION, CityHash64),
               new Checksum<2 * sizeof(uint64_t)>("CityHash128", _CITYHASH_VERSION, CityHash128),
 #endif
 #ifdef FSBENCH_USE_CRAPWOW
@@ -312,21 +318,21 @@ Codec * codecs[] =
 #endif
 #ifdef FSBENCH_USE_CRYPTOPP
               new Checksum<sizeof(uint32_t)>("cryptopp-adler32", _CRYPTOPP_VERSION, FsBenchCryptoPP::adler32),
-              new Checksum<sizeof(uint32_t)>("cryptopp-crc32", _CRYPTOPP_VERSION, FsBenchCryptoPP::crc),
-              new Checksum<128/CHAR_BIT> ("cryptopp-md5", _CRYPTOPP_VERSION, FsBenchCryptoPP::md5),
-              new Checksum<224/CHAR_BIT> ("cryptopp-sha224", _CRYPTOPP_VERSION, FsBenchCryptoPP::sha224),
-              new Checksum<256/CHAR_BIT> ("cryptopp-sha256", _CRYPTOPP_VERSION, FsBenchCryptoPP::sha256),
-              new Checksum<384/CHAR_BIT> ("cryptopp-sha384", _CRYPTOPP_VERSION, FsBenchCryptoPP::sha384),
-              new Checksum<512/CHAR_BIT> ("cryptopp-sha512", _CRYPTOPP_VERSION, FsBenchCryptoPP::sha512),
+              new Checksum<sizeof(uint32_t)>("cryptopp-crc32",   _CRYPTOPP_VERSION, FsBenchCryptoPP::crc),
+              new Checksum<128/CHAR_BIT> ("cryptopp-md5",        _CRYPTOPP_VERSION, FsBenchCryptoPP::md5),
+              new Checksum<224/CHAR_BIT> ("cryptopp-sha224",     _CRYPTOPP_VERSION, FsBenchCryptoPP::sha224),
+              new Checksum<256/CHAR_BIT> ("cryptopp-sha256",     _CRYPTOPP_VERSION, FsBenchCryptoPP::sha256),
+              new Checksum<384/CHAR_BIT> ("cryptopp-sha384",     _CRYPTOPP_VERSION, FsBenchCryptoPP::sha384),
+              new Checksum<512/CHAR_BIT> ("cryptopp-sha512",     _CRYPTOPP_VERSION, FsBenchCryptoPP::sha512),
 #endif
 #ifdef FSBENCH_USE_FASTCRYPTO
-              new Checksum<64/CHAR_BIT>("uhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::uhash),
+              new Checksum<64/CHAR_BIT> ("uhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::uhash),
               new Checksum<128/CHAR_BIT>("vhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::vhash),
-              new Checksum<64/CHAR_BIT>("umac", _FASTCRYPTO_VERSION, FsBenchFastCrypto::umac),
-              new Checksum<128/CHAR_BIT>("vmac", _FASTCRYPTO_VERSION, FsBenchFastCrypto::vmac),
+              new Checksum<64/CHAR_BIT> ("umac",  _FASTCRYPTO_VERSION, FsBenchFastCrypto::umac),
+              new Checksum<128/CHAR_BIT>("vmac",  _FASTCRYPTO_VERSION, FsBenchFastCrypto::vmac),
 #endif
 #ifdef FSBENCH_USE_MURMUR
-              new Checksum< sizeof(uint32_t)>("murmur3_x86_32", _MURMUR_VERSION, murmur_x86_32),
+              new Checksum<sizeof(uint32_t)>("murmur3_x86_32", _MURMUR_VERSION, murmur_x86_32),
               new Checksum<128/CHAR_BIT>("murmur3_x86_128", _MURMUR_VERSION, murmur_x86_128),
               new Checksum<128/CHAR_BIT>("murmur3_x64_128", _MURMUR_VERSION, murmur_x64_128),
 #endif
@@ -518,6 +524,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("Yappy"), ""),
       make_pair(raw_find_codec("z3lib"), ""),
       make_pair(raw_find_codec("zlib"), ""),
+      make_pair(raw_find_codec("zling"), ""),
       make_pair(find_codec("zopfli/zlib"), "")
         };
 MKLIST(ALL_COMPRESSORS, all_compressors);

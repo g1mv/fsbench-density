@@ -56,6 +56,7 @@ set(USE_YAPPY             1)
 set(USE_Z3LIB             0) # Nothing great
 set(USE_ZFS               0) # Nothing great
 set(USE_ZLIB              1)
+set(USE_ZLING             1)
 set(USE_ZOPFLI            1)
 
 # This script can feed certain compilers with additional optimisation flags aside from the usual -O2 or so. Other compilers use the defaults.
@@ -335,6 +336,18 @@ IF(USE_ZLIB)
     add_definitions(-DNO_VIZ) # Lack of this definition causes troubles sometimes
 ENDIF(USE_ZLIB)
 
+IF(USE_ZLING)
+    set(ZLING_SRC 
+        codecs/zling/fsbench_zling.cpp
+
+        codecs/zling/libzling.cpp
+        codecs/zling/libzling_huffman.cpp
+        codecs/zling/libzling_lz.cpp
+        codecs/zling/libzling_utils.cpp)
+
+    add_definitions(-DFSBENCH_USE_ZLING)
+ENDIF(USE_ZLING)
+
 IF(USE_AR)
     set(OTHER_SRC ${OTHER_SRC} codecs/ar/lzhclib.c codecs/ar/lzhxlib.c)
     add_definitions(-DFSBENCH_USE_AR)
@@ -536,7 +549,20 @@ IF(USE_Z3LIB)
 ENDIF(USE_Z3LIB)
 
 
-set(SRC ${MAIN_SRC} ${7z_SRC} ${BCL_SRC} ${BZ2_SRC} ${CRYPTOPP_SRC} ${ECRYPT_SRC} ${LZHAM_SRC} ${LZO_SRC} ${NRV_SRC} ${ZLIB_SRC} ${ZOPFLI_SRC} ${OTHER_SRC})
+set(SRC ${MAIN_SRC}
+        ${7z_SRC}
+        ${BCL_SRC}
+        ${BZ2_SRC}
+        ${CRYPTOPP_SRC}
+        ${ECRYPT_SRC}
+        ${LZHAM_SRC}
+        ${LZO_SRC}
+        ${NRV_SRC}
+        ${ZLIB_SRC}
+        ${ZLING_SRC}
+        ${ZOPFLI_SRC}
+        ${OTHER_SRC})
+
 
 
 #----------------#

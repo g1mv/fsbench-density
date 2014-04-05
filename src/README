@@ -190,6 +190,7 @@ Tornado                             | Joachim Henke, Bulat Ziganshin            
 Yappy                               | Peter Popov                                      | v2              | yes      | http://blog.gamedeff.com/?p=371
 z3lib - deflate                     | Oskar Schirmer                                   | 1.3             | no       | http://scara.com/~schirmer/o/z3lib
 zlib - deflate                      | Mark Adler, Jean-loup Gailly                     | 1.2.8           | yes      | http://zlib.net
+zling                               | Zhang Li                                         | 20140324        | yes      | https://github.com/richox/libzling
 zopfli - deflate                    | Lode Vandevenne, Jyrki Alakuijala                | 1.0.0           | yes      | https://code.google.com/p/zopfli
 
 *************************
