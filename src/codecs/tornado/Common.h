@@ -647,7 +647,7 @@ void BigFree(void *address) throw();
 // Функции парсинга и арифметики **********************************************
 // ****************************************************************************
 void strncopy (char *to, char *from, int len);      // Копирует строчку from в to, но не более len символов
-int  split (char *str, char splitter, char **result, int result_size); // Разбить строку str на подстроки, разделённые символом splitter
+int  FAsplit (char *str, char splitter, char **result, int result_size); // Разбить строку str на подстроки, разделённые символом splitter
 void join (char **src, char splitter, char *result, int result_size);  // Объединить NULL-terminated массив строк src в строку result, ставя между строками разделитель splitter
 char *search_param(char **param, char *prefix);                        // Найти параметр с заданным именем в массиве параметров алгоритма
 char*subst (char *original, char *from, char *to);                     // Заменяет в строке original все вхождения from на to

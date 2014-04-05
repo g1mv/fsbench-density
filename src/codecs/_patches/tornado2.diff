@@ -1,0 +1,10 @@
+diff 1/Common.cpp 2/Common.cpp
+133c133
+< int split (char *str, char splitter, char **result_base, int result_size)
+---
+> int FAsplit (char *str, char splitter, char **result_base, int result_size)
+diff 1/Common.h 2/Common.h
+650c650
+< int  split (char *str, char splitter, char **result, int result_size); // Разбить строку str на подстроки, разделённые символом splitter
+---
+> int  FAsplit (char *str, char splitter, char **result, int result_size); // Разбить строку str на подстроки, разделённые символом splitter

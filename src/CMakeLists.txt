@@ -25,6 +25,7 @@ set(USE_LZ4               1)
 set(USE_LZF               1)
 set(USE_LZFX              0) # inefficient
 set(USE_LZG               0) # inefficient
+set(USE_LZHAM             0) # known to cause problems on some platforms
 set(USE_LZMAT             1)
 set(USE_LZO               1)
 set(USE_LZSS_IM           0) # inefficient

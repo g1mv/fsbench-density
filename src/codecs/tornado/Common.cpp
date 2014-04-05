@@ -130,7 +130,7 @@ void strncopy( char *to, char *from, int len ) {
 // Результат - в строке str splitter заменяется на '\0'
 //   и массив result заполняется ссылками на выделенные в str подстроки + NULL (аналогично argv)
 // Возвращает число найденных подстрок
-int split (char *str, char splitter, char **result_base, int result_size)
+int FAsplit (char *str, char splitter, char **result_base, int result_size)
 {
   char **result      = result_base;
   char **result_last = result_base+result_size-1;
