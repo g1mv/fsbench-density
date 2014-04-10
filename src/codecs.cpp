@@ -185,6 +185,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_BZ2
               new CodecWithIntModes("bzip2", _BZ2_VERSION, bz2_c, bz2_d, 1, 9, "9", no_blowup),
 #endif
+#ifdef FSBENCH_USE_CRUSH
+              new CodecWithIntModes("crush", _CRUSH_VERSION, crush_c, crush_d, 0, 2, "0"),
+#endif
 #ifdef FSBENCH_USE_CRYPTOPP
               new CodecWithIntModes("cryptopp-deflate", _CRYPTOPP_VERSION, FsBenchCryptoPP::deflate, FsBenchCryptoPP::inflate, 1, 9, "6", no_blowup),
 #endif
@@ -488,6 +491,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("blosc"), ""),
       make_pair(raw_find_codec("BriefLZ"), ""),
       make_pair(raw_find_codec("bzip2"), ""),
+      make_pair(raw_find_codec("crush"), ""),
       make_pair(raw_find_codec("cryptopp-deflate"), ""),
       make_pair(raw_find_codec("Doboz"), ""),
       make_pair(raw_find_codec("fastlz"), ""),

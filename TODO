@@ -6,7 +6,7 @@ small_iters problem: in-place and buffered codecs that overwrite their input (al
   * if the 1st codec is moving, start with it and then keep iterating between workbufs
   * after it's done, make sure that inbuf contents haven't changed 
 
-update LZWC
+update LZWC (requires reiplementation of patches, it changed so much)
 get rid of iostream.
 add the AES implementation used by vmac/umac
 add mmini-lzh
@@ -39,12 +39,15 @@ add:
 * https://github.com/floodyberry/poly1305-donna
 * https://code.google.com/p/crcutil/
 * http://cessu.blogspot.com/2008/11/hashing-with-sse2-revisited-or-my-hash.html
-* http://encode.ru/threads/1289-CRUSH-0-01-is-here!
-* http://libssc.net/
+* http://libssc.net/ (crashes ??)
 * http://encode.ru/threads/1874-Alba (seems poor)
 * entropy coders, http://encode.ru/threads/1890-Benchmarking-Entropy-Coders lists some
 * https://github.com/Bulat-Ziganshin/DataSmoke
 * BWT(s) variants
+* http://www.nongnu.org/lzip/pdlzip.html
+* http://www.cs.amherst.edu/~sfkaplan/research/compressed-caching/WK4x4.tgz
+* http://www.cs.amherst.edu/~sfkaplan/research/compressed-caching/WKdm.tgz
+* https://code.google.com/p/wflz/
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4
 Don't use a fixed number of iters; watch variance and keep repeating until confidence is good enough.

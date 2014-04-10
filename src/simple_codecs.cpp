@@ -172,6 +172,17 @@ void CrapWow(char * in, size_t isize, char * out)
     *(uint32_t*) out = CrapWow((const uint8_t*)in, (uint32_t)isize, (uint32_t)0);
 }
 #endif//FSBENCH_USE_CRAPWOW
+#ifdef FSBENCH_USE_CRUSH
+#include "crush.hpp"
+size_t crush_c(char * in, size_t isize, char * out, size_t, void * level)
+{
+    return crush::compress(*(intptr_t*)level, (uint8_t*)in, isize, (uint8_t*)out);
+}
+size_t crush_d(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return crush::decompress((uint8_t*)in, (uint8_t*)out, osize);
+}
+#endif//FSBENCH_USE_CRUSH
 #ifdef FSBENCH_USE_DOBOZ
 #include "Doboz/Compressor.h"
 #include "Doboz/Decompressor.h"

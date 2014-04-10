@@ -13,6 +13,7 @@ set(USE_BLZ               0) # inefficient
 set(USE_BZ2               0) # there are barely any competitors for it
 set(USE_CITYHASH          1)
 set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
+set(USE_CRUSH             1)
 set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
 set(USE_DOBOZ             0) # inefficient
 set(USE_ECRYPT            1)
@@ -381,6 +382,11 @@ IF(USE_CRAPWOW)
     set(OTHER_SRC ${OTHER_SRC} codecs/CrapWow.c)
     add_definitions(-DFSBENCH_USE_CRAPWOW)
 ENDIF(USE_CRAPWOW)
+IF(USE_CRUSH)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/crush) 
+    set(OTHER_SRC ${OTHER_SRC} codecs/crush/crush.cpp)
+    add_definitions(-DFSBENCH_USE_CRUSH)
+ENDIF(USE_CRUSH)
 IF(USE_DOBOZ)
     set(OTHER_SRC ${OTHER_SRC} codecs/Doboz/Compressor.cpp codecs/Doboz/Decompressor.cpp codecs/Doboz/Dictionary.cpp)
     add_definitions(-DFSBENCH_USE_DOBOZ)

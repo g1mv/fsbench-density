@@ -156,6 +156,7 @@ Basic Compression Library - rle     | Marcus Geelnard                           
 blosc                               | Francesc Alted                                   | 1.2.3           | no       | http://blosc.pytables.org/trac
 BriefLZ                             | Joergen Ibsen                                    | 1.0.5           | no       | http://ibsensoftware.com/download.html
 bzip2                               | Julian Seward                                    | 1.0.6           | yes      | http://bzip.org
+crush                               | Ilia Muraviev                                    | 0.0.1           | yes      | http://encode.ru/threads/1289-CRUSH-0-01-is-here!
 crypto++ - deflate                  | Wei Dai                                          | 5.6.1           | yes      | www.cryptopp.com
 Doboz                               | Attila T. Áfra                                   | 2011-03-19      | no       | https://bitbucket.org/attila_afra/doboz/downloads
 FastLZ                              | Ariya Hidayat                                    | 0.1.0           | no       | http://fastlz.org

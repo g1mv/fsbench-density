@@ -48,6 +48,10 @@ void CityHash128(char * in, size_t isize, char * out);
 #ifdef FSBENCH_USE_CRAPWOW
 void CrapWow(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_CRAPWOW
+#ifdef FSBENCH_USE_CRUSH
+size_t crush_c(char * in, size_t isize, char * out, size_t, void * level);
+size_t crush_d(char * in, size_t isize, char * out, size_t osize, void *);
+#endif//FSBENCH_USE_CRUSH
 #ifdef FSBENCH_USE_DOBOZ
 size_t Doboz_c(char * in, size_t isize, char * out, size_t osize, void * _);
 size_t Doboz_d(char * in, size_t isize, char * out, size_t osize, void * _);
