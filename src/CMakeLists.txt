@@ -37,6 +37,7 @@ set(USE_MINIHUFF          1)
 set(USE_MINIZ             1)
 set(USE_MMINI             0) # doesn't compile with MSVC10
 set(USE_MURMUR            1)
+set(USE_NAKAMICHI         0) # inefficient
 set(USE_NRV               0) # inefficient
 set(USE_QUICKLZ           1)
 set(USE_QUICKLZZIP        0) # quite good, but single-threaded. I may fix it one day.
@@ -464,6 +465,10 @@ IF(USE_MURMUR)
     set(OTHER_SRC ${OTHER_SRC} codecs/MurmurHash3.cpp)
     add_definitions(-DFSBENCH_USE_MURMUR)
 ENDIF(USE_MURMUR)
+IF(USE_NAKAMICHI)
+    set(OTHER_SRC ${OTHER_SRC} codecs/Nakamichi.c)
+    add_definitions(-DFSBENCH_USE_NAKAMICHI)
+ENDIF(USE_NAKAMICHI)
 IF(USE_QUICKLZ)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/quicklz) 
     set(OTHER_SRC ${OTHER_SRC} codecs/quicklz/quicklz1.c codecs/quicklz/quicklz2.c codecs/quicklz/quicklz3.c )

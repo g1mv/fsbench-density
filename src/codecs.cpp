@@ -261,6 +261,9 @@ Codec * codecs[] =
               new BufferedCodec("mmini_huffman", _MMINI_VERSION, mmini_huffman_c, mmini_huffman_d, no_blowup, MMINI_HUFFHEAP_SIZE),
               new Codec("mmini_lzl", _MMINI_VERSION, mmini_lzl_c, mmini_lzl_d, no_blowup),
 #endif
+#ifdef FSBENCH_USE_NAKAMICHI
+              new Codec("Nakamichi", _NAKAMICHI_VERSION, nakamichi_c, nakamichi_d),
+#endif
 #ifdef FSBENCH_USE_QUICKLZZIP
               new Codec("QuickLZ-zip", _QLZZIP_VERSION, qlzzip_c, 0),
 #endif
@@ -514,6 +517,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("miniz"), ""),
       make_pair(raw_find_codec("mmini_huffman"), ""),
       make_pair(raw_find_codec("mmini_lzl"), ""),
+      make_pair(raw_find_codec("Nakamichi"), ""),
       make_pair(raw_find_codec("nrv2b"), ""),
       make_pair(raw_find_codec("nrv2d"), ""),
       make_pair(raw_find_codec("nrv2e"), ""),

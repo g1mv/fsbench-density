@@ -2,6 +2,7 @@
 [+] added memcpy, memmove codecs
 [+] added crush
 [+] added zling
+[+] added Nakamichi
 [~] updated lz4 to r114
 [~] updated LZJB to the latest FreeBSD version
 [~] updated tornado to 0.6a

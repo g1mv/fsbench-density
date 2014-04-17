@@ -225,7 +225,7 @@ namespace FsBenchFastCrypto
         uhash_free(ctx);
         memcpy(in + isize, backup, sizeof(backup));
     }
-    
+
     // TODO: uhash doesn't support blocks > 16 MB
     void umac(char * in, size_t isize, char * out)
     {
@@ -651,6 +651,22 @@ void murmur_x64_128(char * in, size_t isize, char * out)
     MurmurHash3_x64_128(in, isize, 0, out);
 }
 #endif//FSBENCH_USE_MURMUR
+#ifdef FSBENCH_USE_NAKAMICHI
+
+extern "C"
+{
+unsigned int Compress(char* ret, char* src, unsigned int srcSize);
+unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
+}
+size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
+{
+    return Compress(out, in, isize);
+}
+size_t nakamichi_d(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return Decompress(out, in, isize);
+}
+#endif//FSBENCH_USE_NAKAMICHI
 #ifdef FSBENCH_USE_QUICKLZZIP
 
 extern "C"
