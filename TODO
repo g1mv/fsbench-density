@@ -48,6 +48,15 @@ add:
 * http://www.cs.amherst.edu/~sfkaplan/research/compressed-caching/WK4x4.tgz
 * http://www.cs.amherst.edu/~sfkaplan/research/compressed-caching/WKdm.tgz
 * https://code.google.com/p/wflz/
+* WSL: http://ssergeo.narod.ru/
+* http://mattmahoney.net/dc/bpe2v3.cpp
+* http://ctxmodel.net/files/LZP-DS_v0.rar
+* RLC: https://061c9e27-a-62cb3a1a-s-sites.googlegroups.com/site/bindeshyouneedme/RLC.zip?attachauth=ANoY7cqQOLgsVAXDyUMRJzdA-QTf-fzxScDfY2z1XFVdH1_Lz0KBIt3RdWj6XmEkeJqH7y0GdoppvDaJVK0mhufMhVc7vjRcXr1GGQv11iATd_zaA61JkdxlSaYs2yhaTvDFGy06V9t4qcpWKN9REqqkIwiiqWPcosks6Cis7rR4fe-t946C6JK5UzVdlfc2Q59Bo8DdB-nfl9TqWf_RUoQ-hQ6aYbgLqQ%3D%3D&attredirects=0
+* https://sites.google.com/site/compgt/lz77
+* http://mattmahoney.net/dc/lazy100.zip
+* http://encode.ru/threads/1874
+* https://github.com/valdmann/crook
+* http://jveness.info/software/cts-v1.zip
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4
 Don't use a fixed number of iters; watch variance and keep repeating until confidence is good enough.

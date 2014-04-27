@@ -175,9 +175,9 @@ LZMAT                               | Vitaly Evseenko                           
 LZO                                 | Markus Franz Xaver Johannes Oberhumer            | 2.06            | yes      | www.oberhumer.com/opensource/lzo
 LZSS                                | Ilia Muraviev                                    | 2008-07-31      | no       | http://encode.ru/threads/143-LZSS-v0-01-is-here!
 LZV1                                | Hermann Vogt                                     | 0.5             | no       | http://encode.ru/threads/1661-LZWC-A-fast-tree-based-LZW-compressor
-lzx_compress                        | Matthew T. Russotto                              | 2005-07-06      | no       |
+lzx_compress                        | Matthew T. Russotto                              | 2005-07-06      | no       | http://www.russotto.net/chm/
 miniz                               | Richard Geldreich, Jr.                           | 1.11            | yes      | https://code.google.com/p/miniz
-Nakamichi                           | Georgi Marinov                                   | r1              | no       | http://www.codeproject.com/Articles/250566/Fastest-strstr-like-function-in-C?msg=4800986#xx4800986xx
+Nakamichi                           | Georgi Marinov                                   | round 5         | yes      | http://www.codeproject.com/Articles/250566/Fastest-strstr-like-function-in-C?msg=4800986#xx4800986xx
 nrv2a                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
 nrv2b                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
 nrv2d                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl

@@ -37,7 +37,7 @@ set(USE_MINIHUFF          1)
 set(USE_MINIZ             1)
 set(USE_MMINI             0) # doesn't compile with MSVC10
 set(USE_MURMUR            1)
-set(USE_NAKAMICHI         0) # inefficient
+set(USE_NAKAMICHI         1)
 set(USE_NRV               0) # inefficient
 set(USE_QUICKLZ           1)
 set(USE_QUICKLZZIP        0) # quite good, but single-threaded. I may fix it one day.
@@ -466,7 +466,7 @@ IF(USE_MURMUR)
     add_definitions(-DFSBENCH_USE_MURMUR)
 ENDIF(USE_MURMUR)
 IF(USE_NAKAMICHI)
-    set(OTHER_SRC ${OTHER_SRC} codecs/Nakamichi.c)
+    set(OTHER_SRC ${OTHER_SRC} codecs/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX.c codecs/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD.c)
     add_definitions(-DFSBENCH_USE_NAKAMICHI)
 ENDIF(USE_NAKAMICHI)
 IF(USE_QUICKLZ)
