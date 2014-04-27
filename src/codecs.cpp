@@ -203,6 +203,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_MINIZ
               new CodecWithIntModes("miniz", _MINIZ_VERSION, miniz_c, miniz_d, 1, 10, "6", no_blowup),
 #endif
+#ifdef FSBENCH_USE_PG_LZ
+              new CodecWithIntModes("pg_lz", _PG_LZ_VERSION, pg_lz_c, pg_lz_d, 0, 1, "0", no_blowup),
+#endif
 #ifdef FSBENCH_USE_ZLIB
               new CodecWithIntModes("zlib", _ZLIB_VERSION, zlib_c, zlib_d, 1, 9, "6", no_blowup),
 #endif
@@ -523,6 +526,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("nrv2b"), ""),
       make_pair(raw_find_codec("nrv2d"), ""),
       make_pair(raw_find_codec("nrv2e"), ""),
+      make_pair(raw_find_codec("pg_lz"), ""),
       make_pair(raw_find_codec("QuickLZ"), ""),
       make_pair(find_codec("QuickLZ-zip/zlib"), ""),
       make_pair(raw_find_codec("RLE64"), ""),

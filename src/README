@@ -181,6 +181,7 @@ Nakamichi                           | Georgi Marinov                            
 nrv2a                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
 nrv2b                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
 nrv2d                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
+PostreSQL                           | Jan Wieck                                        | 9.3.4           | no       | http://www.postgresql.org/
 QuickLZ                             | Lasse Mikkel Reinhold                            | 1.5.1b6         | yes      | www.quicklz.com
 QuickLZ zip                         | Lasse Mikkel Reinhold                            | 0.4             | no       | www.quicklz.com/zip.html
 RLE64                               | Javier Gutiérrez Chamorro                        | R3.00           | yes      | http://nikkhokkho.sourceforge.net/static.php?page=RLE64

@@ -677,6 +677,28 @@ size_t nakamichi_nomemcpy_d(char * in, size_t isize, char * out, size_t, void *)
     return DecompressNoMemcpy(out, in, isize);
 }
 #endif//FSBENCH_USE_NAKAMICHI
+#ifdef FSBENCH_USE_PG_LZ
+
+extern "C"
+{
+#include <pg_lzcompress.h>
+}
+size_t pg_lz_c(char * in, size_t isize, char * out, size_t, void * strategy)
+{
+    PGLZ_Header * pgout = reinterpret_cast<PGLZ_Header *>(out);
+    const PGLZ_Strategy * pglz_strategy = *(intptr_t*) strategy ? 
+            PGLZ_strategy_default : PGLZ_strategy_always;
+    return pglz_compress(in,
+                         isize,
+                         pgout,
+                         pglz_strategy) ? VARSIZE(pgout) : CODING_ERROR;
+}
+size_t pg_lz_d(char * in, size_t, char * out, size_t osize, void *)
+{
+    PGLZ_Header * pgin = reinterpret_cast<PGLZ_Header *>(in);
+    return pglz_decompress(pgin, out) ? osize : CODING_ERROR;
+}
+#endif//FSBENCH_USE_PG_LZ
 #ifdef FSBENCH_USE_QUICKLZZIP
 
 extern "C"

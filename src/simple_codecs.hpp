@@ -134,6 +134,10 @@ size_t nakamichi_d(char * in, size_t isize, char * out, size_t osize, void *);
 size_t nakamichi_nomemcpy_c(char * in, size_t isize, char * out, size_t, void *);
 size_t nakamichi_nomemcpy_d(char * in, size_t isize, char * out, size_t osize, void *);
 #endif//FSBENCH_USE_NAKAMICHI
+#ifdef FSBENCH_USE_PG_LZ
+size_t pg_lz_c(char * in, size_t isize, char * out, size_t, void * strategy);
+size_t pg_lz_d(char * in, size_t, char * out, size_t osize, void *);
+#endif//FSBENCH_USE_PG_LZ
 #ifdef FSBENCH_USE_QUICKLZZIP
 size_t qlzzip_c(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_QUICKLZZIP

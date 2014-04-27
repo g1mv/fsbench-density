@@ -13,7 +13,7 @@ set(USE_BLZ               0) # inefficient
 set(USE_BZ2               0) # there are barely any competitors for it
 set(USE_CITYHASH          1)
 set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
-set(USE_CRUSH             1)
+set(USE_CRUSH             0) # Nothing great
 set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
 set(USE_DOBOZ             0) # inefficient
 set(USE_ECRYPT            1)
@@ -33,12 +33,12 @@ set(USE_LZSS_IM           0) # inefficient
 set(USE_LZV1              0) # inefficient
 set(USE_LZWC              0) # inefficient
 set(USE_LZX_COMPRESS      0) # inefficient, no decompressor
-set(USE_MINIHUFF          1)
 set(USE_MINIZ             1)
 set(USE_MMINI             0) # doesn't compile with MSVC10
 set(USE_MURMUR            1)
 set(USE_NAKAMICHI         1)
 set(USE_NRV               0) # inefficient
+set(USE_PG_LZ             0) # inefficient
 set(USE_QUICKLZ           1)
 set(USE_QUICKLZZIP        0) # quite good, but single-threaded. I may fix it one day.
 set(USE_RLE64             1)
@@ -55,7 +55,7 @@ set(USE_SPOOKY            1)
 set(USE_TINF              0) # inefficient
 set(USE_TOR               1)
 set(USE_XXHASH            1)
-set(USE_YAPPY             1)
+set(USE_YAPPY             0) # Nothing great
 set(USE_Z3LIB             0) # Nothing great
 set(USE_ZFS               0) # Nothing great
 set(USE_ZLIB              1)
@@ -469,6 +469,11 @@ IF(USE_NAKAMICHI)
     set(OTHER_SRC ${OTHER_SRC} codecs/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX.c codecs/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD.c)
     add_definitions(-DFSBENCH_USE_NAKAMICHI)
 ENDIF(USE_NAKAMICHI)
+IF(USE_PG_LZ)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/pg_lz)
+    set(OTHER_SRC ${OTHER_SRC} codecs/pg_lz/pg_lzcompress.c)
+    add_definitions(-DFSBENCH_USE_PG_LZ)
+ENDIF(USE_PG_LZ)
 IF(USE_QUICKLZ)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/quicklz) 
     set(OTHER_SRC ${OTHER_SRC} codecs/quicklz/quicklz1.c codecs/quicklz/quicklz2.c codecs/quicklz/quicklz3.c )

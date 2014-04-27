@@ -204,6 +204,7 @@ Codec * find_codec(const std::string & name);
 #define _MURMUR_VERSION     "2012-02-29"
 #define _NAKAMICHI_VERSION  "round 5"
 #define _NRV_VERSION        "1.03"
+#define _PG_LZ_VERSION      "9.3.4"
 #define _QLZ_VERSION        "1.5.1b6"
 #define _QLZZIP_VERSION     "0.4"
 #define _RLE64_VERSION      "R3.00"
