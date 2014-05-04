@@ -19,6 +19,7 @@ set(USE_DOBOZ             0) # inefficient
 set(USE_ECRYPT            1)
 set(USE_FASTCRYPTO        1)
 set(USE_FASTLZ            0) # inefficient
+set(USE_FSE               0) # crashes on scc/clang 3.1; decoding fails on anything with gcc 4.2 on my FreeBSD box
 set(USE_GIPFELI           0) # rarely works...
 set(USE_HALIBUT           0) # inefficient
 set(USE_LODEPNG           0) # inefficient
@@ -116,7 +117,7 @@ IF(${ARCH} STREQUAL "AMD64")
     IF(USE_SSE2)
         add_definitions( -DFSBENCH_SSE2) 
     ENDIF(USE_SSE2)
-    add_definitions(-DFREEARC_INTEL_BYTE_ORDER -DFREEARC_64BIT)
+    add_definitions(-DFREEARC_INTEL_BYTE_ORDER)
     add_definitions(-D__x86_64__)
 ENDIF(${ARCH} STREQUAL "AMD64")
 IF(${ARCH} STREQUAL "x86")
@@ -401,6 +402,11 @@ IF(USE_FASTLZ)
     set(OTHER_SRC ${OTHER_SRC} codecs/fastlz.c)
     add_definitions(-DFSBENCH_USE_FASTLZ)
 ENDIF(USE_FASTLZ)
+IF(USE_FSE)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/fse)
+    set(OTHER_SRC ${OTHER_SRC} codecs/fse/fse.c)
+    add_definitions(-DFSBENCH_USE_FSE)
+ENDIF(USE_FSE)
 IF(USE_GIPFELI)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/gipfeli)
     set(OTHER_SRC ${OTHER_SRC} codecs/gipfeli/fsbench_gipfeli.cpp codecs/gipfeli/decompress.cc codecs/gipfeli/entropy.cc codecs/gipfeli/entropy_code_builder.cc codecs/gipfeli/gipfeli.cc codecs/gipfeli/lz77.cc)

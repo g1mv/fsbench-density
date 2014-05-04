@@ -71,6 +71,11 @@ size_t fastlz2_c(char * in, size_t isize, char * out, size_t osize, void * _);
 size_t fastlz_d (char * in, size_t isize, char * out, size_t osize, void * _);
 size_t fastlz_m (size_t input_size);
 #endif//FSBENCH_USE_FASTLZ
+#ifdef FSBENCH_USE_FSE
+size_t fse_c(char * in, size_t isize, char * out, size_t, void *);
+size_t fse_d (char * in, size_t isize, char * out, size_t osize, void *);
+size_t fse_m (size_t input_size);
+#endif//FSBENCH_USE_
 #ifdef FSBENCH_USE_HALIBUT
 size_t halibut_c(char * in, size_t isize, char * out, size_t osize, void * _);
 size_t halibut_d(char * in, size_t isize, char * out, size_t osize, void * _);

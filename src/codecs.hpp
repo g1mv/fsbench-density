@@ -184,6 +184,7 @@ Codec * find_codec(const std::string & name);
 #define _EDON_R_VERSION     "v20"
 #define _FASTCRYPTO_VERSION "2007-04-17"
 #define _FASTLZ_VERSION     "0.1.0"
+#define _FSE_VERSION        "2014-04-07"
 #define _GIPFELI_VERSION    "2011-10-19"
 #define _HALIBUT_VERSION    "SVN r9550"
 #define _KECCAK_VERSION     "3.2"

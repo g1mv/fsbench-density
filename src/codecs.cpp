@@ -234,6 +234,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_DOBOZ
               new Codec("Doboz", _DOBOZ_VERSION, Doboz_c, Doboz_d, no_blowup),
 #endif
+#ifdef FSBENCH_USE_FSE
+              new Codec("fse",   _FSE_VERSION,   fse_c,   fse_d,   fse_m),
+#endif
 #ifdef FSBENCH_USE_GIPFELI
               new Codec("gipfeli", _GIPFELI_VERSION, FsBenchGipfeli::compress, FsBenchGipfeli::decompress, FsBenchGipfeli::max_size),
 #endif
@@ -502,6 +505,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("cryptopp-deflate"), ""),
       make_pair(raw_find_codec("Doboz"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
+      make_pair(raw_find_codec("fse"), ""),
       make_pair(raw_find_codec("gipfeli"), ""),
       make_pair(raw_find_codec("halibut-deflate"), ""),
       make_pair(raw_find_codec("lodepng"), ""),

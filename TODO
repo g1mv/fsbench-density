@@ -92,3 +92,6 @@ void  VHASH_128 ( const void * key,  int len, unsigned long seed, void * out )
 
 VHASH can be faster, according to Bulat, all that's needed is a define:
 #define VMAC_NHBYTES 4096 
+
+pg_lz: endianness detection, now it's OK with LE only
+endianness detection framework

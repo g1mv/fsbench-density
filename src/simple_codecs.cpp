@@ -297,6 +297,27 @@ size_t fastlz_m (size_t input_size)
 }
 
 #endif//FSBENCH_USE_FASTLZ
+#ifdef FSBENCH_USE_FSE
+extern "C"
+{
+#include "fse.h"
+}
+#include <cstdio>
+size_t fse_c(char * in, size_t isize, char * out, size_t, void *)
+{
+    int res = FSE_compress((unsigned char*)out, (const unsigned char*)in, isize);
+    return res == -1 ? CODING_ERROR : res;
+}
+size_t fse_d (char * in, size_t, char * out, size_t osize, void *)
+{
+    int res = FSE_decompress((unsigned char*)out, osize, (const unsigned char*)in);
+    return res == -1 ? CODING_ERROR : res;
+}
+size_t fse_m (size_t input_size)
+{
+    return FSE_compressBound(input_size);
+}
+#endif//FSBENCH_USE_FSE
 #ifdef FSBENCH_USE_HALIBUT
 
 #define HALIBUT_BUF_SIZE (1 * 1024 * 1024)

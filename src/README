@@ -44,7 +44,7 @@ What is small enough? For ciphers / hashes, take slightly less than the size of 
 Included codecs:
 ****************
 
-Some codecs are in the default installation, some yout have to enable with a compile-time option. See CMakeFiles.txt if you want them.
+Some codecs are in the default installation, some you have to enable with a compile-time option. See CMakeFiles.txt if you want them.
 
 Checksums:
 name                       | author                                      | version               | default? | source
@@ -160,6 +160,7 @@ crush                               | Ilia Muraviev                             
 crypto++ - deflate                  | Wei Dai                                          | 5.6.1           | yes      | www.cryptopp.com
 Doboz                               | Attila T. Áfra                                   | 2011-03-19      | no       | https://bitbucket.org/attila_afra/doboz/downloads
 FastLZ                              | Ariya Hidayat                                    | 0.1.0           | no       | http://fastlz.org
+FSE                                 | Yann Collet                                      | 2014-04-07      | no       | https://github.com/Cyan4973/FiniteStateEntropy
 gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala                 | 2011-10-19      | no       | https://code.google.com/p/gipfeli
 Halibut - deflate                   | Simon Tatham                                     | SVN r9550       | no       | http://www.chiark.greenend.org.uk/~sgtatham/halibut
 lodepng - deflate                   | Lode Vandevenne                                  | 20120729        | no       | http://lodev.org/lodepng

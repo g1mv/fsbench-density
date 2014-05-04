@@ -79,8 +79,7 @@ uint32_t tor_compress(uint8_t method, uint8_t* inbuf, uint8_t* outbuf, uint32_t 
 
 	ReadWriteCallback ("init", NULL, 0, &r);
     PackMethod m = std_Tornado_method[method];
-	if (r.inlen >= 0)
-		m.buffer = mymin (m.buffer, r.inlen+LOOKAHEAD*2);
+	m.buffer = mymin (m.buffer, r.inlen+LOOKAHEAD*2);
 	int result = tor_compress (m, ReadWriteCallback, &r, NULL, -1);
 	return r.outlen;
 }
