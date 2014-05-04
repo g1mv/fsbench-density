@@ -1,20 +1,20 @@
 // Nakamichi is 100% FREE LZSS SUPERFAST decompressor.
 
-// Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji, written by Kaze, babealicious suggestion by m^2 enforced.
-// TO-DO: Known bug: the decompressed file sometimes has few additional bytes at the end.
-// Change #1: Now instead of looking first in the leftmost end of the window a "preemptive" search is done 8*128 bytes before the rightmost end of the window, there is the hottest (cachewise&matchwise) zone, as a side effect the compression speed is much higher. Maybe in the future I will try hashing as well.
+// Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX, written by Kaze, babealicious suggestion by m^2 enforced.
+// Fixed! TO-DO: Known bug: the decompressed file sometimes has few additional bytes at the end.
+// Change #1: Now instead of looking first in the leftmost end of the window a "preemptive" search is done 16*8*128 bytes before the rightmost end of the window, there is the hottest (cachewise&matchwise) zone, as a side effect the compression speed is much higher. Maybe in the future I will try hashing as well.
 // Change #2: The full 16bits are used for offsets, 64KB window, that is.
 
 // Compile line:
-//icl /O3 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.c -D_N_GP /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_GP.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_GP.exe
-//icl /O3 /QxSSE2 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.c -D_N_XMM /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_XMM.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_XMM.exe
-//icl /O3 /QxAVX Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.c -D_N_YMM /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_YMM.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_YMM.exe
+//icl /O3 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c -D_N_GP /FAcs
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_GP.cod
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_GP.exe
+//icl /O3 /QxSSE2 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c -D_N_XMM /FAcs
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_XMM.cod
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_XMM.exe
+//icl /O3 /QxAVX Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c -D_N_YMM /FAcs
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_YMM.cod
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_YMM.exe
 
 // Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX, written by Kaze, babealicious suggestion by m^2 enforced.
 // Change #1: Nasty bug in Swampshine was fixed.
@@ -307,7 +307,7 @@ double duration;
 
 unsigned long long k;
 
-	printf("Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
+	printf("Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
 	if (argc==1) {
 		printf("Usage: Nakamichi filename\n"); exit(13);
 	}
@@ -336,7 +336,7 @@ unsigned long long k;
 		*( NewFileName + strlen(argv[1])-strlen(Nakamichi) ) = '\0';
 	} else {
 	SourceBlock = (char*)malloc(SourceSize+512);
-	TargetBlock = (char*)malloc(SourceSize+512);
+	TargetBlock = (char*)malloc(SourceSize+512+32*1024*1024); //+32*1024*1024, some files may be expanded instead of compressed.
 	fread(SourceBlock, 1, SourceSize, fp);
 	fclose(fp);
 		printf("Compressing %d bytes ...\n", SourceSize );
@@ -373,9 +373,9 @@ clocks4 = clock();
 duration = (double) (clocks4 - clocks3 + 1);
 printf("memcpy(): (%dMB block); %dMB copied in %d clocks or %.3fMB per clock\n", 256, 1024*( 256 ), (int) duration, (float)1024*( 256 )/ ((int) duration));
 // Benchmark memcpy() ]
-i = (int)((TargetSize/(clocks2 - clocks1 + 1))*(float)1000)>>20;
+k = (((float)1000*TargetSize/(clocks2 - clocks1 + 1))); k=k>>20;
 j = (float)1000*1024*( 256 )/ ((int) duration);
-printf("RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): %d%%\n", (int)(i*100/j));
+printf("RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): %d%%\n", (int)(k*100/j));
 	}
 
 	free(TargetBlock);
@@ -386,7 +386,7 @@ printf("RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): %d%%\n", (
 void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd){
 	char* FoundAtPosition;
 	unsigned int match=0;
-	char* refStartHOTTER = refStart+((1<<OffsetBITS)-8*128);
+	char* refStartHOTTER = refStart+((1<<OffsetBITS)-16*8*128);
 	*retIndex=0;
 	*retMatch=0;
 
@@ -394,7 +394,8 @@ void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, cha
 	// Step #1: LONG MATCH is sought [
 	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
 	while (refStartHOTTER < refEnd) {
-	FoundAtPosition = Railgun_Doublet(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
+	//FoundAtPosition = Railgun_Doublet(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
 		if (FoundAtPosition!=NULL) {
 			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
 			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
@@ -475,8 +476,11 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 			encEnd=&src[srcSize];
 		else
 			encEnd=&src[srcIndex+ENC_SIZE];
-
-		SearchIntoSlidingWindow(&index,&match,refStart,&src[srcIndex],&src[srcIndex],encEnd);
+		// Fixing the stupid 'search-beyond-end' bug:
+		if(srcIndex+ENC_SIZE < srcSize)
+			SearchIntoSlidingWindow(&index,&match,refStart,&src[srcIndex],&src[srcIndex],encEnd);
+		else
+			match=0; // Nothing to find.
 		//if ( match<Min_Match_Length ) {
 		//if ( match<Min_Match_Length || match<8 ) {
   		if ( match==0 ) {
@@ -569,7 +573,7 @@ unsigned int Decompress(char* ret, char* src, unsigned int srcSize){
 
 	while(srcIndex < srcSize){
 		WORDpair = *(unsigned short int*)&src[srcIndex];
-		if((WORDpair & 0x07) == 0){
+		if((WORDpair & 0x07) == 0){ // It is tempting to reduce literals even more, to 3x8 (instead of 31) would be nice:
 				#ifdef _N_GP
 				*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(src+srcIndex+1+8*(0));
 				*(uint64_t*)(ret+retIndex+8*(1)) = *(uint64_t*)(src+srcIndex+1+8*(1));
