@@ -678,8 +678,6 @@ extern "C"
 {
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
     unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
-    unsigned int CompressNoMemcpy(char* ret, char* src, unsigned int srcSize);
-    unsigned int DecompressNoMemcpy(char* ret, char* src, unsigned int srcSize);
 }
 size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 {
@@ -688,14 +686,6 @@ size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 size_t nakamichi_d(char * in, size_t isize, char * out, size_t, void *)
 {
     return Decompress(out, in, isize);
-}
-size_t nakamichi_nomemcpy_c(char * in, size_t isize, char * out, size_t, void *)
-{
-    return CompressNoMemcpy(out, in, isize);
-}
-size_t nakamichi_nomemcpy_d(char * in, size_t isize, char * out, size_t, void *)
-{
-    return DecompressNoMemcpy(out, in, isize);
 }
 #endif//FSBENCH_USE_NAKAMICHI
 #ifdef FSBENCH_USE_PG_LZ

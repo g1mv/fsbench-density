@@ -55,6 +55,7 @@ void setHighestPriority()
     if (getuid() == 0)
     {
         setpriority(PRIO_PROCESS, getpid(), -20);
+#if 0 // On some systems nobody can't even open files
         // drop root privileges
         struct passwd * pwd = getpwnam("nobody");
         if (pwd != NULL)
@@ -67,6 +68,7 @@ void setHighestPriority()
         }
         else
             throw runtime_error("Can't drop root privileges.");
+#endif
     }
 #endif
 }

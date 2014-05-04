@@ -269,7 +269,6 @@ Codec * codecs[] =
 #endif
 #ifdef FSBENCH_USE_NAKAMICHI
               new Codec("Nakamichi",          _NAKAMICHI_VERSION, nakamichi_c,          nakamichi_d),
-              new Codec("Nakamichi-nomemcpy", _NAKAMICHI_VERSION, nakamichi_nomemcpy_c, nakamichi_nomemcpy_d),
 #endif
 #ifdef FSBENCH_USE_QUICKLZZIP
               new Codec("QuickLZ-zip", _QLZZIP_VERSION, qlzzip_c, 0),
@@ -526,7 +525,6 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("mmini_huffman"), ""),
       make_pair(raw_find_codec("mmini_lzl"), ""),
       make_pair(raw_find_codec("Nakamichi"), ""),
-      make_pair(raw_find_codec("Nakamichi-nomemcpy"), ""),
       make_pair(raw_find_codec("nrv2b"), ""),
       make_pair(raw_find_codec("nrv2d"), ""),
       make_pair(raw_find_codec("nrv2e"), ""),

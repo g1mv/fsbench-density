@@ -203,7 +203,7 @@ Codec * find_codec(const std::string & name);
 #define _MINIZ_VERSION      "1.11"
 #define _MMINI_VERSION      "2012-12-23"
 #define _MURMUR_VERSION     "2012-02-29"
-#define _NAKAMICHI_VERSION  "round 5"
+#define _NAKAMICHI_VERSION  "Kaidanji"
 #define _NRV_VERSION        "1.03"
 #define _PG_LZ_VERSION      "9.3.4"
 #define _QLZ_VERSION        "1.5.1b6"

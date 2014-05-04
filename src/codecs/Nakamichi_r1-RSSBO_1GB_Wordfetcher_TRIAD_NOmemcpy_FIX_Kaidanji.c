@@ -1,5 +1,21 @@
 // Nakamichi is 100% FREE LZSS SUPERFAST decompressor.
 
+// Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji, written by Kaze, babealicious suggestion by m^2 enforced.
+// TO-DO: Known bug: the decompressed file sometimes has few additional bytes at the end.
+// Change #1: Now instead of looking first in the leftmost end of the window a "preemptive" search is done 8*128 bytes before the rightmost end of the window, there is the hottest (cachewise&matchwise) zone, as a side effect the compression speed is much higher. Maybe in the future I will try hashing as well.
+// Change #2: The full 16bits are used for offsets, 64KB window, that is.
+
+// Compile line:
+//icl /O3 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.c -D_N_GP /FAcs
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_GP.cod
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_GP.exe
+//icl /O3 /QxSSE2 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.c -D_N_XMM /FAcs
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_XMM.cod
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_XMM.exe
+//icl /O3 /QxAVX Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.c -D_N_YMM /FAcs
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_YMM.cod
+//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_YMM.exe
+
 // Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX, written by Kaze, babealicious suggestion by m^2 enforced.
 // Change #1: Nasty bug in Swampshine was fixed.
 // Change #2: Sanity check in compression section was added thus avoiding 'index-Min_Match_Length' going below 0.
@@ -162,18 +178,43 @@ YAPPY: [b 128K] bytes 846351894 -> 177591807  21.0%  comp  34.9 MB/s  uncomp 906
 D:\_KAZE\Nakamichi_r1-RSSBO>
 */
 
+// During compilation use one of these, the granularity of the padded 'memcpy', 4x2x8/2x2x16/1x2x32/1x1x64 respectively as GP/XMM/YMM/ZMM, the maximum literal length reduced from 127 to 63:
+//#define _N_GP
+//#define _N_XMM
+//#define _N_YMM
+//#define _N_ZMM
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h> // uint64_t needed
 #include <time.h>
 #include <string.h>
 
-//#include <emmintrin.h> // SSE2 intrinsics
-//#include <smmintrin.h> // SSE4.1 intrinsics
-//#include <immintrin.h> // AVX intrinsics
-//#include <zmmintrin.h> // AVX2 intrinsics, definitions and declarations for use with 512-bit compiler intrinsics.
+#ifdef _N_XMM
+#include <emmintrin.h> // SSE2 intrinsics
+#include <smmintrin.h> // SSE4.1 intrinsics
+#endif
+#ifdef _N_YMM
+#include <emmintrin.h> // SSE2 intrinsics
+#include <smmintrin.h> // SSE4.1 intrinsics
+#include <immintrin.h> // AVX intrinsics
+#endif
+#ifdef _N_ZMM
+#include <emmintrin.h> // SSE2 intrinsics
+#include <smmintrin.h> // SSE4.1 intrinsics
+#include <immintrin.h> // AVX intrinsics
+#include <zmmintrin.h> // AVX2 intrinsics, definitions and declarations for use with 512-bit compiler intrinsics.
+#endif
 
-//void SlowCopy128bit (const char *SOURCE, char *TARGET) { _mm_storeu_si128((__m128i *)(TARGET), _mm_loadu_si128((const __m128i *)(SOURCE))); }
+#ifdef _N_XMM
+void SlowCopy128bit (const char *SOURCE, char *TARGET) { _mm_storeu_si128((__m128i *)(TARGET), _mm_loadu_si128((const __m128i *)(SOURCE))); }
+#endif
+#ifdef _N_YMM
+void SlowCopy128bit (const char *SOURCE, char *TARGET) { _mm_storeu_si128((__m128i *)(TARGET), _mm_loadu_si128((const __m128i *)(SOURCE))); }
+#endif
+#ifdef _N_ZMM
+void SlowCopy128bit (const char *SOURCE, char *TARGET) { _mm_storeu_si128((__m128i *)(TARGET), _mm_loadu_si128((const __m128i *)(SOURCE))); }
+#endif
 /*
  * Move Unaligned Packed Integer Values
  * **** VMOVDQU ymm1, m256
@@ -183,29 +224,14 @@ D:\_KAZE\Nakamichi_r1-RSSBO>
  */
 //extern __m256i __ICL_INTRINCC _mm256_loadu_si256(__m256i const *);
 //extern void    __ICL_INTRINCC _mm256_storeu_si256(__m256i *, __m256i);
-//void SlowCopy256bit (const char *SOURCE, char *TARGET) { _mm256_storeu_si256((__m256i *)(TARGET), _mm256_loadu_si256((const __m256i *)(SOURCE))); }
+#ifdef _N_YMM
+void SlowCopy256bit (const char *SOURCE, char *TARGET) { _mm256_storeu_si256((__m256i *)(TARGET), _mm256_loadu_si256((const __m256i *)(SOURCE))); }
+#endif
 //extern __m512i __ICL_INTRINCC _mm512_loadu_si512(void const*);
 //extern void    __ICL_INTRINCC _mm512_storeu_si512(void*, __m512i);
-//void SlowCopy512bit (const char *SOURCE, char *TARGET) { _mm512_storeu_si512((__m512i *)(TARGET), _mm512_loadu_si512((const __m512i *)(SOURCE))); }
-
-// During compilation use one of these, the granularity of the padded 'memcpy', 4x2x8/2x2x16/1x2x32/1x1x64 respectively as GP/XMM/YMM/ZMM, the maximum literal length reduced from 127 to 63:
-//#define _N_GP
-//#define _N_XMM
-//#define _N_YMM
-//#define _N_ZMM
-
-//icl /O3 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.c -D_N_GP /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_GP.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_GP.exe
-//icl /O3 /QxSSE2 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.c -D_N_XMM /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_XMM.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_XMM.exe
-//icl /O3 /QxAVX Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.c -D_N_YMM /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_YMM.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_YMM.exe
-//icl /O3 /QxCORE-AVX2 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.c -D_N_ZMM /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_ZMM.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_NOif_ZMM.exe
+#ifdef _N_ZMM
+void SlowCopy512bit (const char *SOURCE, char *TARGET) { _mm512_storeu_si512((__m512i *)(TARGET), _mm512_loadu_si512((const __m512i *)(SOURCE))); }
+#endif
 
 #ifndef NULL
 #define NULL ((void*)0)
@@ -214,22 +240,52 @@ D:\_KAZE\Nakamichi_r1-RSSBO>
 // Comment it to see how slower 'BruteForce' is, for Wikipedia 100MB the ratio is 41KB/s versus 197KB/s.
 #define ReplaceBruteForceWithRailgunSwampshineBailOut
 
-static void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
-static unsigned int SlidingWindowVsLookAheadBuffer(char* refStart, char* refEnd, char* encStart, char* encEnd);
+void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
+unsigned int SlidingWindowVsLookAheadBuffer(char* refStart, char* refEnd, char* encStart, char* encEnd);
 unsigned int Compress(char* ret, char* src, unsigned int srcSize);
 unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
-static char * Railgun_Swampshine_BailOut(char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
-static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
+char * Railgun_Swampshine_BailOut(char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
+char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
+
+// The pair SHORT/LONG to be respectively in range 3..8/9..24:
+// 4/12:
+// 846,351,894 Kazahana_on.PAGODA-order-5.txt
+// 219,459,398 Kazahana_on.PAGODA-order-5.txt.Nakamichi
+// 6/13:
+// 846,351,894 Kazahana_on.PAGODA-order-5.txt
+// 213,629,110 Kazahana_on.PAGODA-order-5.txt.Nakamichi
+// 5/13:
+//   846,351,894 Kazahana_on.PAGODA-order-5.txt
+//   210,396,428 Kazahana_on.PAGODA-order-5.txt.Nakamichi
+//   206,908,949 OSHO.TXT
+//    99,739,184 OSHO.TXT.Nakamichi
+// 1,000,000,000 enwik9
+//   531,893,878 enwik9.Nakamichi
+// 6/14:
+// 846,351,894 Kazahana_on.PAGODA-order-5.txt
+// 207,213,691 Kazahana_on.PAGODA-order-5.txt.Nakamichi
+// 5/14:
+// 846,351,894 Kazahana_on.PAGODA-order-5.txt
+// 205,946,653 Kazahana_on.PAGODA-order-5.txt.Nakamichi
+// 5/8:
+// 1,000,000,000 enwik9
+//   525,215,362 enwik9.Nakamichi
+//   846,351,894 Kazahana_on.PAGODA-order-5.txt
+//   271,833,018 Kazahana_on.PAGODA-order-5.txt.Nakamichi
+//   206,908,949 OSHO.TXT
+//    96,001,059 OSHO.TXT.Nakamichi
 
 // Min_Match_Length=THRESHOLD=4 means 4 and bigger are to be encoded:
 #define Min_Match_BAILOUT_Length (8)
 #define Min_Match_Length (8)
-#define OffsetBITS (14)
+#define Min_Match_Length_SHORT (5)
+#define OffsetBITS (16)
 #define LengthBITS (1)
 
 //12bit
 //#define REF_SIZE (4095+Min_Match_Length)
-#define REF_SIZE ( ((1<<OffsetBITS)-1) + Min_Match_Length )
+//#define REF_SIZE ( ((1<<OffsetBITS)-1) + Min_Match_Length )
+#define REF_SIZE ( ((1<<OffsetBITS)-1) )
 //3bit
 //#define ENC_SIZE (7+Min_Match_Length)
 #define ENC_SIZE ( ((1<<LengthBITS)-1) + Min_Match_Length )
@@ -244,7 +300,14 @@ int main( int argc, char *argv[] ) {
 	char NewFileName[256];
 	clock_t clocks1, clocks2;
 
-	printf("Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
+char *pointerALIGN;
+int i, j;
+clock_t clocks3, clocks4;
+double duration;
+
+unsigned long long k;
+
+	printf("Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
 	if (argc==1) {
 		printf("Usage: Nakamichi filename\n"); exit(13);
 	}
@@ -263,9 +326,12 @@ int main( int argc, char *argv[] ) {
 	fclose(fp);
 		printf("Decompressing %d bytes ...\n", SourceSize );
 		clocks1 = clock();
+		while (clocks1 == clock());
+		clocks1 = clock();
 		TargetSize = Decompress(TargetBlock, SourceBlock, SourceSize);
 		clocks2 = clock();
-		printf("RAM-to-RAM performance: %d MB/s.\n", ((TargetSize/(clocks2 - clocks1 + 1))*(long)1000)>>20);
+		k = (((float)1000*TargetSize/(clocks2 - clocks1 + 1))); k=k>>20;
+		printf("RAM-to-RAM performance: %d MB/s.\n", k);
 		strcpy(NewFileName, argv[1]);
 		*( NewFileName + strlen(argv[1])-strlen(Nakamichi) ) = '\0';
 	} else {
@@ -275,9 +341,12 @@ int main( int argc, char *argv[] ) {
 	fclose(fp);
 		printf("Compressing %d bytes ...\n", SourceSize );
 		clocks1 = clock();
+		while (clocks1 == clock());
+		clocks1 = clock();
 		TargetSize = Compress(TargetBlock, SourceBlock, SourceSize);
 		clocks2 = clock();
-		printf("RAM-to-RAM performance: %d KB/s.\n", ((SourceSize/(clocks2 - clocks1 + 1))*(long)1000)>>10);
+		k = (((float)1000*SourceSize/(clocks2 - clocks1 + 1))); k=k>>10;
+		printf("RAM-to-RAM performance: %d KB/s.\n", k);
 		strcpy(NewFileName, argv[1]);
 		strcat(NewFileName, Nakamichi);
 	}
@@ -286,6 +355,29 @@ int main( int argc, char *argv[] ) {
 	}
 	fwrite(TargetBlock, 1, TargetSize, fp);
 	fclose(fp);
+
+	if (strcmp(argv[1]+(strlen(argv[1])-strlen(Nakamichi)), Nakamichi) == 0) {
+// Benchmark memcpy() [
+pointerALIGN = TargetBlock + 64 - (((size_t)TargetBlock) % 64);
+//offset=64-int((long)data&63);
+printf("Memory pool starting address: %p ... ", pointerALIGN);
+if (((uintptr_t)(const void *)pointerALIGN & (64 - 1)) == 0) printf( "64 byte aligned, OK\n"); else printf( "NOT 64 byte aligned, FAILURE\n");
+clocks3 = clock();
+while (clocks3 == clock());
+clocks3 = clock();
+printf("Copying a %dMB block 1024 times i.e. %dGB READ + %dGB WRITTEN ...\n", 256, 256, 256);
+	for (i = 0; i < 1024; i++) {
+	memcpy(pointerALIGN+256*1024*1024, pointerALIGN, 256*1024*1024);
+	}
+clocks4 = clock();
+duration = (double) (clocks4 - clocks3 + 1);
+printf("memcpy(): (%dMB block); %dMB copied in %d clocks or %.3fMB per clock\n", 256, 1024*( 256 ), (int) duration, (float)1024*( 256 )/ ((int) duration));
+// Benchmark memcpy() ]
+i = (int)((TargetSize/(clocks2 - clocks1 + 1))*(float)1000)>>20;
+j = (float)1000*1024*( 256 )/ ((int) duration);
+printf("RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): %d%%\n", (int)(i*100/j));
+	}
+
 	free(TargetBlock);
 	free(SourceBlock);
 	exit(0);
@@ -294,11 +386,29 @@ int main( int argc, char *argv[] ) {
 void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd){
 	char* FoundAtPosition;
 	unsigned int match=0;
+	char* refStartHOTTER = refStart+((1<<OffsetBITS)-8*128);
 	*retIndex=0;
 	*retMatch=0;
+
 #ifdef ReplaceBruteForceWithRailgunSwampshineBailOut
-	if (refStart < refEnd) {
-		FoundAtPosition = Railgun_Swampshine_BailOut(refStart, encStart, (uint32_t)(refEnd-refStart), 8);
+	// Step #1: LONG MATCH is sought [
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOTTER < refEnd) {
+	FoundAtPosition = Railgun_Doublet(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
+		if (FoundAtPosition!=NULL) {
+			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
+			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
+			if ( (refEnd-FoundAtPosition) & 0x07 ) { // Discard matches that have OFFSET with lower 3bits ALL zero.
+				*retMatch=Min_Match_Length;
+				*retIndex=refEnd-FoundAtPosition;
+				return;
+			}
+			refStartHOTTER=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+	while (refStart < refEnd) {
+		FoundAtPosition = Railgun_Swampshine_BailOut(refStart, encStart, (uint32_t)(refEnd-refStart), Min_Match_Length);
 		//FoundAtPosition = Railgun_Doublet(refStart, encStart, (uint32_t)(refEnd-refStart), 8);
 		// For bigger windows 'Doublet' is slower:
 		// Nakamichi, revision 1-RSSBO_1GB_15bit performance with 'Swampshine':
@@ -309,12 +419,16 @@ void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, cha
 		// RAM-to-RAM performance: 213 KB/s.
 		if (FoundAtPosition!=NULL) {
 			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
-			if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
-				*retMatch=8;
+			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
+			if ( (refEnd-FoundAtPosition) & 0x07 ) { // Discard matches that have OFFSET with lower 3bits ALL zero.
+				*retMatch=Min_Match_Length;
 				*retIndex=refEnd-FoundAtPosition;
+				return;
 			}
-		}
+			refStart=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
 	}
+	// Step #1: LONG MATCH is sought ]
 #else				
 	while(refStart < refEnd){
 		match=SlidingWindowVsLookAheadBuffer(refStart,refEnd,encStart,encEnd);
@@ -339,7 +453,7 @@ unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char*
 	return ret;
 }
 
-unsigned int CompressNoMemcpy(char* ret, char* src, unsigned int srcSize){
+unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
 	unsigned int index=0;
@@ -348,9 +462,9 @@ unsigned int CompressNoMemcpy(char* ret, char* src, unsigned int srcSize){
 	unsigned char* notMatchStart=NULL;
 	char* refStart=NULL;
 	char* encEnd=NULL;
-	//int Melnitchka=0;
-	//char *Auberge[4] = {"|\0","/\0","-\0","\\\0"};
-	//int ProgressIndicator;
+	/*int Melnitchka=0;
+	char *Auberge[4] = {"|\0","/\0","-\0","\\\0"};
+	int ProgressIndicator;*/
 
 	while(srcIndex < srcSize){
 		if(srcIndex>=REF_SIZE)
@@ -370,8 +484,8 @@ unsigned int CompressNoMemcpy(char* ret, char* src, unsigned int srcSize){
 				notMatchStart=&ret[retIndex];
 				retIndex++;
 			}
-			else if (notMatch==127) {
-				*notMatchStart=(unsigned char)((127)<<1);
+			else if (notMatch==(127-64-32)) {
+				*notMatchStart=(unsigned char)((127-64-32)<<3);
 				notMatch=0;
 				notMatchStart=&ret[retIndex];
 				retIndex++;
@@ -380,14 +494,14 @@ unsigned int CompressNoMemcpy(char* ret, char* src, unsigned int srcSize){
 			retIndex++;
 			notMatch++;
 			srcIndex++;
-			/*if ((srcIndex-1) % (1<<17) > srcIndex % (1<<17)) {
+			/*if ((srcIndex-1) % (1<<16) > srcIndex % (1<<16)) {
 				ProgressIndicator = (int)( (srcIndex+1)*(float)100/(srcSize+1) );
-				printf("%s; Each rotation means 128KB are encoded; Done %d%%\r", Auberge[Melnitchka++], ProgressIndicator );
+				printf("%s; Each rotation means 64KB are encoded; Done %d%%\r", Auberge[Melnitchka++], ProgressIndicator );
 				Melnitchka = Melnitchka & 3; // 0 1 2 3: 00 01 10 11
 			}*/
 		} else {
 			if(notMatch > 0){
-				*notMatchStart=(unsigned char)((notMatch)<<1);
+				*notMatchStart=(unsigned char)((notMatch)<<3);
 				notMatch=0;
 			}
 // ---------------------| 
@@ -397,8 +511,11 @@ unsigned int CompressNoMemcpy(char* ret, char* src, unsigned int srcSize){
 	  		//if ( match==Min_Match_BAILOUT_Length ) ret[retIndex] = 0xC0; // 8bit&7bit set, SHORT MATCH if seventh/fifteenth bit is not zero i.e. Min_Match_BAILOUT_Length
 //                     / \
 // ---------------------|
+/*
 			ret[retIndex] = 0x01; // Assuming seventh/fifteenth bit is zero i.e. LONG MATCH i.e. Min_Match_BAILOUT_Length*4
-	  		//if ( match==Min_Match_BAILOUT_Length ) ret[retIndex] = 0x03; // 2bit&1bit set, SHORT MATCH if 2bit is not zero i.e. Min_Match_BAILOUT_Length
+	  		if ( match==Min_Match_BAILOUT_Length ) ret[retIndex] = 0x03; // 2bit&1bit set, LONG MATCH if 2bit is not zero i.e. Min_Match_BAILOUT_Length
+*/
+// No need of above, during compression we demanded lowest 2bits to be not 00.
 			// 1bit+3bits+12bits:
 			//ret[retIndex] = ret[retIndex] | ((match-Min_Match_Length)<<4);
 			//ret[retIndex] = ret[retIndex] | (((index-Min_Match_Length) & 0x0F00)>>8);
@@ -415,453 +532,188 @@ unsigned int CompressNoMemcpy(char* ret, char* src, unsigned int srcSize){
 // ---------------------|
 			// Now the situation is like LOW:HIGH i.e. FF:3F i.e. 0x3FFF, 16bit&15bit used as flags,
 			// should become LOW:HIGH i.e. FC:FF i.e. 0xFFFC, 2bit&1bit used as flags.
+/*
 			ret[retIndex] = ret[retIndex] | (((index-Min_Match_Length) & 0x00FF)<<2); // 6+8=14
 			//ret[retIndex] = ret[retIndex] | (((index-Min_Match_Length) & 0x00FF)<<1); // 7+8=15
 			retIndex++;
 			ret[retIndex] = (char)(((index-Min_Match_Length) & 0x3FFF)>>6);
 			//ret[retIndex] = (char)(((index-Min_Match_Length) & 0x7FFF)>>7);
 			retIndex++;
+*/
+// No need of above, during compression we demanded lowest 2bits to be not 00, use the full 16bits and get rid of the stupid '+/-' Min_Match_Length.
+			if (index>0xFFFF) {printf ("\nFatal error: Overflow!\n"); exit(13);}
+			memcpy(&ret[retIndex],&index,2); // copy lower 2 bytes
+			retIndex++;
+			retIndex++;
 //                     / \
 // ---------------------|
 			srcIndex+=match;
-			/*if ((srcIndex-match) % (1<<17) > srcIndex % (1<<17)) {
+			/*if ((srcIndex-match) % (1<<16) > srcIndex % (1<<16)) {
 				ProgressIndicator = (int)( (srcIndex+1)*(float)100/(srcSize+1) );
-				printf("%s; Each rotation means 128KB are encoded; Done %d%%\r", Auberge[Melnitchka++], ProgressIndicator );
+				printf("%s; Each rotation means 64KB are encoded; Done %d%%\r", Auberge[Melnitchka++], ProgressIndicator );
 				Melnitchka = Melnitchka & 3; // 0 1 2 3: 00 01 10 11
 			}*/
 		}
 	}
 	if(notMatch > 0){
-		*notMatchStart=(unsigned char)((notMatch)<<1);
+		*notMatchStart=(unsigned char)((notMatch)<<3);
 	}
 	//printf("%s; Each rotation means 128KB are encoded; Done %d%%\n", Auberge[Melnitchka], 100 );
 	return retIndex;
 }
 
-unsigned int DecompressNoMemcpy(char* ret, char* src, unsigned int srcSize){
+unsigned int Decompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
-	unsigned int index=0;
-	unsigned int match=0;
 	unsigned int WORDpair;
-	signed int mm;
-	unsigned int Fantagiro;
 
 	while(srcIndex < srcSize){
-		//if((unsigned char)src[srcIndex] <= 127){
 		WORDpair = *(unsigned short int*)&src[srcIndex];
-		if((WORDpair & 0x01) == 0){
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 735 MB/s:
-/*
-				*(uint64_t*)(ret+retIndex+8*0) = *(uint64_t*)(src+srcIndex+1+8*0);
-				SlowCopy128bit((src+srcIndex+1+8*1), (ret+retIndex+8*1));
-			if ( ((WORDpair & 0xFF)>>1) > 8+16 ) {
-				memcpy(&ret[retIndex]+8+16,&src[srcIndex+1]+8+16,((WORDpair & 0xFF)>>1)-(8+16)); // Use padding and replace 'memcpy' with loop of 4 or 4+4 transfers/stores i.e. *()=DWORD
-			}
-*/
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 782 MB/s:
-/*
-				*(uint64_t*)(ret+retIndex+8*0) = *(uint64_t*)(src+srcIndex+1+8*0);
-				*(uint64_t*)(ret+retIndex+8*1) = *(uint64_t*)(src+srcIndex+1+8*1);
-				*(uint64_t*)(ret+retIndex+8*2) = *(uint64_t*)(src+srcIndex+1+8*2);
-			if ( ((WORDpair & 0xFF)>>1) > 8*3 ) {
-				memcpy(&ret[retIndex]+8*3,&src[srcIndex+1]+8*3,((WORDpair & 0xFF)>>1)-8*3); // Use padding and replace 'memcpy' with loop of 4 or 4+4 transfers/stores i.e. *()=DWORD
-			}
-*/
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 763 MB/s:
-/*
-			if ( ((WORDpair & 0xFF)>>1) > 8*4 ) {
-				memcpy(&ret[retIndex],&src[srcIndex+1],(WORDpair & 0xFF)>>1); // Use padding and replace 'memcpy' with loop of 4 or 4+4 transfers/stores i.e. *()=DWORD
-			} else {
-				//SlowCopy128bit((src+srcIndex+1+16*0), (ret+retIndex+16*0));
-				//SlowCopy128bit((src+srcIndex+1+16*1), (ret+retIndex+16*1));
-				*(uint64_t*)(ret+retIndex+8*0) = *(uint64_t*)(src+srcIndex+1+8*0);
-				*(uint64_t*)(ret+retIndex+8*1) = *(uint64_t*)(src+srcIndex+1+8*1);
-				*(uint64_t*)(ret+retIndex+8*2) = *(uint64_t*)(src+srcIndex+1+8*2);
-				*(uint64_t*)(ret+retIndex+8*3) = *(uint64_t*)(src+srcIndex+1+8*3);
-				// Funny, Nikola Tesla is always right, triads rule, for 'Kazahana_on.PAGODA-order-5.txt.Nakamichi':
-				// For 8*3 GP  : RAM-to-RAM performance: 876 MB/s.
-				// For 8*4 GP  : RAM-to-RAM performance: 833 MB/s.
-				// For 16*2 XMM: RAM-to-RAM performance: 820 MB/s.
-			}
-*/
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 793 MB/s:
-/*
-			if ( ((WORDpair & 0xFF)>>1) > 8*3 ) {
-				memcpy(&ret[retIndex],&src[srcIndex+1],(WORDpair & 0xFF)>>1); // Use padding and replace 'memcpy' with loop of 4 or 4+4 transfers/stores i.e. *()=DWORD
-			} else {
-				//SlowCopy128bit((src+srcIndex+1+16*0), (ret+retIndex+16*0));
-				//SlowCopy128bit((src+srcIndex+1+16*1), (ret+retIndex+16*1));
-				*(uint64_t*)(ret+retIndex+8*0) = *(uint64_t*)(src+srcIndex+1+8*0);
-				*(uint64_t*)(ret+retIndex+8*1) = *(uint64_t*)(src+srcIndex+1+8*1);
-				*(uint64_t*)(ret+retIndex+8*2) = *(uint64_t*)(src+srcIndex+1+8*2);
-				//*(uint64_t*)(ret+retIndex+8*3) = *(uint64_t*)(src+srcIndex+1+8*3);
-				// Funny, Nikola Tesla is always right, triads rule, for 'Kazahana_on.PAGODA-order-5.txt.Nakamichi':
-				// For 8*3 GP  : RAM-to-RAM performance: 876 MB/s.
-				// For 8*4 GP  : RAM-to-RAM performance: 833 MB/s.
-				// For 16*2 XMM: RAM-to-RAM performance: 820 MB/s.
-			}
-*/
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 727 MB/s:
-/*
-			if ( ((WORDpair & 0xFF)>>1) > 8*2 ) {
-				memcpy(&ret[retIndex],&src[srcIndex+1],(WORDpair & 0xFF)>>1); // Use padding and replace 'memcpy' with loop of 4 or 4+4 transfers/stores i.e. *()=DWORD
-			} else {
-				//SlowCopy128bit((src+srcIndex+1+16*0), (ret+retIndex+16*0));
-				//SlowCopy128bit((src+srcIndex+1+16*1), (ret+retIndex+16*1));
-				*(uint64_t*)(ret+retIndex+8*0) = *(uint64_t*)(src+srcIndex+1+8*0);
-				*(uint64_t*)(ret+retIndex+8*1) = *(uint64_t*)(src+srcIndex+1+8*1);
-				// Funny, Nikola Tesla is always right, triads rule, for 'Kazahana_on.PAGODA-order-5.txt.Nakamichi':
-				// For 8*3 GP  : RAM-to-RAM performance: 876 MB/s.
-				// For 8*4 GP  : RAM-to-RAM performance: 833 MB/s.
-				// For 16*2 XMM: RAM-to-RAM performance: 820 MB/s.
-			}
-*/
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 629 MB/s:
-/*
-			if ( ((WORDpair & 0xFF)>>1) > 8*1 ) {
-				memcpy(&ret[retIndex],&src[srcIndex+1],(WORDpair & 0xFF)>>1); // Use padding and replace 'memcpy' with loop of 4 or 4+4 transfers/stores i.e. *()=DWORD
-			} else {
-				//SlowCopy128bit((src+srcIndex+1+16*0), (ret+retIndex+16*0));
-				//SlowCopy128bit((src+srcIndex+1+16*1), (ret+retIndex+16*1));
-				*(uint64_t*)(ret+retIndex+8*0) = *(uint64_t*)(src+srcIndex+1+8*0);
-				// Funny, Nikola Tesla is always right, triads rule, for 'Kazahana_on.PAGODA-order-5.txt.Nakamichi':
-				// For 8*3 GP  : RAM-to-RAM performance: 876 MB/s.
-				// For 8*4 GP  : RAM-to-RAM performance: 833 MB/s.
-				// For 16*2 XMM: RAM-to-RAM performance: 820 MB/s.
-			}
-*/
-
-			// The approach below was proposed by m^2, many-many thanks:
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 686 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(8*1);
-//			gogogo:
-//				*(uint64_t*)(ret+retIndex+8*(0+1*mm)) = *(uint64_t*)(src+srcIndex+1+8*(0+1*mm));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 754 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(8*2);
-//			gogogo:
-//				*(uint64_t*)(ret+retIndex+8*(0+2*mm)) = *(uint64_t*)(src+srcIndex+1+8*(0+2*mm));
-//				*(uint64_t*)(ret+retIndex+8*(1+2*mm)) = *(uint64_t*)(src+srcIndex+1+8*(1+2*mm));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 753 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(8*3);
-//			gogogo:
-//				*(uint64_t*)(ret+retIndex+8*(0+3*mm)) = *(uint64_t*)(src+srcIndex+1+8*(0+3*mm));
-//				*(uint64_t*)(ret+retIndex+8*(1+3*mm)) = *(uint64_t*)(src+srcIndex+1+8*(1+3*mm));
-//				*(uint64_t*)(ret+retIndex+8*(2+3*mm)) = *(uint64_t*)(src+srcIndex+1+8*(2+3*mm));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 763 MB/s:
-//			for (mm=0; mm <= ((WORDpair & 0xFF)>>1)/(8*3); mm++) {
-//				*(uint64_t*)(ret+retIndex+8*(0+3*mm)) = *(uint64_t*)(src+srcIndex+1+8*(0+3*mm));
-//				*(uint64_t*)(ret+retIndex+8*(1+3*mm)) = *(uint64_t*)(src+srcIndex+1+8*(1+3*mm));
-//				*(uint64_t*)(ret+retIndex+8*(2+3*mm)) = *(uint64_t*)(src+srcIndex+1+8*(2+3*mm));
-//			}
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 773 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(8*4);
-//			gogogo:
-//				*(uint64_t*)(ret+retIndex+8*(0+4*mm)) = *(uint64_t*)(src+srcIndex+1+8*(0+4*mm));
-//				*(uint64_t*)(ret+retIndex+8*(1+4*mm)) = *(uint64_t*)(src+srcIndex+1+8*(1+4*mm));
-//				*(uint64_t*)(ret+retIndex+8*(2+4*mm)) = *(uint64_t*)(src+srcIndex+1+8*(2+4*mm));
-//				*(uint64_t*)(ret+retIndex+8*(3+4*mm)) = *(uint64_t*)(src+srcIndex+1+8*(3+4*mm));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 727 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(8*5);
-//			gogogo:
-//				*(uint64_t*)(ret+retIndex+8*(0+5*mm)) = *(uint64_t*)(src+srcIndex+1+8*(0+5*mm));
-//				*(uint64_t*)(ret+retIndex+8*(1+5*mm)) = *(uint64_t*)(src+srcIndex+1+8*(1+5*mm));
-//				*(uint64_t*)(ret+retIndex+8*(2+5*mm)) = *(uint64_t*)(src+srcIndex+1+8*(2+5*mm));
-//				*(uint64_t*)(ret+retIndex+8*(3+5*mm)) = *(uint64_t*)(src+srcIndex+1+8*(3+5*mm));
-//				*(uint64_t*)(ret+retIndex+8*(4+5*mm)) = *(uint64_t*)(src+srcIndex+1+8*(4+5*mm));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 664 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(8*8);
-//			gogogo:
-//				*(uint64_t*)(ret+retIndex+8*(0+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(0+8*mm));
-//				*(uint64_t*)(ret+retIndex+8*(1+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(1+8*mm));
-//				*(uint64_t*)(ret+retIndex+8*(2+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(2+8*mm));
-//				*(uint64_t*)(ret+retIndex+8*(3+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(3+8*mm));
-//				*(uint64_t*)(ret+retIndex+8*(4+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(4+8*mm));
-//				*(uint64_t*)(ret+retIndex+8*(5+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(5+8*mm));
-//				*(uint64_t*)(ret+retIndex+8*(6+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(6+8*mm));
-//				*(uint64_t*)(ret+retIndex+8*(7+8*mm)) = *(uint64_t*)(src+srcIndex+1+8*(7+8*mm));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 702 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(16*1);
-//			gogogo:
-//				SlowCopy128bit((src+srcIndex+1+16*(0+1*mm)), (ret+retIndex+16*(0+1*mm)));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 710 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(16*2);
-//			gogogo:
-//				SlowCopy128bit((src+srcIndex+1+16*(0+2*mm)), (ret+retIndex+16*(0+2*mm)));
-//				SlowCopy128bit((src+srcIndex+1+16*(1+2*mm)), (ret+retIndex+16*(1+2*mm)));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 593 MB/s:
-//			mm = ((WORDpair & 0xFF)>>1)/(16*4);
-//			gogogo:
-//				SlowCopy128bit((src+srcIndex+1+16*(0+4*mm)), (ret+retIndex+16*(0+4*mm)));
-//				SlowCopy128bit((src+srcIndex+1+16*(1+4*mm)), (ret+retIndex+16*(1+4*mm)));
-//				SlowCopy128bit((src+srcIndex+1+16*(2+4*mm)), (ret+retIndex+16*(2+4*mm)));
-//				SlowCopy128bit((src+srcIndex+1+16*(3+4*mm)), (ret+retIndex+16*(3+4*mm)));
-//			if (mm--) goto gogogo;
-
-			// For enwik9 (as 64bit code) RAM-to-RAM performance: 793 MB/s:
-			mm = ((WORDpair & 0xFF)>>1);
-			Fantagiro = 0;
-			gogogo:
-				*(uint64_t*)(ret+retIndex+8*(0+Fantagiro)) = *(uint64_t*)(src+srcIndex+1+8*(0+Fantagiro));
-				*(uint64_t*)(ret+retIndex+8*(1+Fantagiro)) = *(uint64_t*)(src+srcIndex+1+8*(1+Fantagiro));
-				*(uint64_t*)(ret+retIndex+8*(2+Fantagiro)) = *(uint64_t*)(src+srcIndex+1+8*(2+Fantagiro));
-				// 3 x GP 793MB/s
-				// 2 x GP 773MB/s
-				// 1 x GP 718MB/s
-				// 3 x XMM 664MB/s
-				// 2 x XMM 727MB/s
-				// 1 x XMM 727MB/s
-				Fantagiro = Fantagiro + 3;
-				mm = mm - 24;
-			if (mm>0) goto gogogo;
-
-			retIndex+=(WORDpair & 0xFF)>>1;
-			srcIndex+=(((WORDpair & 0xFF)>>1)+1);
+		if((WORDpair & 0x07) == 0){
+				#ifdef _N_GP
+				*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(src+srcIndex+1+8*(0));
+				*(uint64_t*)(ret+retIndex+8*(1)) = *(uint64_t*)(src+srcIndex+1+8*(1));
+				*(uint64_t*)(ret+retIndex+8*(2)) = *(uint64_t*)(src+srcIndex+1+8*(2));
+				*(uint64_t*)(ret+retIndex+8*(3)) = *(uint64_t*)(src+srcIndex+1+8*(3));
+				#endif
+				#ifdef _N_XMM
+				SlowCopy128bit((src+srcIndex+1+16*(0)), (ret+retIndex+16*(0)));
+				SlowCopy128bit((src+srcIndex+1+16*(1)), (ret+retIndex+16*(1)));
+				#endif
+				#ifdef _N_YMM
+				SlowCopy256bit((src+srcIndex+1+32*(0)), (ret+retIndex+32*(0)));
+				#endif
+			retIndex+=(WORDpair & 0xFF)>>3;
+			srcIndex+=(((WORDpair & 0xFF)>>3)+1);
 		}
 		else{
-			// 1bit+3bits+12bits:
-			//match = ((src[srcIndex] & 0x7F) >> 4)+Min_Match_Length;
-			//index = (src[srcIndex] & 0x0F) << 8;
-			// 1bit+1bit+14bits:
-			//match = ((src[srcIndex] & 0x4F) >> 4)+Min_Match_Length; // In fact, not needed when eightfoldness is commenced, match is 8.
-// The fragment below is outrageously ineffective - it can be done in one WORD operation instead of two BYTE operations.
-// ---------------------| 
-//                     \ /
-			//index = (src[srcIndex] & 0x3F) << 8;
-			//srcIndex++;
-			//index = (index | (unsigned int)(0x00FF & src[srcIndex])) + Min_Match_Length;
-			//srcIndex++;
-//                     / \
-// ---------------------|
-// ---------------------| 
-//                     \ /
-			index = (WORDpair>>2) + Min_Match_Length; // 14bit
-			//index = (WORDpair>>1) + Min_Match_Length; // 15bit
 			srcIndex=srcIndex+2;
-//                     / \
-// ---------------------|
-			//if (src[srcIndex-1-1] & 0x40) { // 4 if seventh/fifteenth bit is not zero
-//			if (WORDpair & 0x02) { // 4 if 2/14 bit is not zero
-//				match = Min_Match_BAILOUT_Length;
-//				//memcpy(&ret[retIndex],&ret[retIndex-index],match);
-//				*(uint32_t*)(ret+retIndex) = *(uint32_t*)(ret+retIndex-index);
-//			} else {
-//				match = Min_Match_BAILOUT_Length*4;
-//				//*(uint32_t*)(ret+retIndex) = *(uint32_t*)(ret+retIndex-index);
-//				//*(uint32_t*)(ret+retIndex+4) = *(uint32_t*)(ret+retIndex-index+4);
-//				//*(uint32_t*)(ret+retIndex+8) = *(uint32_t*)(ret+retIndex-index+8);
-//				//*(uint32_t*)(ret+retIndex+12) = *(uint32_t*)(ret+retIndex-index+12);
-//				SlowCopy128bit((ret+retIndex-index), (ret+retIndex));
-//			}
-			match = Min_Match_BAILOUT_Length;
-			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-index);
-			retIndex+=match;
+			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORDpair);
+			retIndex+=Min_Match_Length;
 		}
 	}
 	return retIndex;
 }
 
-// Decompression main loop:
+
+// Decompression main loop, 30 nifty lines:
 /*
 ; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
-; mark_description "-O3 -FAcs";
+; mark_description "-O3 -D_N_GP -FAcs";
 
-.B7.3::                         
-  0002e 48 03 c2         add rax, rdx                           
-  00031 44 0f b7 18      movzx r11d, WORD PTR [rax]             
-  00035 41 f7 c3 01 00 
-        00 00            test r11d, 1                           
-  0003c 0f 85 82 00 00 
-        00               jne .B7.10 ; Prob 10%                  
-.B7.4::                         
-  00042 45 0f b6 db      movzx r11d, r11b                       
-  00046 45 33 e4         xor r12d, r12d                         
-  00049 41 d1 eb         shr r11d, 1                            
-  0004c 4a 8d 2c 09      lea rbp, QWORD PTR [rcx+r9]            
-  00050 45 89 dd         mov r13d, r11d                         
-.B7.5::                         
-  00053 41 83 c5 e8      add r13d, -24                          
-  00057 46 8d 34 e5 00 
-        00 00 00         lea r14d, DWORD PTR [r12*8]            
-  0005f 4e 8b 7c 30 01   mov r15, QWORD PTR [1+rax+r14]         
-  00064 4d 89 3c 2e      mov QWORD PTR [r14+rbp], r15           
-  00068 46 8d 3c e5 08 
-        00 00 00         lea r15d, DWORD PTR [8+r12*8]          
-  00070 4d 8b 74 07 01   mov r14, QWORD PTR [1+r15+rax]         
-  00075 4d 89 34 2f      mov QWORD PTR [r15+rbp], r14           
-  00079 46 8d 34 e5 10 
-        00 00 00         lea r14d, DWORD PTR [16+r12*8]         
-  00081 41 83 c4 03      add r12d, 3                            
-  00085 45 85 ed         test r13d, r13d                        
-  00088 4d 8b 7c 06 01   mov r15, QWORD PTR [1+r14+rax]         
-  0008d 4d 89 3c 2e      mov QWORD PTR [r14+rbp], r15           
-  00091 7f c0            jg .B7.5 ; Prob 82%                    
-.B7.6::                         
-  00093 43 8d 44 1a 01   lea eax, DWORD PTR [1+r10+r11]         
-  00098 45 03 cb         add r9d, r11d                          
-.B7.7::                         
-  0009b 41 89 c2         mov r10d, eax                          
-  0009e 45 3b d0         cmp r10d, r8d                          
-  000a1 72 8b            jb .B7.3 ; Prob 82%                    
-.B7.8::                         
-  000a3 4c 8b 64 24 20   mov r12, QWORD PTR [32+rsp]            
-  000a8 4c 8b 6c 24 28   mov r13, QWORD PTR [40+rsp]            
-  000ad 4c 8b 74 24 30   mov r14, QWORD PTR [48+rsp]            
-  000b2 4c 8b 7c 24 38   mov r15, QWORD PTR [56+rsp]            
-  000b7 48 8b 6c 24 40   mov rbp, QWORD PTR [64+rsp]            
-.B7.9::                         
-  000bc 44 89 c8         mov eax, r9d                           
-  000bf 48 83 c4 48      add rsp, 72                            
-  000c3 c3               ret                                    
-.B7.10::                        
-  000c4 41 c1 eb 02      shr r11d, 2                            
-  000c8 41 83 c2 02      add r10d, 2                            
-  000cc 41 83 c3 08      add r11d, 8                            
-  000d0 49 f7 db         neg r11                                
-  000d3 4c 03 d9         add r11, rcx                           
-  000d6 44 89 d0         mov eax, r10d                          
-  000d9 4b 8b 2c 19      mov rbp, QWORD PTR [r9+r11]            
-  000dd 49 89 2c 09      mov QWORD PTR [r9+rcx], rbp            
-  000e1 41 83 c1 08      add r9d, 8                             
-  000e5 eb b4            jmp .B7.7 ; Prob 100%                  
+.B6.3::                         
+  00017 41 0f b7 04 12   movzx eax, WORD PTR [r10+rdx]          
+  0001c a8 07            test al, 7                             
+  0001e 75 37            jne .B6.5 
+.B6.4::                         
+  00020 0f b6 c0         movzx eax, al                          
+  00023 49 8b 5c 12 01   mov rbx, QWORD PTR [1+r10+rdx]         
+  00028 c1 e8 03         shr eax, 3                             
+  0002b 49 89 1c 0b      mov QWORD PTR [r11+rcx], rbx           
+  0002f 49 8b 5c 12 09   mov rbx, QWORD PTR [9+r10+rdx]         
+  00034 49 89 5c 0b 08   mov QWORD PTR [8+r11+rcx], rbx         
+  00039 49 8b 5c 12 11   mov rbx, QWORD PTR [17+r10+rdx]        
+  0003e 4d 8b 54 12 19   mov r10, QWORD PTR [25+r10+rdx]        
+  00043 49 89 5c 0b 10   mov QWORD PTR [16+r11+rcx], rbx        
+  00048 4d 89 54 0b 18   mov QWORD PTR [24+r11+rcx], r10        
+  0004d 45 8d 54 01 01   lea r10d, DWORD PTR [1+r9+rax]         
+  00052 44 03 d8         add r11d, eax                          
+  00055 eb 19            jmp .B6.6 
+.B6.5::                         
+  00057 41 83 c1 02      add r9d, 2                             
+  0005b 48 f7 d8         neg rax                                
+  0005e 48 03 c1         add rax, rcx                           
+  00061 45 89 ca         mov r10d, r9d                          
+  00064 49 8b 1c 03      mov rbx, QWORD PTR [r11+rax]           
+  00068 49 89 1c 0b      mov QWORD PTR [r11+rcx], rbx           
+  0006c 41 83 c3 08      add r11d, 8                            
+.B6.6::                         
+  00070 45 89 d1         mov r9d, r10d                          
+  00073 45 3b c8         cmp r9d, r8d                           
+  00076 72 9f            jb .B6.3 
 */
 
-// Yappy vs Nakamichi 'Speed Showdown' on Core2 T7500 2200MHz with enwik9:
+// Decompression main loop:
 /*
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_vs_Nakamichi_SpeedShowdown_on_enwik9.bat
-Yappy vs Nakamichi 'Speed Showdown' on enwik9 ...
+; mark_description "Intel(R) C++ Compiler XE for applications running on IA-32, Version 12.1.1.258 Build 20111011";
+; mark_description "-O3 -D_N_GP -FAcs";
 
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 512
-YAPPY: [b 0K] bytes 1000000000 -> 779421758  77.9%  comp  40.9 MB/s  uncomp 702.8 MB/s
+.B6.3:                          
+  00026 8b 4c 24 14      mov ecx, DWORD PTR [20+esp]            
+  0002a 0f b7 1c 2a      movzx ebx, WORD PTR [edx+ebp]          
+  0002e f6 c3 07         test bl, 7                             
+  00031 8d 0c 01         lea ecx, DWORD PTR [ecx+eax]           
+  00034 75 45            jne .B6.5 
+.B6.4:                          
+  00036 8b 74 2a 01      mov esi, DWORD PTR [1+edx+ebp]         
+  0003a 8b 7c 2a 05      mov edi, DWORD PTR [5+edx+ebp]         
+  0003e 0f b6 db         movzx ebx, bl                          
+  00041 89 31            mov DWORD PTR [ecx], esi               
+  00043 89 79 04         mov DWORD PTR [4+ecx], edi             
+  00046 8b 74 2a 09      mov esi, DWORD PTR [9+edx+ebp]         
+  0004a 8b 7c 2a 0d      mov edi, DWORD PTR [13+edx+ebp]        
+  0004e c1 eb 03         shr ebx, 3                             
+  00051 89 71 08         mov DWORD PTR [8+ecx], esi             
+  00054 03 c3            add eax, ebx                           
+  00056 89 79 0c         mov DWORD PTR [12+ecx], edi            
+  00059 8b 74 2a 11      mov esi, DWORD PTR [17+edx+ebp]        
+  0005d 8b 7c 2a 15      mov edi, DWORD PTR [21+edx+ebp]        
+  00061 89 71 10         mov DWORD PTR [16+ecx], esi            
+  00064 89 79 14         mov DWORD PTR [20+ecx], edi            
+  00067 8b 74 2a 19      mov esi, DWORD PTR [25+edx+ebp]        
+  0006b 8b 7c 2a 1d      mov edi, DWORD PTR [29+edx+ebp]        
+  0006f 8d 54 1a 01      lea edx, DWORD PTR [1+edx+ebx]         
+  00073 89 71 18         mov DWORD PTR [24+ecx], esi            
+  00076 89 79 1c         mov DWORD PTR [28+ecx], edi            
+  00079 eb 14            jmp .B6.6 
+.B6.5:                          
+  0007b f7 db            neg ebx                                
+  0007d 83 c2 02         add edx, 2                             
+  00080 03 d9            add ebx, ecx                           
+  00082 83 c0 08         add eax, 8                             
+  00085 8b 33            mov esi, DWORD PTR [ebx]               
+  00087 8b 5b 04         mov ebx, DWORD PTR [4+ebx]             
+  0008a 89 31            mov DWORD PTR [ecx], esi               
+  0008c 89 59 04         mov DWORD PTR [4+ecx], ebx             
+.B6.6:                          
+  0008f 3b 54 24 1c      cmp edx, DWORD PTR [28+esp]            
+  00093 72 91            jb .B6.3 
 
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 1024
-YAPPY: [b 1K] bytes 1000000000 -> 714236729  71.4%  comp  41.8 MB/s  uncomp 657.3 MB/s
+; mark_description "Intel(R) C++ Compiler XE for applications running on IA-32, Version 12.1.1.258 Build 20111011";
+; mark_description "-O3 -QxSSE2 -D_N_XMM -FAcs";
 
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 2048
-YAPPY: [b 2K] bytes 1000000000 -> 655356839  65.5%  comp  40.1 MB/s  uncomp 611.3 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 4096
-YAPPY: [b 4K] bytes 1000000000 -> 593819184  59.4%  comp  36.7 MB/s  uncomp 566.0 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 8192
-YAPPY: [b 8K] bytes 1000000000 -> 544342520  54.4%  comp  33.6 MB/s  uncomp 545.9 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 16384
-YAPPY: [b 16K] bytes 1000000000 -> 519654588  52.0%  comp  32.3 MB/s  uncomp 540.9 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 32768
-YAPPY: [b 32K] bytes 1000000000 -> 507264601  50.7%  comp  32.1 MB/s  uncomp 541.2 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_64bit.exe enwik9 65536
-YAPPY: [b 64K] bytes 1000000000 -> 501106828  50.1%  comp  32.2 MB/s  uncomp 540.9 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 512
-YAPPY: [b 0K] bytes 1000000000 -> 779421758  77.9%  comp  43.0 MB/s  uncomp 710.6 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 1024
-YAPPY: [b 1K] bytes 1000000000 -> 714236729  71.4%  comp  42.2 MB/s  uncomp 657.7 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 2048
-YAPPY: [b 2K] bytes 1000000000 -> 655356839  65.5%  comp  39.3 MB/s  uncomp 611.3 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 4096
-YAPPY: [b 4K] bytes 1000000000 -> 593819184  59.4%  comp  36.3 MB/s  uncomp 571.4 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 8192
-YAPPY: [b 8K] bytes 1000000000 -> 544342520  54.4%  comp  33.5 MB/s  uncomp 550.9 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 16384
-YAPPY: [b 16K] bytes 1000000000 -> 519654588  52.0%  comp  32.2 MB/s  uncomp 550.6 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 32768
-YAPPY: [b 32K] bytes 1000000000 -> 507264601  50.7%  comp  32.0 MB/s  uncomp 545.9 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Yappy_32bit.exe enwik9 65536
-YAPPY: [b 64K] bytes 1000000000 -> 501106828  50.1%  comp  32.2 MB/s  uncomp 545.9 MB/s
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_64bit.exe enwik9.Nakamichi
-Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD, written by Kaze, based on Nobuo Ito's LZSS source.
-Decompressing 641441055 bytes ...
-RAM-to-RAM performance: 772 MB/s.
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_32bit.exe enwik9.Nakamichi
-Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD, written by Kaze, based on Nobuo Ito's LZSS source.
-Decompressing 641441055 bytes ...
-RAM-to-RAM performance: 678 MB/s.
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_64bit.exe enwik9.Nakamichi
-Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
-Decompressing 641441055 bytes ...
-RAM-to-RAM performance: 783 MB/s.
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_32bit.exe enwik9.Nakamichi
-Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
-Decompressing 641441055 bytes ...
-RAM-to-RAM performance: 678 MB/s.
-
-D:\_KAZE\_KAZE_GOLD\Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy>
-*/
-
-// In my opinion Hamid Buzidi is the best, therefore his lzturbo v1.1 reference results are given below:
-/*
-D:\_KAZE\Nakamichi_r1-RSSBO>timer32 lzturbo.exe -19 -p0 enwiki-20140304-pages-articles.7z.001 .
-
-Kernel  Time =     0.982 =    0%
-User    Time =   152.537 =   99%
-Process Time =   153.520 =  100%    Virtual  Memory =    429 MB
-Global  Time =   153.519 =  100%    Physical Memory =    407 MB
-
-D:\_KAZE\Nakamichi_r1-RSSBO>timer32.exe lzturbo.exe -d enwiki-20140304-pages-articles.7z.001.lzt .
-
-Kernel  Time =     0.234 =   62%
-User    Time =     0.187 =   50%
-Process Time =     0.421 =  112%    Virtual  Memory =     98 MB
-Global  Time =     0.374 =  100%    Physical Memory =     70 MB
-
-D:\_KAZE\Nakamichi_r1-RSSBO>dir
-
-04/15/2014  08:05 AM       104,857,600 enwiki-20140304-pages-articles.7z.001
-04/15/2014  08:04 AM        41,984,881 enwiki-20140304-pages-articles.7z.001.lzt
-
-D:\_KAZE\Nakamichi_r1-RSSBO>timer32 lzturbo.exe -11 -p0 enwiki-20140304-pages-articles.7z.001 .
-
-Kernel  Time =     0.171 =    9%
-User    Time =     1.622 =   90%
-Process Time =     1.794 =  100%    Virtual  Memory =     58 MB
-Global  Time =     1.794 =  100%    Physical Memory =     39 MB
-
-D:\_KAZE\Nakamichi_r1-RSSBO>timer32.exe lzturbo.exe -d enwiki-20140304-pages-articles.7z.001.lzt .
-
-Kernel  Time =     0.249 =   41%
-User    Time =     0.140 =   23%
-Process Time =     0.390 =   64%    Virtual  Memory =     98 MB
-Global  Time =     0.608 =  100%    Physical Memory =     73 MB
-
-D:\_KAZE\Nakamichi_r1-RSSBO>dir
-
-04/15/2014  08:05 AM       104,857,600 enwiki-20140304-pages-articles.7z.001
-04/15/2014  08:05 AM        47,685,453 enwiki-20140304-pages-articles.7z.001.lzt
-
-D:\_KAZE\Nakamichi_r1-RSSBO>
+.B7.3:                          
+  0001e 8b 4c 24 10      mov ecx, DWORD PTR [16+esp]            
+  00022 0f b7 34 3a      movzx esi, WORD PTR [edx+edi]          
+  00026 f7 c6 07 00 00 
+        00               test esi, 7                            
+  0002c 8d 1c 01         lea ebx, DWORD PTR [ecx+eax]           
+  0002f 74 16            je .B7.5 
+.B7.4:                          
+  00031 f7 de            neg esi                                
+  00033 83 c2 02         add edx, 2                             
+  00036 03 f3            add esi, ebx                           
+  00038 83 c0 08         add eax, 8                             
+  0003b 8b 0e            mov ecx, DWORD PTR [esi]               
+  0003d 8b 76 04         mov esi, DWORD PTR [4+esi]             
+  00040 89 0b            mov DWORD PTR [ebx], ecx               
+  00042 89 73 04         mov DWORD PTR [4+ebx], esi             
+  00045 eb 24            jmp .B7.6 
+.B7.5:                          
+  00047 81 e6 ff 00 00 
+        00               and esi, 255                           
+  0004d c1 ee 03         shr esi, 3                             
+  00050 f3 0f 6f 44 3a 
+        01               movdqu xmm0, XMMWORD PTR [1+edx+edi]   
+  00056 f3 0f 6f 4c 3a 
+        11               movdqu xmm1, XMMWORD PTR [17+edx+edi]  
+  0005c f3 0f 7f 03      movdqu XMMWORD PTR [ebx], xmm0         
+  00060 f3 0f 7f 4b 10   movdqu XMMWORD PTR [16+ebx], xmm1      
+  00065 03 c6            add eax, esi                           
+  00067 8d 54 32 01      lea edx, DWORD PTR [1+edx+esi]         
+.B7.6:                          
+  0006b 3b 54 24 18      cmp edx, DWORD PTR [24+esp]            
+  0006f 72 ad            jb .B7.3 
 */
 
 
@@ -1340,6 +1192,6 @@ char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, ui
 	}
 }
 
-// Last change: 2014-Apr-27
+// Last change: 2014-Apr-29
 // If you want to help me to improve it, email me at: sanmayce@sanmayce.com
 // Enfun!
