@@ -38,6 +38,7 @@ set(USE_MINIZ             1)
 set(USE_MMINI             0) # doesn't compile with MSVC10
 set(USE_MURMUR            1)
 set(USE_NAKAMICHI         1)
+set(USE_NOBUO_ITO_LZSS    0) # inefficient
 set(USE_NRV               0) # inefficient
 set(USE_PG_LZ             0) # inefficient
 set(USE_QUICKLZ           1)
@@ -475,6 +476,10 @@ IF(USE_NAKAMICHI)
     set(OTHER_SRC ${OTHER_SRC} codecs/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji.c)
     add_definitions(-DFSBENCH_USE_NAKAMICHI)
 ENDIF(USE_NAKAMICHI)
+IF(USE_NOBUO_ITO_LZSS)
+    set(OTHER_SRC ${OTHER_SRC} codecs/Nobuo-Ito-LZSS.c)
+    add_definitions(-DFSBENCH_USE_NOBUO_ITO_LZSS)
+ENDIF(USE_NOBUO_ITO_LZSS)
 IF(USE_PG_LZ)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/pg_lz)
     set(OTHER_SRC ${OTHER_SRC} codecs/pg_lz/pg_lzcompress.c)

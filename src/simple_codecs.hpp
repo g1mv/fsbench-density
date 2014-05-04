@@ -137,6 +137,10 @@ void murmur_x64_128(char * in, size_t isize, char * out);
 size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *);
 size_t nakamichi_d(char * in, size_t isize, char * out, size_t osize, void *);
 #endif//FSBENCH_USE_NAKAMICHI
+#ifdef FSBENCH_USE_NOBUO_ITO_LZSS
+size_t nobuo_ito_lzss_c(char * in, size_t isize, char * out, size_t, void *);
+size_t nobuo_ito_lzss_d(char * in, size_t isize, char * out, size_t, void *);
+#endif//FSBENCH_USE_NOBUO_ITO_LZSS
 #ifdef FSBENCH_USE_PG_LZ
 size_t pg_lz_c(char * in, size_t isize, char * out, size_t, void * strategy);
 size_t pg_lz_d(char * in, size_t, char * out, size_t osize, void *);

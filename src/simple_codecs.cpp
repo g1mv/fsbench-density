@@ -673,7 +673,6 @@ void murmur_x64_128(char * in, size_t isize, char * out)
 }
 #endif//FSBENCH_USE_MURMUR
 #ifdef FSBENCH_USE_NAKAMICHI
-
 extern "C"
 {
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
@@ -688,6 +687,21 @@ size_t nakamichi_d(char * in, size_t isize, char * out, size_t, void *)
     return Decompress(out, in, isize);
 }
 #endif//FSBENCH_USE_NAKAMICHI
+#ifdef FSBENCH_USE_NOBUO_ITO_LZSS
+extern "C"
+{
+    unsigned int compressLZSS(char* ret, char* src, unsigned int srcSize);
+    unsigned int uncompressLZSS(char* ret, char* src, unsigned int srcSize);
+}
+size_t nobuo_ito_lzss_c(char * in, size_t isize, char * out, size_t, void *)
+{
+    return compressLZSS(out, in, isize);
+}
+size_t nobuo_ito_lzss_d(char * in, size_t isize, char * out, size_t, void *)
+{
+    return uncompressLZSS(out, in, isize);
+}
+#endif//FSBENCH_USE_NOBUO_ITO_LZSS
 #ifdef FSBENCH_USE_PG_LZ
 
 extern "C"

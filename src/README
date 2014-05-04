@@ -175,6 +175,7 @@ mmini - lzl                         | Adam Ierymenko                            
 LZMAT                               | Vitaly Evseenko                                  | 1.1             | yes      | www.matcode.com/lzmat.htm
 LZO                                 | Markus Franz Xaver Johannes Oberhumer            | 2.06            | yes      | www.oberhumer.com/opensource/lzo
 LZSS                                | Ilia Muraviev                                    | 2008-07-31      | no       | http://encode.ru/threads/143-LZSS-v0-01-is-here!
+LZSS                                | Nobuo Ito                                        | 1.0             | no       |
 LZV1                                | Hermann Vogt                                     | 0.5             | no       | http://encode.ru/threads/1661-LZWC-A-fast-tree-based-LZW-compressor
 lzx_compress                        | Matthew T. Russotto                              | 2005-07-06      | no       | http://www.russotto.net/chm/
 miniz                               | Richard Geldreich, Jr.                           | 1.11            | yes      | https://code.google.com/p/miniz
