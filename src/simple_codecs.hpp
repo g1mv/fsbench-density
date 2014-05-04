@@ -109,6 +109,10 @@ size_t LZG_m(size_t input_size);
 size_t lzmat_c(char * in,size_t isize, char * out, size_t osize, void * _);
 size_t lzmat_d(char * in,size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_LZMAT
+#ifdef FSBENCH_USE_LZP_DS
+size_t lzp_ds_c(char * in, size_t isize, char * out, size_t, void * min_len);
+size_t lzp_ds_d(char * in, size_t isize, char * out, size_t, void * min_len);
+#endif//FSBENCH_USE_LZP_DS
 #ifdef FSBENCH_USE_LZWC
 size_t LZWC_c(char * in,size_t isize, char * out, size_t osize, void * _);
 size_t LZWC_d(char * in,size_t isize, char * out, size_t osize, void * _);

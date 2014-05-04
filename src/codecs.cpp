@@ -197,6 +197,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_LZG 
               new CodecWithIntModes("lzg", _LZG_VERSION, LZG_c, LZG_d, 1, 9, "5", LZG_m),
 #endif
+#ifdef FSBENCH_USE_LZP_DS
+              new CodecWithIntModes("lzp_ds", _LZP_DS_VERSION, lzp_ds_c, lzp_ds_d, 1, 512, "32"),
+#endif
 #ifdef FSBENCH_USE_LZX_COMPRESS
               new CodecWithIntModes("lzx_compress", _LZX_VERSION, LZX_c, 0, 15, 21, "21"),
 #endif

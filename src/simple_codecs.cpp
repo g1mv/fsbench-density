@@ -540,6 +540,18 @@ size_t lzmat_d(char * in, size_t isize, char * out, size_t osize, void *)
     return ret;
 }
 #endif//FSBENCH_USE_LZMAT
+#ifdef FSBENCH_USE_LZP_DS
+int LZPEncode(unsigned char* In, unsigned int Size, unsigned char* Out, int MinLen);
+int LZPDecode(unsigned char* In, unsigned int Size, unsigned char* Out, int MinLen);
+size_t lzp_ds_c(char * in, size_t isize, char * out, size_t, void * min_len)
+{
+    return LZPEncode((unsigned char*)in, isize, (unsigned char*)out, *(uintptr_t*)min_len);
+}
+size_t lzp_ds_d(char * in, size_t isize, char * out, size_t, void * min_len)
+{
+    return LZPDecode((unsigned char*)in, isize, (unsigned char*)out, *(uintptr_t*)min_len);
+}
+#endif//FSBENCH_USE_LZP_DS
 #ifdef FSBENCH_USE_LZWC
 extern "C"
 {

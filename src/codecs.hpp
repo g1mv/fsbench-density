@@ -196,6 +196,7 @@ Codec * find_codec(const std::string & name);
 #define _LZHAM_VERSION          "SVN r96"
 #define _LZMAT_VERSION          "1.1"
 #define _LZO_VERSION            "2.06"
+#define _LZP_DS_VERSION         "v0"
 #define _LZSSIM_VERSION         "2008-07-31"
 #define _LZV1_VERSION           "0.5"
 #define _LZWC_VERSION           "0.4"

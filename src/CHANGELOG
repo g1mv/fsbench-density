@@ -6,6 +6,7 @@
 [+] added PostgreSQL's LZ 9.3.4
 [+] added FSE 2014-04-07
 [+] added Nobuo Ito's LZSS 1.0
+[+] added Dmitry Shkarin's LZP v0
 [~] updated lz4 to r114
 [~] updated LZJB to the latest FreeBSD version
 [~] updated tornado to 0.6a

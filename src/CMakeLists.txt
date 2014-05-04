@@ -30,6 +30,7 @@ set(USE_LZG               0) # inefficient
 set(USE_LZHAM             0) # known to cause problems on some platforms
 set(USE_LZMAT             1)
 set(USE_LZO               1)
+set(USE_LZP_DS            0) # inefficient
 set(USE_LZSS_IM           0) # inefficient
 set(USE_LZV1              0) # inefficient
 set(USE_LZWC              0) # inefficient
@@ -443,6 +444,10 @@ IF(USE_LZMAT)
     set(OTHER_SRC ${OTHER_SRC} codecs/lzmat_dec.c codecs/lzmat_enc.c)
     add_definitions(-DFSBENCH_USE_LZMAT)
 ENDIF(USE_LZMAT)
+IF(USE_LZP_DS)
+    set(OTHER_SRC ${OTHER_SRC} codecs/LZP_ds.cpp)
+    add_definitions(-DFSBENCH_USE_LZP_DS)
+ENDIF(USE_LZP_DS)
 IF(USE_LZSS_IM)
     set(OTHER_SRC ${OTHER_SRC} codecs/lzss.cpp)
     add_definitions(-DFSBENCH_USE_LZSS_IM)
