@@ -1,5 +1,7 @@
 // Nakamichi is 100% FREE LZSS SUPERFAST decompressor.
 
+// Nakamichi_Sanshi a.k.a. '888', is simply a beauty, the decompression loop is branchless excluding the if-else for literal/match, also it betters significantly Kaidanji's compression ratio.
+
 // Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX, written by Kaze, babealicious suggestion by m^2 enforced.
 // Fixed! TO-DO: Known bug: the decompressed file sometimes has few additional bytes at the end.
 // Change #1: Now instead of looking first in the leftmost end of the window a "preemptive" search is done 16*8*128 bytes before the rightmost end of the window, there is the hottest (cachewise&matchwise) zone, as a side effect the compression speed is much higher. Maybe in the future I will try hashing as well.
@@ -240,12 +242,12 @@ void SlowCopy512bit (const char *SOURCE, char *TARGET) { _mm512_storeu_si512((__
 // Comment it to see how slower 'BruteForce' is, for Wikipedia 100MB the ratio is 41KB/s versus 197KB/s.
 #define ReplaceBruteForceWithRailgunSwampshineBailOut
 
-void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
-unsigned int SlidingWindowVsLookAheadBuffer(char* refStart, char* refEnd, char* encStart, char* encEnd);
-unsigned int Compress(char* ret, char* src, unsigned int srcSize);
-unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
-char * Railgun_Swampshine_BailOut(char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
-char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
+static void SearchIntoSlidingWindow(unsigned int* ShortMediumLongOFFSET, unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
+static unsigned int SlidingWindowVsLookAheadBuffer(char* refStart, char* refEnd, char* encStart, char* encEnd);
+unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize);
+unsigned int SanshiDecompress(char* ret, char* src, unsigned int srcSize);
+static char * Railgun_Swampshine_BailOut(char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
+static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
 
 // The pair SHORT/LONG to be respectively in range 3..8/9..24:
 // 4/12:
@@ -279,7 +281,8 @@ char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, ui
 #define Min_Match_BAILOUT_Length (8)
 #define Min_Match_Length (8)
 #define Min_Match_Length_SHORT (5)
-#define OffsetBITS (16)
+//#define OffsetBITS (16)
+#define OffsetBITS (22)
 #define LengthBITS (1)
 
 //12bit
@@ -307,7 +310,7 @@ double duration;
 
 unsigned long long k;
 
-	printf("Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
+	printf("Nakamichi 'Sanshi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
 	if (argc==1) {
 		printf("Usage: Nakamichi filename\n"); exit(13);
 	}
@@ -383,53 +386,64 @@ printf("RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): %d%%\n", (
 	exit(0);
 }*/
 
-void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd){
+static void SearchIntoSlidingWindow(unsigned int* ShortMediumLongOFFSET, unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd){
 	char* FoundAtPosition;
 	unsigned int match=0;
-	char* refStartHOTTER = refStart+((1<<OffsetBITS)-16*8*128);
+	char* refStartShort = refStart+( ((1<<OffsetBITS)-1) - ((1<<(1*8-2))-1) );
+	char* refStartMedium = refStart+( ((1<<OffsetBITS)-1) - ((1<<(2*8-2))-1) );
+	char* refStartLong = refStart+( ((1<<OffsetBITS)-1) - ((1<<(3*8-2))-1) );
+
+	char* refStartHOTTERlong = refStart+((1<<OffsetBITS)-128*8*128);
+	*ShortMediumLongOFFSET=0;
 	*retIndex=0;
 	*retMatch=0;
 
 #ifdef ReplaceBruteForceWithRailgunSwampshineBailOut
-	// Step #1: LONG MATCH is sought [
-	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
-	while (refStartHOTTER < refEnd) {
-	//FoundAtPosition = Railgun_Doublet(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
-	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
+	// Step #1: SHORT offset [
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+	if (refStartShort < refEnd) {
+		FoundAtPosition = Railgun_Doublet(refStartShort, encStart, (uint32_t)(refEnd-refStartShort), Min_Match_Length);
 		if (FoundAtPosition!=NULL) {
-			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
-			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
-			if ( (refEnd-FoundAtPosition) & 0x07 ) { // Discard matches that have OFFSET with lower 3bits ALL zero.
+				*ShortMediumLongOFFSET=1;
 				*retMatch=Min_Match_Length;
 				*retIndex=refEnd-FoundAtPosition;
 				return;
-			}
-			refStartHOTTER=FoundAtPosition+1; // Exhaust the pool.
-		} else break;
+		}
+	}
+	// Step #1: SHORT offset ]
+	// Step #2: MEDIUM offset [
+	if (refStartMedium < refEnd) {
+		FoundAtPosition = Railgun_Swampshine_BailOut(refStartMedium, encStart, (uint32_t)(refEnd-refStartMedium), Min_Match_Length);
+		if (FoundAtPosition!=NULL) {
+				*ShortMediumLongOFFSET=2;
+				*retMatch=Min_Match_Length;
+				*retIndex=refEnd-FoundAtPosition;
+				return;
+		}
+	}
+	// Step #2: MEDIUM offset ]
+	// Step #3: LONG offset [
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	if (refStartHOTTERlong < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTERlong, encStart, (uint32_t)(refEnd-refStartHOTTERlong), Min_Match_Length);	
+		if (FoundAtPosition!=NULL) {
+				*ShortMediumLongOFFSET=3;
+				*retMatch=Min_Match_Length;
+				*retIndex=refEnd-FoundAtPosition;
+				return;
+		}
 	}
 	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
-	while (refStart < refEnd) {
-		FoundAtPosition = Railgun_Swampshine_BailOut(refStart, encStart, (uint32_t)(refEnd-refStart), Min_Match_Length);
-		//FoundAtPosition = Railgun_Doublet(refStart, encStart, (uint32_t)(refEnd-refStart), 8);
-		// For bigger windows 'Doublet' is slower:
-		// Nakamichi, revision 1-RSSBO_1GB_15bit performance with 'Swampshine':
-		// Compressing 846351894 bytes ...
-		// RAM-to-RAM performance: 370 KB/s.
-		// Nakamichi, revision 1-RSSBO_1GB_15bit performance with 'Doublet':
-		// Compressing 846351894 bytes ...
-		// RAM-to-RAM performance: 213 KB/s.
+	if (refStartLong < refEnd) {
+		FoundAtPosition = Railgun_Swampshine_BailOut(refStartLong, encStart, (uint32_t)(refEnd-refStartLong), Min_Match_Length);
 		if (FoundAtPosition!=NULL) {
-			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
-			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
-			if ( (refEnd-FoundAtPosition) & 0x07 ) { // Discard matches that have OFFSET with lower 3bits ALL zero.
+				*ShortMediumLongOFFSET=3;
 				*retMatch=Min_Match_Length;
 				*retIndex=refEnd-FoundAtPosition;
 				return;
-			}
-			refStart=FoundAtPosition+1; // Exhaust the pool.
-		} else break;
+		}
 	}
-	// Step #1: LONG MATCH is sought ]
+	// Step #3: LONG offset ]
 #else				
 	while(refStart < refEnd){
 		match=SlidingWindowVsLookAheadBuffer(refStart,refEnd,encStart,encEnd);
@@ -443,7 +457,7 @@ void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, cha
 #endif
 }
 
-unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char* encStart,char* encEnd){
+static unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char* encStart,char* encEnd){
 	int ret = 0;
 	while(refStart[ret] == encStart[ret]){
 		if(&refStart[ret] >= refEnd) break;
@@ -454,9 +468,10 @@ unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char*
 	return ret;
 }
 
-unsigned int Compress(char* ret, char* src, unsigned int srcSize){
+unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
+	unsigned int ShortMediumLongOFFSET=0;
 	unsigned int index=0;
 	unsigned int match=0;
 	unsigned int notMatch=0;
@@ -466,6 +481,8 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 	/*int Melnitchka=0;
 	char *Auberge[4] = {"|\0","/\0","-\0","\\\0"};
 	int ProgressIndicator;*/
+
+	unsigned int NumberOfFullLiterals=0;
 
 	while(srcIndex < srcSize){
 		if(srcIndex>=REF_SIZE)
@@ -478,7 +495,7 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 			encEnd=&src[srcIndex+ENC_SIZE];
 		// Fixing the stupid 'search-beyond-end' bug:
 		if(srcIndex+ENC_SIZE < srcSize)
-			SearchIntoSlidingWindow(&index,&match,refStart,&src[srcIndex],&src[srcIndex],encEnd);
+			SearchIntoSlidingWindow(&ShortMediumLongOFFSET,&index,&match,refStart,&src[srcIndex],&src[srcIndex],encEnd);
 		else
 			match=0; // Nothing to find.
 		//if ( match<Min_Match_Length ) {
@@ -488,8 +505,11 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 				notMatchStart=&ret[retIndex];
 				retIndex++;
 			}
-			else if (notMatch==(127-64-32)) {
-				*notMatchStart=(unsigned char)((127-64-32)<<3);
+			//else if (notMatch==(127-64)) {
+			else if (notMatch==(24)) {
+NumberOfFullLiterals++;
+				//*notMatchStart=(unsigned char)((127-64)<<2);
+				*notMatchStart=(unsigned char)((24)<<2);
 				notMatch=0;
 				notMatchStart=&ret[retIndex];
 				retIndex++;
@@ -505,7 +525,7 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 			}*/
 		} else {
 			if(notMatch > 0){
-				*notMatchStart=(unsigned char)((notMatch)<<3);
+				*notMatchStart=(unsigned char)((notMatch)<<2);
 				notMatch=0;
 			}
 // ---------------------| 
@@ -545,10 +565,14 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 			retIndex++;
 */
 // No need of above, during compression we demanded lowest 2bits to be not 00, use the full 16bits and get rid of the stupid '+/-' Min_Match_Length.
-			if (index>0xFFFF) {return 0;}
-			memcpy(&ret[retIndex],&index,2); // copy lower 2 bytes
-			retIndex++;
-			retIndex++;
+			//if (index>0xFFFF) {printf ("\nFatal error: Overflow!\n"); exit(13);}
+			//ShortMediumLongOFFSET = 0x01;
+			//ShortMediumLongOFFSET = 0x02;
+			//ShortMediumLongOFFSET = 0x03;
+			index = (index)<<2;
+			memcpy(&ret[retIndex],&index,ShortMediumLongOFFSET); // copy lower 'ShortMediumLong' bytes
+			ret[retIndex] = ret[retIndex] | ShortMediumLongOFFSET;
+			retIndex = retIndex + ShortMediumLongOFFSET;
 //                     / \
 // ---------------------|
 			srcIndex+=match;
@@ -560,46 +584,173 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 		}
 	}
 	if(notMatch > 0){
-		*notMatchStart=(unsigned char)((notMatch)<<3);
+		*notMatchStart=(unsigned char)((notMatch)<<2);
 	}
 	//printf("%s; Each rotation means 128KB are encoded; Done %d%%\n", Auberge[Melnitchka], 100 );
+	//printf("NumberOfFullLiterals (lower-the-better): %d\n", NumberOfFullLiterals );
 	return retIndex;
 }
 
-unsigned int Decompress(char* ret, char* src, unsigned int srcSize){
+/*
+Sanshi will fetch DWORD (instead of WORD) in decompression loop and will use respectively 1|2|3 bytes,
+with such layout:
+[1bit][1bit][6bits][8bits][8bits]
+First two bits used as Literal/Match flag and as MatchLength selector at the same time:
+- if 00 then Literals, yeah, one ZMM store (or 8 QWORDS) with no branching;
+- if 01, 10, 11 then Offsets are 1*8-2/2*8-2/3*8-2 bit, Matches with length 8|8|8, yeah, 1/1/1 QWORD store.
+The nasty SHR (shifting by 2bits) returns (preceded by one AND), however compactness is good.
+Also the order for searching will be 1/2/3, thus speed is favored (1*8-2bits=64bytes/2*8-2bits=16KB/3*8-2bits=4MB),
+the 1 byte Offsets will use 6bit window, crazy, with 8:1 eventual gain, double-crazy!
+For 8/8/8:
+05/07/2014  06:57 AM        10,192,446 dickens
+05/07/2014  10:54 AM         4,617,821 dickens.Nakamichi
+05/07/2014  07:44 AM        11,546,860 Goyathlay.txt
+05/07/2014  11:19 AM         4,413,175 Goyathlay.txt.Nakamichi
+05/07/2014  10:32 AM         3,903,143 MASAKARI_General-Purpose_Grade_English_Wordlist.wrd
+05/07/2014  10:27 AM         2,106,310 MASAKARI_General-Purpose_Grade_English_Wordlist.wrd.Nakamichi
+05/05/2014  04:41 AM       206,908,949 OSHO.TXT
+05/07/2014  04:21 PM        76,483,638 OSHO.TXT.Nakamichi
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_Sanshi>Nakamichi_Sanshi_GP.exe dickens
+Nakamichi 'Sanshi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 10192446 bytes ...
+\; Each rotation means 128KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 1079
+RAM-to-RAM performance: 7 KB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_Sanshi>Nakamichi_Sanshi_GP.exe OSHO.TXT
+Nakamichi 'Sanshi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 206908949 bytes ...
+/; Each rotation means 128KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 5964
+RAM-to-RAM performance: 11 KB/s.
+*/
+unsigned int SanshiDecompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
-	unsigned int WORDpair;
+	unsigned int DWORD;
+	unsigned int TAG;
+
+	signed int mm;
+	unsigned int Fantagiro;
 
 	while(srcIndex < srcSize){
-		WORDpair = *(unsigned short int*)&src[srcIndex];
-		if((WORDpair & 0x07) == 0){ // It is tempting to reduce literals even more, to 3x8 (instead of 31) would be nice:
-				#ifdef _N_GP
+		DWORD = *(uint32_t*)&src[srcIndex]; // Padding by 4, the input should be padded accordingly.
+		TAG = (DWORD & 0x03);
+		if(TAG == 0){ // It is tempting to reduce literals even more, to 3x8 (instead of 31) would be nice:
 				*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(src+srcIndex+1+8*(0));
 				*(uint64_t*)(ret+retIndex+8*(1)) = *(uint64_t*)(src+srcIndex+1+8*(1));
 				*(uint64_t*)(ret+retIndex+8*(2)) = *(uint64_t*)(src+srcIndex+1+8*(2));
-				*(uint64_t*)(ret+retIndex+8*(3)) = *(uint64_t*)(src+srcIndex+1+8*(3));
+/*
+				#ifdef _N_GP
+			mm = (DWORD & 0xFF)>>2;
+			Fantagiro = 0;
+			gogogo:
+				*(uint64_t*)(ret+retIndex+8*(0+Fantagiro)) = *(uint64_t*)(src+srcIndex+1+8*(0+Fantagiro));
+				*(uint64_t*)(ret+retIndex+8*(1+Fantagiro)) = *(uint64_t*)(src+srcIndex+1+8*(1+Fantagiro));
+				*(uint64_t*)(ret+retIndex+8*(2+Fantagiro)) = *(uint64_t*)(src+srcIndex+1+8*(2+Fantagiro));
+				Fantagiro = Fantagiro + 3;
+				mm = mm - 24;
+			if (mm>0) goto gogogo;
 				#endif
 				#ifdef _N_XMM
-				SlowCopy128bit((src+srcIndex+1+16*(0)), (ret+retIndex+16*(0)));
-				SlowCopy128bit((src+srcIndex+1+16*(1)), (ret+retIndex+16*(1)));
+			mm = (DWORD & 0xFF)>>2;
+			Fantagiro = 0;
+			gogogo:
+				SlowCopy128bit((src+srcIndex+1+16*(0+Fantagiro)), (ret+retIndex+16*(0+Fantagiro)));
+				Fantagiro = Fantagiro + 1;
+				mm = mm - 16;
+			if (mm>0) goto gogogo;
 				#endif
 				#ifdef _N_YMM
-				SlowCopy256bit((src+srcIndex+1+32*(0)), (ret+retIndex+32*(0)));
+			mm = (DWORD & 0xFF)>>2;
+			Fantagiro = 0;
+			gogogo:
+				SlowCopy256bit((src+srcIndex+1+32*(0+Fantagiro)), (ret+retIndex+32*(0+Fantagiro)));
+				Fantagiro = Fantagiro + 1;
+				mm = mm - 32;
+			if (mm>0) goto gogogo;
 				#endif
-			retIndex+=(WORDpair & 0xFF)>>3;
-			srcIndex+=(((WORDpair & 0xFF)>>3)+1);
+				#ifdef _N_ZMM
+				SlowCopy512bit((src+srcIndex+1+64*(0)), (ret+retIndex+64*(0)));
+				#endif
+*/
+			retIndex+=(DWORD & 0xFF)>>2;
+			srcIndex+=(((DWORD & 0xFF)>>2)+1);
 		}
 		else{
-			srcIndex=srcIndex+2;
-			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORDpair);
-			retIndex+=Min_Match_Length;
+			// This if-elseif-else should be optimized, somehow:
+/*
+			if(TAG == 1){
+				DWORD = (DWORD & 0x000000FF);
+				//Fantagiro=7;
+			} else if(TAG == 2){
+				DWORD = (DWORD & 0x0000FFFF);
+				//Fantagiro=7;
+			} else { // i.e. 3
+				DWORD = (DWORD & 0x00FFFFFF);
+				//Fantagiro=7;
+			}
+*/
+			// Above 'if-elseif-else' fragment is a nasty break, so:
+			DWORD = (DWORD & (0x00FFFFFF>>(8*(3-TAG))));
+
+			srcIndex=srcIndex+TAG;
+			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-(DWORD>>2));
+			retIndex+=Min_Match_Length; // Due to the lowered match length the literal sequence DRASTICALLY is lowered too, yum-yum.
+			//retIndex+=Fantagiro;
 		}
 	}
 	return retIndex;
 }
 
 
+// Sanshi:
+// Decompression main loop:
+/*
+; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
+; mark_description "-O3 -D_N_GP -FAcs";
+
+.B6.3::                         
+  00022 41 8b 1c 13      mov ebx, DWORD PTR [r11+rdx]           
+  00026 89 d9            mov ecx, ebx                           
+  00028 83 e1 03         and ecx, 3                             
+  0002b 4b 8d 34 11      lea rsi, QWORD PTR [r9+r10]            
+  0002f 75 2a            jne .B6.5 
+.B6.4::                         
+  00031 0f b6 db         movzx ebx, bl                          
+  00034 c1 eb 02         shr ebx, 2                             
+  00037 49 8b 4c 13 01   mov rcx, QWORD PTR [1+r11+rdx]         
+  0003c 44 03 d3         add r10d, ebx                          
+  0003f 48 89 0e         mov QWORD PTR [rsi], rcx               
+  00042 49 8b 4c 13 09   mov rcx, QWORD PTR [9+r11+rdx]         
+  00047 4d 8b 5c 13 11   mov r11, QWORD PTR [17+r11+rdx]        
+  0004c 4c 89 5e 10      mov QWORD PTR [16+rsi], r11            
+  00050 44 8d 5c 18 01   lea r11d, DWORD PTR [1+rax+rbx]        
+  00055 48 89 4e 08      mov QWORD PTR [8+rsi], rcx             
+  00059 eb 29            jmp .B6.6 
+.B6.5::                         
+  0005b 03 c1            add eax, ecx                           
+  0005d c1 e1 03         shl ecx, 3                             
+  00060 41 83 c2 08      add r10d, 8                            
+  00064 f7 d9            neg ecx                                
+  00066 83 c1 18         add ecx, 24                            
+  00069 41 89 c3         mov r11d, eax                          
+  0006c b8 ff ff ff 00   mov eax, 16777215                      
+  00071 d3 e8            shr eax, cl                            
+  00073 23 d8            and ebx, eax                           
+  00075 c1 eb 02         shr ebx, 2                             
+  00078 48 f7 db         neg rbx                                
+  0007b 48 03 de         add rbx, rsi                           
+  0007e 48 8b 03         mov rax, QWORD PTR [rbx]               
+  00081 48 89 06         mov QWORD PTR [rsi], rax               
+.B6.6::                         
+  00084 44 89 d8         mov eax, r11d                          
+  00087 41 3b c0         cmp eax, r8d                           
+  0008a 72 96            jb .B6.3 
+*/
+
+// Kaidanji:
 // Decompression main loop, 30 nifty lines:
 /*
 ; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
@@ -750,7 +901,7 @@ if ( count <= 0 ) {
 // Railgun_Swampshine_BailOut, copyleft 2014-Jan-31, Kaze.
 // Caution: For better speed the case 'if (cbPattern==1)' was removed, so Pattern must be longer than 1 char.
 #define NeedleThreshold2vs4swampLITE 9+10 // Should be bigger than 9. BMH2 works up to this value (inclusive), if bigger then BMH4 takes over.
-char * Railgun_Swampshine_BailOut (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
+static char * Railgun_Swampshine_BailOut (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
 {
 	char * pbTargetMax = pbTarget + cbTarget;
 	register uint32_t ulHashPattern;
@@ -1170,7 +1321,7 @@ if ( count <= 0 ) {
 
 // Fixed version from 2012-Feb-27.
 // Caution: For better speed the case 'if (cbPattern==1)' was removed, so Pattern must be longer than 1 char.
-char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
+static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
 {
 	char * pbTargetMax = pbTarget + cbTarget;
 	register uint32_t ulHashPattern;
@@ -1196,6 +1347,6 @@ char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, ui
 	}
 }
 
-// Last change: 2014-Apr-29
+// Last change: 2014-May-07
 // If you want to help me to improve it, email me at: sanmayce@sanmayce.com
 // Enfun!

@@ -271,7 +271,8 @@ Codec * codecs[] =
               new Codec("mmini_lzl", _MMINI_VERSION, mmini_lzl_c, mmini_lzl_d, no_blowup),
 #endif
 #ifdef FSBENCH_USE_NAKAMICHI
-              new Codec("Nakamichi",      _NAKAMICHI_VERSION,      nakamichi_c,      nakamichi_d),
+              new Codec("Nakamichi",        _NAKAMICHI_VERSION,   nakamichi_c,        nakamichi_d),
+              new Codec("Nakamichi-Sanshi", _NAKAMICHI_S_VERSION, nakamichi_sanshi_c, nakamichi_sanshi_d),
 #endif
 #ifdef FSBENCH_USE_NOBUO_ITO_LZSS
               new Codec("Nobuo-Ito-LZSS", _NOBUO_ITO_LZSS_VERSION, nobuo_ito_lzss_c, nobuo_ito_lzss_d),

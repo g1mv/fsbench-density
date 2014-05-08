@@ -689,6 +689,8 @@ extern "C"
 {
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
     unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
+    unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize);
+    unsigned int SanshiDecompress(char* ret, char* src, unsigned int srcSize);
 }
 size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 {
@@ -697,6 +699,14 @@ size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 size_t nakamichi_d(char * in, size_t isize, char * out, size_t, void *)
 {
     return Decompress(out, in, isize);
+}
+size_t nakamichi_sanshi_c(char * in, size_t isize, char * out, size_t, void *)
+{
+    return SanshiCompress(out, in, isize);
+}
+size_t nakamichi_sanshi_d(char * in, size_t isize, char * out, size_t, void *)
+{
+    return SanshiDecompress(out, in, isize);
 }
 #endif//FSBENCH_USE_NAKAMICHI
 #ifdef FSBENCH_USE_NOBUO_ITO_LZSS
