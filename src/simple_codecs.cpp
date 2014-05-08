@@ -689,6 +689,7 @@ extern "C"
 {
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
     unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
+    int64_t DecompressSafe(const char * in, int64_t in_size, char * out, int64_t out_size);
     unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanshiDecompress(char* ret, char* src, unsigned int srcSize);
 }
@@ -699,6 +700,10 @@ size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 size_t nakamichi_d(char * in, size_t isize, char * out, size_t, void *)
 {
     return Decompress(out, in, isize);
+}
+size_t nakamichi_ds(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return DecompressSafe(in, isize, out, osize);
 }
 size_t nakamichi_sanshi_c(char * in, size_t isize, char * out, size_t, void *)
 {
