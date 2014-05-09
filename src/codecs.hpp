@@ -207,6 +207,7 @@ Codec * find_codec(const std::string & name);
 #define _NAKAMICHI_VERSION      "Kaidanji FIX"
 #define _NAKAMICHI_S_VERSION    "Sanshi"
 #define _NAKAMICHI_D_VERSION    "Daikuni"
+#define _NAKAMICHI_M_VERSION    "M"
 #define _NOBUO_ITO_LZSS_VERSION "1.0"
 #define _NRV_VERSION            "1.03"
 #define _PG_LZ_VERSION          "9.3.4"

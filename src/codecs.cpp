@@ -275,6 +275,7 @@ Codec * codecs[] =
               new Codec("Nakamichi-safe",    _NAKAMICHI_VERSION,   0,                   nakamichi_ds),
               new Codec("Nakamichi-Sanshi",  _NAKAMICHI_S_VERSION, nakamichi_sanshi_c,  nakamichi_sanshi_d),
               new Codec("Nakamichi-Daikuni", _NAKAMICHI_D_VERSION, nakamichi_daikuni_c, nakamichi_daikuni_d),
+              new Codec("Nakamichi-M",       _NAKAMICHI_M_VERSION, nakamichi_m_c,       nakamichi_m_d),
 #endif
 #ifdef FSBENCH_USE_NOBUO_ITO_LZSS
               new Codec("Nobuo-Ito-LZSS", _NOBUO_ITO_LZSS_VERSION, nobuo_ito_lzss_c, nobuo_ito_lzss_d),
@@ -534,6 +535,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("mmini_huffman"), ""),
       make_pair(raw_find_codec("mmini_lzl"), ""),
       make_pair(raw_find_codec("Nakamichi"), ""),
+      make_pair(raw_find_codec("Nakamichi-M"), ""),
       make_pair(raw_find_codec("Nobuo-Ito-LZSS"), ""),
       make_pair(raw_find_codec("nrv2b"), ""),
       make_pair(raw_find_codec("nrv2d"), ""),
