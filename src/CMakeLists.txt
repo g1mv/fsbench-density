@@ -479,6 +479,7 @@ IF(USE_MURMUR)
 ENDIF(USE_MURMUR)
 IF(USE_NAKAMICHI)
     set(OTHER_SRC ${OTHER_SRC} codecs/nakamichi/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c
+                               codecs/nakamichi/Nakamichi_Daikuni.c
                                codecs/nakamichi/Nakamichi_Sanshi.c
                                codecs/nakamichi/nakamichi.c)
     add_definitions(-DFSBENCH_USE_NAKAMICHI)
