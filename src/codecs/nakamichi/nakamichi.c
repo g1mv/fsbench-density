@@ -107,19 +107,19 @@ ssize_t DecompressM(const void * _in, ssize_t in_size, void * _out, ssize_t out_
 	// The head loop
 	while(in_index < main_loop_in_limit && out_index < main_loop_out_limit && out_index < 65535)
 	{
-		// 16 bits, AAAAABBB CCCCCCCC
-		// If BBB == 0, we have a literal.
-		//     AAAAA is its length reduced by 1 and CCCCCCCC - its first byte
-		// If BBB != 0, we have a match.
+		// 16 bits, AAABBBBB CCCCCCCC
+		// If AAA == 0, we have a literal.
+		//     BBBBB is its length reduced by 1 and CCCCCCCC - its first byte
+		// If AAA != 0, we have a match.
 		//     It's always 8-byte long
 		//     and the whole two bytes are a little endian match offset.
 		// Note a funny side effect, we can't encode any match in the stream
 		// because match distances can't have all 3 least significant bits zeroed.
 		uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
-		if ((two_bytes & 0x07) == 0)
+		if ((two_bytes & 0xE0) == 0)
 		{
 			// literal
-			const int_fast16_t literal_length = ((two_bytes & 0xFF) >> 3) + 1;
+			const int_fast16_t literal_length = (two_bytes & 0xFF) + 1;
 			// a wild copy, may write too much, but no more than 32 bytes
 			// loop limits prevent us from getting out of bounds
 			// TODO: on x86 aligned copy of 32 bytes is always faster than aligned copy of literal_length
@@ -144,10 +144,10 @@ ssize_t DecompressM(const void * _in, ssize_t in_size, void * _out, ssize_t out_
 	while(in_index < main_loop_in_limit && out_index < main_loop_out_limit)
 	{
 		uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
-		if ((two_bytes & 0x07) == 0)
+		if ((two_bytes & 0xE0) == 0)
 		{
 			// literal
-			const int_fast16_t literal_length = ((two_bytes & 0xFF) >> 3) + 1;
+			const int_fast16_t literal_length = (two_bytes & 0xFF) + 1;
 			// a wild copy, may write too much, but no more than 32 bytes
 			// loop limits prevent us from getting out of bounds
 			copy_at_most_32_bytes(out + out_index, in + in_index + 1, 32);
@@ -169,120 +169,12 @@ ssize_t DecompressM(const void * _in, ssize_t in_size, void * _out, ssize_t out_
 		uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
 		ssize_t out_size_left = out_size - out_index;
 		ssize_t in_size_left  = in_size - in_index;
-		if ((two_bytes & 0x07) == 0)
+		if ((two_bytes & 0xE0) == 0)
 		{
 			// literal
 			in_size_left -= 1;
 			const ssize_t size_left = in_size_left > out_size_left ? out_size_left : in_size_left;
-			const int_fast16_t literal_length = ((two_bytes & 0xFF) >> 3) + 1;
-			if (literal_length > size_left)
-				return -1;
-			memcpy(out + out_index, in + in_index + 1, literal_length);
-			out_index += literal_length;
-			in_index  += literal_length + 1;
-			/*ssize_t i;
-			++in_index;
-			for(i=0; i<literal_length; ++i)
-				out[out_index++] = in[in_index++];*/
-		}
-		else
-		{
-			// match
-			in_index += 2;
-			in_size_left -= 2;
-			// match length is always 8 bytes
-			if (out_size_left < 8 || out_index < two_bytes)
-				return -1;
-			copy_8_bytes(out + out_index, out + out_index - two_bytes);
-			out_index += 8; 
-		}
-	}
-	return in_index == in_size ? out_index : -1;
-}
-ssize_t DecompressSafe(const void * _in, ssize_t in_size, void * _out, ssize_t out_size)
-{
-    const uint8_t * in = _in;
-    uint8_t * out = _out;
-	ssize_t in_index = 0;
-	ssize_t out_index = 0;
-	// main loop may go 32 bytes out of limit on input
-	const size_t main_loop_in_limit = in_size < 32 ? 0 : in_size - 32;
-	// and 31 on output
-	const size_t main_loop_out_limit = out_size < 31 ? 0 : out_size - 31;
-
-	// The head loop
-	while(in_index < main_loop_in_limit && out_index < main_loop_out_limit && out_index < 65535)
-	{
-		// 16 bits, AAAAABBB CCCCCCCC
-		// If BBB == 0, we have a literal.
-		//     AAAAA is its length and CCCCCCCC - its first byte
-		// If BBB != 0, we have a match.
-		//     It's always 8-byte long
-		//     and the whole two bytes are a little endian match offset.
-		// Note a funny side effect, we can't encode any match in the stream
-		// because match distances can't have all 3 least significant bits zeroed.
-		uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
-		if ((two_bytes & 0x07) == 0)
-		{
-			// literal
-			const int_fast16_t literal_length = (two_bytes & 0xFF) >> 3;
-			// a wild copy, at least 1 byte too large
-			// (since max literal length is 31)
-			// but loop limits prevent us from getting out of bounds
-			// TODO: on x86 aligned copy of 32 bytes is always faster than aligned copy of literal_length
-			// x86 sucks as a testbed for aligned access performance, check it elsewhere
-			copy_at_most_32_bytes(out + out_index, in + in_index + 1, 32);
-			out_index += literal_length;
-			in_index  += literal_length + 1;
-		}
-		else
-		{
-			// match
-			in_index += 2;
-			ssize_t in_size_left = in_size - in_index - 2;
-			if (out_index < two_bytes)
-				return -1;
-			// match length is always 8 bytes
-			copy_8_bytes(out + out_index, out + out_index - two_bytes);
-			out_index += 8; 
-		}
-	}
-	// The main loop
-	while(in_index < main_loop_in_limit && out_index < main_loop_out_limit)
-	{
-		uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
-		if ((two_bytes & 0x07) == 0)
-		{
-			// literal
-			const int_fast16_t literal_length = (two_bytes & 0xFF) >> 3;
-			// a wild copy, at least 1 byte too large
-			// (since max literal length is 31)
-			// but loop limits prevent us from getting out of bounds
-			copy_at_most_32_bytes(out + out_index, in + in_index + 1, 32);
-			out_index += literal_length;
-			in_index  += literal_length + 1;
-		}
-		else
-		{
-			// match
-			in_index += sizeof(uint16_t);
-			// match length is always 8 bytes
-			copy_8_bytes(out + out_index, out + out_index - two_bytes);
-			out_index += 8; 
-		}
-	}
-	// The tail loop
-	while(in_index < (in_size - 1) && out_index < out_size)
-	{
-		uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
-		ssize_t out_size_left = out_size - out_index;
-		ssize_t in_size_left  = in_size - in_index;
-		if ((two_bytes & 0x07) == 0)
-		{
-			// literal
-			in_size_left -= 1;
-			const ssize_t size_left = in_size_left > out_size_left ? out_size_left : in_size_left;
-			const int_fast16_t literal_length = (two_bytes & 0xFF) >> 3;
+			const int_fast16_t literal_length = (two_bytes & 0xFF) + 1;
 			if (literal_length > size_left)
 				return -1;
 			memcpy(out + out_index, in + in_index + 1, literal_length);
@@ -337,11 +229,10 @@ static void SearchIntoSlidingWindow(unsigned int * retIndex, unsigned int * retM
 			FoundAtPosition = Railgun_Swampshine_BailOut(current_start, encStart, (uint32_t)(refEnd-current_start), Match_Length);
 			if (FoundAtPosition!=NULL)
 			{
-				// Stupid sanity check, in next revision I will discard 'Match_Length' additions/subtractions altogether:
-				if ( (refEnd-FoundAtPosition) & 0x07 )
+				if ( (refEnd-FoundAtPosition) & 0xE0 )
 				{
-					// Discard matches that have OFFSET with lower 3bits ALL zero.
-					// Having all 3 lower bits 0 is an indicator of a literal
+					// Discard matches that have OFFSET with higher 3bits ALL zero.
+					// Having all 3 higher bits 0 is an indicator of a literal
 					*retMatch=Match_Length;
 					*retIndex=refEnd-FoundAtPosition;
 					return;
@@ -386,7 +277,7 @@ unsigned int CompressM(void * _ret, const void * _src, unsigned int srcSize)
 				retIndex++;
 			}
 			else if (notMatch==32) {
-				*notMatchStart=(uint8_t)31<<3;
+				*notMatchStart=(uint8_t)31;
 				notMatch=0;
 				notMatchStart=&ret[retIndex];
 				retIndex++;
@@ -397,7 +288,7 @@ unsigned int CompressM(void * _ret, const void * _src, unsigned int srcSize)
 			srcIndex++;
 		} else {
 			if(notMatch > 0){
-				*notMatchStart=(uint8_t)((notMatch-1)<<3);
+				*notMatchStart=(uint8_t)(notMatch-1);
 				notMatch=0;
 			}
 			// sanity check
@@ -409,7 +300,7 @@ unsigned int CompressM(void * _ret, const void * _src, unsigned int srcSize)
 		}
 	}
 	if(notMatch > 0){
-		*notMatchStart=(uint8_t)((notMatch-1)<<3);
+		*notMatchStart=(uint8_t)(notMatch-1);
 	}
 	return retIndex;
 }
@@ -703,4 +594,108 @@ if ( count <= 0 ) {
 		} // if ( cbPattern<=NeedleThreshold2vs4swampLITE )
 		} // if ( cbPattern<=NeedleThreshold2vs4swampLITE )
 	} //if ( cbPattern<4 )
+}
+ssize_t DecompressSafe(const void * _in, ssize_t in_size, void * _out, ssize_t out_size)
+{
+    const uint8_t * in = _in;
+    uint8_t * out = _out;
+    ssize_t in_index = 0;
+    ssize_t out_index = 0;
+    // main loop may go 32 bytes out of limit on input
+    const size_t main_loop_in_limit = in_size < 32 ? 0 : in_size - 32;
+    // and 31 on output
+    const size_t main_loop_out_limit = out_size < 31 ? 0 : out_size - 31;
+
+    // The head loop
+    while(in_index < main_loop_in_limit && out_index < main_loop_out_limit && out_index < 65535)
+    {
+        // 16 bits, AAAAABBB CCCCCCCC
+        // If BBB == 0, we have a literal.
+        //     AAAAA is its length and CCCCCCCC - its first byte
+        // If BBB != 0, we have a match.
+        //     It's always 8-byte long
+        //     and the whole two bytes are a little endian match offset.
+        // Note a funny side effect, we can't encode any match in the stream
+        // because match distances can't have all 3 least significant bits zeroed.
+        uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
+        if ((two_bytes & 0x07) == 0)
+        {
+            // literal
+            const int_fast16_t literal_length = (two_bytes & 0xFF) >> 3;
+            // a wild copy, at least 1 byte too large
+            // (since max literal length is 31)
+            // but loop limits prevent us from getting out of bounds
+            // TODO: on x86 aligned copy of 32 bytes is always faster than aligned copy of literal_length
+            // x86 sucks as a testbed for aligned access performance, check it elsewhere
+            copy_at_most_32_bytes(out + out_index, in + in_index + 1, 32);
+            out_index += literal_length;
+            in_index  += literal_length + 1;
+        }
+        else
+        {
+            // match
+            in_index += 2;
+            ssize_t in_size_left = in_size - in_index - 2;
+            if (out_index < two_bytes)
+                return -1;
+            // match length is always 8 bytes
+            copy_8_bytes(out + out_index, out + out_index - two_bytes);
+            out_index += 8; 
+        }
+    }
+    // The main loop
+    while(in_index < main_loop_in_limit && out_index < main_loop_out_limit)
+    {
+        uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
+        if ((two_bytes & 0x07) == 0)
+        {
+            // literal
+            const int_fast16_t literal_length = (two_bytes & 0xFF) >> 3;
+            // a wild copy, at least 1 byte too large
+            // (since max literal length is 31)
+            // but loop limits prevent us from getting out of bounds
+            copy_at_most_32_bytes(out + out_index, in + in_index + 1, 32);
+            out_index += literal_length;
+            in_index  += literal_length + 1;
+        }
+        else
+        {
+            // match
+            in_index += sizeof(uint16_t);
+            // match length is always 8 bytes
+            copy_8_bytes(out + out_index, out + out_index - two_bytes);
+            out_index += 8; 
+        }
+    }
+    // The tail loop
+    while(in_index < (in_size - 1) && out_index < out_size)
+    {
+        uint_fast16_t two_bytes = load_2_bytes_le(in + in_index);
+        ssize_t out_size_left = out_size - out_index;
+        ssize_t in_size_left  = in_size - in_index;
+        if ((two_bytes & 0x07) == 0)
+        {
+            // literal
+            in_size_left -= 1;
+            const ssize_t size_left = in_size_left > out_size_left ? out_size_left : in_size_left;
+            const int_fast16_t literal_length = (two_bytes & 0xFF) >> 3;
+            if (literal_length > size_left)
+                return -1;
+            memcpy(out + out_index, in + in_index + 1, literal_length);
+            out_index += literal_length;
+            in_index  += literal_length + 1;
+        }
+        else
+        {
+            // match
+            in_index += 2;
+            in_size_left -= 2;
+            // match length is always 8 bytes
+            if (out_size_left < 8 || out_index < two_bytes)
+                return -1;
+            copy_8_bytes(out + out_index, out + out_index - two_bytes);
+            out_index += 8; 
+        }
+    }
+    return in_index == in_size ? out_index : -1;
 }
