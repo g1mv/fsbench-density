@@ -79,7 +79,7 @@ set(USE_SSE2 0)
 set(USE_ASM 0)
 
 # Type of a build
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 #############################################
 ## CODE, NORMALLY YOU SHOULDN'T EDIT BELOW ##
@@ -130,7 +130,7 @@ IF(MSVC) # Cmake doesn't use the strongest optimisation flags here, so I fix it 
     string(REPLACE "/O2" "/Ox" CMAKE_CXX_FLAGS_RELEASE
     "${CMAKE_CXX_FLAGS_RELEASE}")
 ENDIF(MSVC)
-set(GCC_FLAGS "-fno-tree-vectorize -static") # the code crashes when I compile it with mingw 4.5.2 and w/out -fno-tree-vectorize
+set(GCC_FLAGS "-fno-tree-vectorize -static -g -O0") # the code crashes when I compile it with mingw 4.5.2 and w/out -fno-tree-vectorize
                                              # with mingw64 4.6.2 it's fine. Don't know what's up. FIXME.
 set(GXX_FLAGS ${GCC_FLAGS})
 set(MSVC_FLAGS "/W4")

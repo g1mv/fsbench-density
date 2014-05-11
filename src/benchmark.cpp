@@ -366,6 +366,7 @@ static THREAD_RETURN_TYPE encode(EncodeParams * params)
     }
     params->input_size  = total_in;
     params->output_size = total_out;
+
     return THREAD_RETURN;
 }
 
@@ -558,7 +559,7 @@ static void run_test(THREAD_HANDLE * threads,
 
     // wait for other threads to do the job
     for (unsigned i = 0; i < threads_no - 1; ++i)
-    pthread_join(threads[i], NULL);
+        pthread_join(threads[i], NULL);
 }
 
 /**

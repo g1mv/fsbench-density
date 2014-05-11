@@ -329,6 +329,11 @@ int main(int argc, char ** argv)
         cerr << e.what();
         return 1;
     }
+    catch (...)
+    {
+        cerr << "Exception caught";
+        return 1;
+    }
     if (csv)
     {
         cout << "Iterations," << iterations << "\n";
