@@ -687,15 +687,16 @@ void murmur_x64_128(char * in, size_t isize, char * out)
 #ifdef FSBENCH_USE_NAKAMICHI
 extern "C"
 {
+    typedef int64_t nssize_t;
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
     unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
-    int64_t DecompressSafe(const char * in, int64_t in_size, char * out, int64_t out_size);
+    nssize_t DecompressSafe(const char * in, nssize_t in_size, char * out, nssize_t out_size);
     unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanshiDecompress(char* ret, char* src, unsigned int srcSize);
     unsigned int DaikuniCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int DaikuniDecompress(char* ret, char* src, unsigned int srcSize);
-    unsigned int CompressM(char* ret, char* src, unsigned int srcSize);
-    int64_t DecompressM(const char * in, int64_t in_size, char * out, int64_t out_size);
+    nssize_t CompressM(const void * _in, nssize_t isize, void * _out, nssize_t osize);
+    nssize_t DecompressM(const char * in, nssize_t in_size, char * out, nssize_t out_size);
 }
 size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 {
@@ -725,9 +726,9 @@ size_t nakamichi_daikuni_d(char * in, size_t isize, char * out, size_t, void *)
 {
     return DaikuniDecompress(out, in, isize);
 }
-size_t nakamichi_m_c(char * in, size_t isize, char * out, size_t, void *)
+size_t nakamichi_m_c(char * in, size_t isize, char * out, size_t osize, void *)
 {
-    return CompressM(out, in, isize);
+    return CompressM(in, isize, out, osize);
 }
 size_t nakamichi_m_d(char * in, size_t isize, char * out, size_t osize, void *)
 {

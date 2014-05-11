@@ -478,11 +478,17 @@ IF(USE_MURMUR)
     add_definitions(-DFSBENCH_USE_MURMUR)
 ENDIF(USE_MURMUR)
 IF(USE_NAKAMICHI)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/nakamichi/divsufsort)
     set(OTHER_SRC ${OTHER_SRC} codecs/nakamichi/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c
                                codecs/nakamichi/Nakamichi_Daikuni.c
                                codecs/nakamichi/Nakamichi_Sanshi.c
-                               codecs/nakamichi/nakamichi.c)
+                               codecs/nakamichi/nakamichi.c
+                               codecs/nakamichi/divsufsort/divsufsort.c
+                               codecs/nakamichi/divsufsort/sssort.c
+                               codecs/nakamichi/divsufsort/trsort.c
+                               codecs/nakamichi/divsufsort/utils.c)
     add_definitions(-DFSBENCH_USE_NAKAMICHI)
+    add_definitions(-DNAKAMICHI_DIVSUFSORT_HAVE_CONFIG_H=1)
 ENDIF(USE_NAKAMICHI)
 IF(USE_NOBUO_ITO_LZSS)
     set(OTHER_SRC ${OTHER_SRC} codecs/Nobuo-Ito-LZSS.c)
