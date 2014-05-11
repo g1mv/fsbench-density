@@ -196,7 +196,7 @@ static void printTime(uint_least64_t cmili,
             cout.width(6);
             cout << efficiency_string(encoder_input_size - encoder_output_size, cmili) << " ";
             cout.width(6);
-            cout << efficiency_string(encoder_input_size - encoder_output_size, dmili);
+            cout << efficiency_string((encoder_input_size - encoder_output_size) / citers * diters, dmili);
         }
         catch(...)
         {

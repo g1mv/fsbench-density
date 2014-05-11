@@ -13,6 +13,7 @@
 [-] removed xxhash256, it's dangerously weak
 [!] fixed integer underflow
 [!] fixed a segfault with nop codec
+[!] fixed an error in decompression efficiency calculations
 
 0.14.2
 [+] added FNV1a-penumbra
