@@ -691,10 +691,14 @@ extern "C"
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
     unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
     nssize_t DecompressSafe(const char * in, nssize_t in_size, char * out, nssize_t out_size);
+    unsigned int SanagiCompress(char* ret, char* src, unsigned int srcSize);
+    unsigned int SanagiDecompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanshiDecompress(char* ret, char* src, unsigned int srcSize);
     unsigned int DaikuniCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int DaikuniDecompress(char* ret, char* src, unsigned int srcSize);
+    unsigned int KaibutsuCompress(char* ret, char* src, unsigned int srcSize);
+    unsigned int KaibutsuDecompress(char* ret, char* src, unsigned int srcSize);
     nssize_t CompressM(const void * _in, nssize_t isize, void * _out, nssize_t osize);
     nssize_t DecompressM(const char * in, nssize_t in_size, char * out, nssize_t out_size);
 }
@@ -709,6 +713,14 @@ size_t nakamichi_d(char * in, size_t isize, char * out, size_t, void *)
 size_t nakamichi_ds(char * in, size_t isize, char * out, size_t osize, void *)
 {
     return DecompressSafe(in, isize, out, osize);
+}
+size_t nakamichi_sanagi_c(char * in, size_t isize, char * out, size_t, void *)
+{
+    return SanagiCompress(out, in, isize);
+}
+size_t nakamichi_sanagi_d(char * in, size_t isize, char * out, size_t, void *)
+{
+    return SanagiDecompress(out, in, isize);
 }
 size_t nakamichi_sanshi_c(char * in, size_t isize, char * out, size_t, void *)
 {
@@ -725,6 +737,14 @@ size_t nakamichi_daikuni_c(char * in, size_t isize, char * out, size_t, void *)
 size_t nakamichi_daikuni_d(char * in, size_t isize, char * out, size_t, void *)
 {
     return DaikuniDecompress(out, in, isize);
+}
+size_t nakamichi_kaibutsu_c(char * in, size_t isize, char * out, size_t, void *)
+{
+    return KaibutsuCompress(out, in, isize);
+}
+size_t nakamichi_kaibutsu_d(char * in, size_t isize, char * out, size_t, void *)
+{
+    return KaibutsuDecompress(out, in, isize);
 }
 size_t nakamichi_m_c(char * in, size_t isize, char * out, size_t osize, void *)
 {
