@@ -687,10 +687,9 @@ void murmur_x64_128(char * in, size_t isize, char * out)
 #ifdef FSBENCH_USE_NAKAMICHI
 extern "C"
 {
-    typedef int64_t nssize_t;
+#include "nakamichi.h"
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
     unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
-    nssize_t DecompressSafe(const char * in, nssize_t in_size, char * out, nssize_t out_size);
     unsigned int SanagiCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanagiDecompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize);
@@ -699,8 +698,6 @@ extern "C"
     unsigned int DaikuniDecompress(char* ret, char* src, unsigned int srcSize);
     unsigned int KaibutsuCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int KaibutsuDecompress(char* ret, char* src, unsigned int srcSize);
-    nssize_t CompressM(const void * _in, nssize_t isize, void * _out, nssize_t osize);
-    nssize_t DecompressM(const char * in, nssize_t in_size, char * out, nssize_t out_size);
 }
 size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 {
@@ -709,10 +706,6 @@ size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 size_t nakamichi_d(char * in, size_t isize, char * out, size_t, void *)
 {
     return Decompress(out, in, isize);
-}
-size_t nakamichi_ds(char * in, size_t isize, char * out, size_t osize, void *)
-{
-    return DecompressSafe(in, isize, out, osize);
 }
 size_t nakamichi_sanagi_c(char * in, size_t isize, char * out, size_t, void *)
 {
@@ -748,11 +741,13 @@ size_t nakamichi_kaibutsu_d(char * in, size_t isize, char * out, size_t, void *)
 }
 size_t nakamichi_m_c(char * in, size_t isize, char * out, size_t osize, void *)
 {
-    return CompressM(in, isize, out, osize);
+    nssize_t ret = CompressM(in, isize, out, osize);
+    return N_ERROR(ret) ? CODING_ERROR : ret;
 }
 size_t nakamichi_m_d(char * in, size_t isize, char * out, size_t osize, void *)
 {
-    return DecompressM(in, isize, out, osize);
+    nssize_t ret = DecompressM(in, isize, out, osize);
+    return N_ERROR(ret) ? CODING_ERROR : ret;
 }
 #endif//FSBENCH_USE_NAKAMICHI
 #ifdef FSBENCH_USE_NOBUO_ITO_LZSS

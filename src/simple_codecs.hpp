@@ -140,7 +140,6 @@ void murmur_x64_128(char * in, size_t isize, char * out);
 #ifdef FSBENCH_USE_NAKAMICHI
 size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *);
 size_t nakamichi_d(char * in, size_t isize, char * out, size_t osize, void *);
-size_t nakamichi_ds(char * in, size_t isize, char * out, size_t osize, void *);
 size_t nakamichi_sanagi_c(char * in, size_t isize, char * out, size_t, void *);
 size_t nakamichi_sanagi_d(char * in, size_t isize, char * out, size_t osize, void *);
 size_t nakamichi_sanshi_c(char * in, size_t isize, char * out, size_t, void *);

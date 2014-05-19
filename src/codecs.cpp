@@ -272,7 +272,6 @@ Codec * codecs[] =
 #endif
 #ifdef FSBENCH_USE_NAKAMICHI
               new Codec("Nakamichi",          _NAKAMICHI_VERSION,    nakamichi_c,         nakamichi_d),
-              new Codec("Nakamichi-safe",     _NAKAMICHI_VERSION,    0,                   nakamichi_ds),
               new Codec("Nakamichi-Sanagi",   _NAKAMICHI_SG_VERSION, nakamichi_sanagi_c,  nakamichi_sanagi_d),
               new Codec("Nakamichi-Sanshi",   _NAKAMICHI_SS_VERSION, nakamichi_sanshi_c,  nakamichi_sanshi_d),
               new Codec("Nakamichi-Daikuni",  _NAKAMICHI_D_VERSION,  nakamichi_daikuni_c, nakamichi_daikuni_d),
