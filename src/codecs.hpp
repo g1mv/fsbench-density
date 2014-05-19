@@ -205,6 +205,7 @@ Codec * find_codec(const std::string & name);
 #define _MMINI_VERSION          "2012-12-23"
 #define _MURMUR_VERSION         "2012-02-29"
 #define _NAKAMICHI_VERSION      "Kaidanji FIX"
+#define _NAKAMICHI_SB_VERSION   "Sanbashi"
 #define _NAKAMICHI_SG_VERSION   "Sanagi"
 #define _NAKAMICHI_SS_VERSION   "Sanshi"
 #define _NAKAMICHI_D_VERSION    "Daikuni"

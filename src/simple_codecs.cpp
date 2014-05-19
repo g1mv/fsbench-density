@@ -690,6 +690,8 @@ extern "C"
 #include "nakamichi.h"
     unsigned int Compress(char* ret, char* src, unsigned int srcSize);
     unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
+    unsigned int SanbashiCompress(char* ret, char* src, unsigned int srcSize);
+    unsigned int SanbashiDecompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanagiCompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanagiDecompress(char* ret, char* src, unsigned int srcSize);
     unsigned int SanshiCompress(char* ret, char* src, unsigned int srcSize);
@@ -706,6 +708,14 @@ size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *)
 size_t nakamichi_d(char * in, size_t isize, char * out, size_t, void *)
 {
     return Decompress(out, in, isize);
+}
+size_t nakamichi_sanbashi_c(char * in, size_t isize, char * out, size_t, void *)
+{
+    return SanbashiCompress(out, in, isize);
+}
+size_t nakamichi_sanbashi_d(char * in, size_t isize, char * out, size_t, void *)
+{
+    return SanbashiDecompress(out, in, isize);
 }
 size_t nakamichi_sanagi_c(char * in, size_t isize, char * out, size_t, void *)
 {
