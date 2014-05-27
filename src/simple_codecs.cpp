@@ -1844,3 +1844,8 @@ size_t c_memmove(char * in, size_t isize, char *out, size_t, void *)
     memmove(out, in, isize);
     return isize;
 }
+size_t c_memset(char * in, size_t isize, char *out, size_t, void *)
+{
+    memset(out, 0, isize);
+    return isize;
+}

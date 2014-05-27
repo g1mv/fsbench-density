@@ -565,3 +565,4 @@ size_t c_bswap32(char * in, size_t isize, char * out, size_t osize, void *);
 size_t c_bswap64(char * in, size_t isize, char * out, size_t osize, void *);
 size_t c_memcpy (char * in, size_t isize, char *out, size_t, void *);
 size_t c_memmove(char * in, size_t isize, char *out, size_t, void *);
+size_t c_memset(char * in, size_t isize, char *out, size_t, void *);

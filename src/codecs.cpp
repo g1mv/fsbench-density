@@ -481,7 +481,8 @@ Codec * codecs[] =
               new Codec("bswap32", "0", c_bswap32, c_bswap32, no_blowup, Codec::in_place, Codec::in_place),
               new Codec("bswap64", "0", c_bswap64, c_bswap64, no_blowup, Codec::in_place, Codec::in_place),
               new Codec("memcpy",  "0", c_memcpy,  c_memcpy,  no_blowup, Codec::moving,   Codec::moving),
-              new Codec("memmove", "0", c_memmove, c_memmove, no_blowup, Codec::moving,   Codec::moving) };
+              new Codec("memmove", "0", c_memmove, c_memmove, no_blowup, Codec::moving,   Codec::moving),
+              new Codec("memset",  "0", c_memset,  c_memset,  no_blowup, Codec::moving,   Codec::moving) };
 
 list<Codec*> CODECS = list<Codec*>(codecs, codecs + sizeof(codecs) / sizeof(Codec*));
 
