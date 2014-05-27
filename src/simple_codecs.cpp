@@ -813,6 +813,29 @@ size_t qlzzip_c(char * in, size_t isize, char * out, size_t, void *)
 }
 
 #endif//FSBENCH_USE_QUICKLZZIP
+#ifdef FSBENCH_USE_LRRLE
+
+
+#define LRRLE(version)                                                                                       \
+    extern "C"                                                                                               \
+    {                                                                                                        \
+        uint_fast64_t lrrle ## version ## _compress  (const void * in_, void * out_, uint_fast64_t in_size); \
+        uint_fast64_t lrrle ## version ## _decompress(const void * in_, void * out_, uint_fast64_t in_size); \
+    }                                                                                                        \
+    size_t lrrle ## version ## _c(char * in, size_t isize, char * out, size_t, void *)                       \
+    {                                                                                                        \
+        return lrrle ## version ## _compress(in, out, isize);                                                \
+    }                                                                                                        \
+    size_t lrrle ## version ## _d(char * in, size_t, char * out, size_t osize, void *)                       \
+    {                                                                                                        \
+        return lrrle ## version ## _decompress(in, out, osize);                                              \
+    }
+LRRLE(64)
+LRRLE(128)
+LRRLE(192)
+LRRLE(256)
+
+#endif// FSBENCH_USE_LRRLE
 #ifdef FSBENCH_USE_RLE64
 
 #include "RLE64.hpp"

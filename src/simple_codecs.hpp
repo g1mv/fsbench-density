@@ -164,6 +164,16 @@ size_t pg_lz_d(char * in, size_t, char * out, size_t osize, void *);
 #ifdef FSBENCH_USE_QUICKLZZIP
 size_t qlzzip_c(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_QUICKLZZIP
+#ifdef FSBENCH_USE_LRRLE
+size_t lrrle64_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t lrrle64_d(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t lrrle128_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t lrrle128_d(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t lrrle192_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t lrrle192_d(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t lrrle256_c(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t lrrle256_d(char * in, size_t isize, char * out, size_t osize, void * _);
+#endif// FSBENCH_USE_LRRLE
 #ifdef FSBENCH_USE_RLE64
 size_t RLE64_c(char * in, size_t isize, char * out, size_t osize, void * _);
 size_t RLE64_d(char * in, size_t isize, char * out, size_t osize, void * _);

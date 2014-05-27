@@ -140,6 +140,15 @@ static const CodecArgs LZF_args[] =
     CodecArgs("ultra", LZF_ultra_c, LZF_d)
 };
 #endif
+#ifdef FSBENCH_USE_LRRLE
+static const CodecArgs LRRLE_args[] =
+{
+    CodecArgs("64",  lrrle64_c,  lrrle64_d),
+    CodecArgs("128", lrrle128_c, lrrle128_d),
+    CodecArgs("192", lrrle192_c, lrrle192_d),
+    CodecArgs("256", lrrle256_c, lrrle256_d),
+};
+#endif
 #ifdef FSBENCH_USE_RLE64
 static const CodecArgs RLE64_args[] =
 {
@@ -156,15 +165,22 @@ Codec * codecs[] =
               new MultifunctionCodec(
                       "fastlz", _FASTLZ_VERSION,
                       fastlz_args,
-                      2,
+                      ARRAY_ELEMS(fastlz_args),
                       "1",
                       fastlz_m),
+#endif
+#ifdef FSBENCH_USE_LRRLE
+              new MultifunctionCodec(
+                      "lrrle", _LRRLE_VERSION,
+                      LRRLE_args,
+                      ARRAY_ELEMS(LRRLE_args),
+                      "256"),
 #endif
 #ifdef FSBENCH_USE_LZF
               new MultifunctionCodec(
                       "LZF", _LZF_VERSION,
                       LZF_args,
-                      3,
+                      ARRAY_ELEMS(LZF_args),
                       "",
                       no_blowup),
 #endif
@@ -172,7 +188,7 @@ Codec * codecs[] =
               new MultifunctionCodec(
                       "RLE64", _RLE64_VERSION,
                       RLE64_args,
-                      4,
+                      ARRAY_ELEMS(RLE64_args),
                       "64"),
 #endif
 #ifdef FSBENCH_USE_7Z
@@ -492,6 +508,7 @@ static const pair<Codec*, const string> fast_compressors[] =
     { make_pair(raw_find_codec("bcl-rle"), ""),
       make_pair(raw_find_codec("blosc"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
+      make_pair(raw_find_codec("lrrle"), ""),
       make_pair(raw_find_codec("LZ4"), ""),
       make_pair(raw_find_codec("LZF"), "very"),
       make_pair(raw_find_codec("LZJB"), ""),
@@ -520,6 +537,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("gipfeli"), ""),
       make_pair(raw_find_codec("halibut-deflate"), ""),
       make_pair(raw_find_codec("lodepng"), ""),
+      make_pair(raw_find_codec("lrrle"), ""),
       make_pair(raw_find_codec("LZ4"), ""),
       make_pair(raw_find_codec("LZ4hc"), ""),
       make_pair(raw_find_codec("LZF"), ""),

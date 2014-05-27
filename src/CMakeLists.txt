@@ -23,6 +23,7 @@ set(USE_FSE               0) # crashes on scc/clang 3.1; decoding fails on anyth
 set(USE_GIPFELI           0) # rarely works...
 set(USE_HALIBUT           0) # inefficient
 set(USE_LODEPNG           0) # inefficient
+set(USE_LRRLE             1)
 set(USE_LZ4               1)
 set(USE_LZF               1)
 set(USE_LZFX              0) # inefficient
@@ -44,7 +45,7 @@ set(USE_NRV               0) # inefficient
 set(USE_PG_LZ             0) # inefficient
 set(USE_QUICKLZ           1)
 set(USE_QUICKLZZIP        0) # quite good, but single-threaded. I may fix it one day.
-set(USE_RLE64             1)
+set(USE_RLE64             0) # obsoleted by lrrle
 set(USE_SANMAYCE_FNV      1)
 set(USE_SCZ               0) # single threaded and far too inefficient to be worth fixing...
 set(USE_SHA3_RND1         0) # didn't make it to the final...
@@ -517,6 +518,10 @@ IF(USE_RLE64)
     set(OTHER_SRC ${OTHER_SRC} codecs/RLE64.cpp)
     add_definitions(-DFSBENCH_USE_RLE64)
 ENDIF(USE_RLE64)
+IF(USE_LRRLE)
+    set(OTHER_SRC ${OTHER_SRC} codecs/lrrle.c)
+    add_definitions(-DFSBENCH_USE_LRRLE)
+ENDIF(USE_LRRLE)
 IF(USE_SANMAYCE_FNV)
     set(OTHER_SRC ${OTHER_SRC} codecs/sanmayce.c)
     add_definitions(-DFSBENCH_USE_SANMAYCE_FNV)

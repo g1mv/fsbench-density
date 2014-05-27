@@ -2,6 +2,7 @@
 
 #define __FSBENCH_COMMON_HPP_AJNDF87k
 #define UNUSED(p) (void)(p)
+#define ARRAY_ELEMS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 
 #define __STDC_CONSTANT_MACROS

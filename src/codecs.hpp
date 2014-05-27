@@ -189,6 +189,7 @@ Codec * find_codec(const std::string & name);
 #define _HALIBUT_VERSION        "SVN r9550"
 #define _KECCAK_VERSION         "3.2"
 #define _LODEPNG_VERSION        "20120729"
+#define _LRRLE_VERSION          "0"
 #define _LZ4_VERSION            "r114"
 #define _LZF_VERSION            "3.6"
 #define _LZFX_VERSION           "r16"
