@@ -56,6 +56,7 @@ add:
 * http://encode.ru/threads/1874
 * https://github.com/valdmann/crook
 * http://jveness.info/software/cts-v1.zip
+* https://github.com/coderforlife/ms-compress
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4
 Don't use a fixed number of iters; watch variance and keep repeating until confidence is good enough.
