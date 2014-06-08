@@ -242,8 +242,6 @@ void SlowCopy512bit (const char *SOURCE, char *TARGET) { _mm512_storeu_si512((__
 
 void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
 unsigned int SlidingWindowVsLookAheadBuffer(char* refStart, char* refEnd, char* encStart, char* encEnd);
-unsigned int Compress(char* ret, char* src, unsigned int srcSize);
-unsigned int Decompress(char* ret, char* src, unsigned int srcSize);
 char * Railgun_Swampshine_BailOut(char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
 char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
 
@@ -454,7 +452,7 @@ unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char*
 	return ret;
 }
 
-unsigned int Compress(char* ret, char* src, unsigned int srcSize){
+unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
 	unsigned int index=0;
@@ -566,7 +564,7 @@ unsigned int Compress(char* ret, char* src, unsigned int srcSize){
 	return retIndex;
 }
 
-unsigned int Decompress(char* ret, char* src, unsigned int srcSize){
+unsigned int KaidanjiDecompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
 	unsigned int WORDpair;

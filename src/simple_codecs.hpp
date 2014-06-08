@@ -138,18 +138,21 @@ void murmur_x86_128(char * in, size_t isize, char * out);
 void murmur_x64_128(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_MURMUR
 #ifdef FSBENCH_USE_NAKAMICHI
-size_t nakamichi_c(char * in, size_t isize, char * out, size_t, void *);
-size_t nakamichi_d(char * in, size_t isize, char * out, size_t osize, void *);
-size_t nakamichi_sanbashi_c(char * in, size_t isize, char * out, size_t, void *);
-size_t nakamichi_sanbashi_d(char * in, size_t isize, char * out, size_t osize, void *);
-size_t nakamichi_sanagi_c(char * in, size_t isize, char * out, size_t, void *);
-size_t nakamichi_sanagi_d(char * in, size_t isize, char * out, size_t osize, void *);
-size_t nakamichi_sanshi_c(char * in, size_t isize, char * out, size_t, void *);
-size_t nakamichi_sanshi_d(char * in, size_t isize, char * out, size_t osize, void *);
-size_t nakamichi_daikuni_c(char * in, size_t isize, char * out, size_t, void *);
-size_t nakamichi_daikuni_d(char * in, size_t isize, char * out, size_t osize, void *);
-size_t nakamichi_kaibutsu_c(char * in, size_t isize, char * out, size_t, void *);
-size_t nakamichi_kaibutsu_d(char * in, size_t isize, char * out, size_t osize, void *);
+#define NAKAMICHI_VARIANT_DECL(name)                                                      \
+    size_t nakamichi_ ## name ## _c(char * in, size_t isize, char * out, size_t, void *); \
+    size_t nakamichi_ ## name ## _d(char * in, size_t isize, char * out, size_t, void *);
+NAKAMICHI_VARIANT_DECL(Kaidanji)
+NAKAMICHI_VARIANT_DECL(Sanbashi)
+NAKAMICHI_VARIANT_DECL(Sanagi)
+NAKAMICHI_VARIANT_DECL(Sanshi)
+NAKAMICHI_VARIANT_DECL(Daikuni)
+NAKAMICHI_VARIANT_DECL(Kaibutsu)
+NAKAMICHI_VARIANT_DECL(Hanabi)
+NAKAMICHI_VARIANT_DECL(Hanazakari)
+NAKAMICHI_VARIANT_DECL(Inazuma)
+NAKAMICHI_VARIANT_DECL(Nirenpatsu)
+NAKAMICHI_VARIANT_DECL(Sanrenpatsu)
+NAKAMICHI_VARIANT_DECL(Zangetsu)
 size_t nakamichi_m_c(char * in, size_t isize, char * out, size_t, void *);
 size_t nakamichi_m_d(char * in, size_t isize, char * out, size_t osize, void *);
 #endif//FSBENCH_USE_NAKAMICHI

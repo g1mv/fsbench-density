@@ -1,7 +1,52 @@
 // Nakamichi is 100% FREE LZSS SUPERFAST decompressor.
+// Home of Nakamichi: www.sanmayce.com/Nakamichi/index.html
 
-// Nakamichi_Kaibutsu.c, three small tweaks in Kaidanji, a good idea to remove shiftings altogether by m^2 was used.
-// Nakamichi_Kaidanji.c, is the very same '1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX'.
+// Nakamichi_Hanabi, a.k.a. '85'
+// Nakamichi_Sanbashi a.k.a. '168168168', windows sizes are (8-3)/(16-3)/(24-3) or 5/13/21 or 32B/8KB/2MB
+// Nakamichi_Sanagi a.k.a. '999'
+// Nakamichi_Sanshi a.k.a. '888', is simply a beauty, the decompression loop is branchless excluding the if-else for literal/match, also it betters significantly Kaidanji's compression ratio.
+
+/*
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_GP.exe CalgaryCorpus.tar
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 3153408 bytes ...
+|; Each rotation means 64KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 16001
+RAM-to-RAM performance: 36 KB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_GP.exe enwik8
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 100000000 bytes ...
+/; Each rotation means 64KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 165971
+RAM-to-RAM performance: 39 KB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_XMM.exe OSHO.TXT
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 206908949 bytes ...
+/; Each rotation means 64KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 78495
+RAM-to-RAM performance: 62 KB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>dir
+
+05/24/2014  02:02 PM         3,153,408 CalgaryCorpus.tar
+05/24/2014  02:02 PM         1,610,426 CalgaryCorpus.tar.Nakamichi
+05/22/2014  02:41 PM       100,000,000 enwik8
+05/24/2014  02:44 PM        53,293,681 enwik8.Nakamichi
+05/16/2014  08:22 AM       206,908,949 OSHO.TXT
+05/24/2014  03:55 PM        87,774,118 OSHO.TXT.Nakamichi
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_GP.exe enwik8.Nakamichi
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 53293681 bytes ...
+RAM-to-RAM performance: 507 MB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_XMM.exe OSHO.TXT.Nakamichi
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 87774118 bytes ...
+RAM-to-RAM performance: 548 MB/s.
+*/
 
 // Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX, written by Kaze, babealicious suggestion by m^2 enforced.
 // Fixed! TO-DO: Known bug: the decompressed file sometimes has few additional bytes at the end.
@@ -9,15 +54,46 @@
 // Change #2: The full 16bits are used for offsets, 64KB window, that is.
 
 // Compile line:
-//icl /O3 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c -D_N_GP /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_GP.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_GP.exe
-//icl /O3 /QxSSE2 Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c -D_N_XMM /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_XMM.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_XMM.exe
-//icl /O3 /QxAVX Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c -D_N_YMM /FAcs
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.cod Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_YMM.cod
-//ren Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.exe Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX_YMM.exe
+/*
+icl /O3 Nakamichi_Sanagi.c -D_N_GP /FAcs
+ren Nakamichi_Sanagi.cod Nakamichi_Sanagi_GP.cod
+ren Nakamichi_Sanagi.exe Nakamichi_Sanagi_GP.exe
+icl /O3 /QxSSE2 Nakamichi_Sanagi.c -D_N_XMM /FAcs
+ren Nakamichi_Sanagi.cod Nakamichi_Sanagi_XMM.cod
+ren Nakamichi_Sanagi.exe Nakamichi_Sanagi_XMM.exe
+icl /O3 /QxAVX Nakamichi_Sanagi.c -D_N_YMM /FAcs
+ren Nakamichi_Sanagi.cod Nakamichi_Sanagi_YMM.cod
+ren Nakamichi_Sanagi.exe Nakamichi_Sanagi_YMM.exe
+icl /O3 /QxCORE-AVX2 Nakamichi_Sanagi.c -D_N_ZMM /FAcs
+ren Nakamichi_Sanagi.cod Nakamichi_Sanagi_ZMM.cod
+ren Nakamichi_Sanagi.exe Nakamichi_Sanagi_ZMM.exe
+*/
+
+/*
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_Sanagi>Nakamichi_Sanagi_XMM.exe enwik8
+Nakamichi 'Sanagi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 100000000 bytes ...
+/; Each rotation means 64KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 3932
+RAM-to-RAM performance: 3 KB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_Sanagi>Nakamichi_Sanagi_XMM.exe enwik8.Nakamichi /testmemcpy
+Nakamichi 'Sanagi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 47939156 bytes ...
+RAM-to-RAM performance: 234 MB/s.
+Memory pool starting address: 04160040 ... 64 byte aligned, OK
+Copying a 256MB block 1024 times i.e. 256GB READ + 256GB WRITTEN ...
+memcpy(): (256MB block); 262144MB copied in 140510 clocks or 1.866MB per clock
+RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): 12%
+
+YAPPY: [b 2K] bytes 100000000 -> 67556975  67.6%  comp  38.7 MB/s  uncomp 593.9 MB/s 
+YAPPY: [b 4K] bytes 100000000 -> 61850858  61.9%  comp  35.1 MB/s  uncomp 555.5 MB/s 
+YAPPY: [b 8K] bytes 100000000 -> 57844183  57.8%  comp  32.2 MB/s  uncomp 524.0 MB/s 
+YAPPY: [b 16K] bytes 100000000 -> 55841094  55.8%  comp  30.7 MB/s  uncomp 516.4 MB/s 
+YAPPY: [b 32K] bytes 100000000 -> 54842431  54.8%  comp  30.6 MB/s  uncomp 516.9 MB/s 
+YAPPY: [b 64K] bytes 100000000 -> 54347923  54.3%  comp  30.6 MB/s  uncomp 516.9 MB/s 
+YAPPY: [b 4096K] bytes 100000000 -> 53852558  53.9%  comp  30.1 MB/s  uncomp 509.1 MB/s 
+*/
 
 // Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX, written by Kaze, babealicious suggestion by m^2 enforced.
 // Change #1: Nasty bug in Swampshine was fixed.
@@ -243,10 +319,8 @@ void SlowCopy512bit (const char *SOURCE, char *TARGET) { _mm512_storeu_si512((__
 // Comment it to see how slower 'BruteForce' is, for Wikipedia 100MB the ratio is 41KB/s versus 197KB/s.
 #define ReplaceBruteForceWithRailgunSwampshineBailOut
 
-static void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
+static void SearchIntoSlidingWindow(unsigned int* ShortMediumLongOFFSET, unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
 static unsigned int SlidingWindowVsLookAheadBuffer(char* refStart, char* refEnd, char* encStart, char* encEnd);
-unsigned int KaibutsuCompress(char* ret, char* src, unsigned int srcSize);
-unsigned int KaibutsuDecompress(char* ret, char* src, unsigned int srcSize);
 static char * Railgun_Swampshine_BailOut(char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
 static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
 
@@ -280,9 +354,10 @@ static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTar
 
 // Min_Match_Length=THRESHOLD=4 means 4 and bigger are to be encoded:
 #define Min_Match_BAILOUT_Length (8)
-#define Min_Match_Length (5)
+#define Min_Match_Length (8)
 #define Min_Match_Length_SHORT (5)
 #define OffsetBITS (16)
+//#define OffsetBITS (22)
 #define LengthBITS (1)
 
 //12bit
@@ -291,8 +366,10 @@ static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTar
 #define REF_SIZE ( ((1<<OffsetBITS)-1) )
 //3bit
 //#define ENC_SIZE (7+Min_Match_Length)
-#define ENC_SIZE ( ((1<<LengthBITS)-1) + Min_Match_Length )
-/*
+//#define ENC_SIZE ( ((1<<LengthBITS)-1) + Min_Match_Length )
+// Enlarge it by 8 in order to house 16
+#define ENC_SIZE ( ((1<<LengthBITS)-1) + (Min_Match_Length+8) )
+#if 0
 int main( int argc, char *argv[] ) {
 	FILE *fp;
 	int SourceSize;
@@ -311,7 +388,7 @@ int BandwidthFlag=0;
 
 unsigned long long k;
 
-	printf("Nakamichi 'Kaibutsu', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
+	printf("Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
 	if (argc==1) {
 		printf("Usage: Nakamichi filename\n"); exit(13);
 	}
@@ -386,55 +463,75 @@ printf("RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): %d%%\n", (
 	free(TargetBlock);
 	free(SourceBlock);
 	exit(0);
-}*/
-
-static void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd){
+}
+#endif
+void SearchIntoSlidingWindow(unsigned int* ShortMediumLongOFFSET, unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd){
 	char* FoundAtPosition;
 	unsigned int match=0;
-	char* refStartHOTTER = refStart+((1<<OffsetBITS)-24*8*128);
+	char* refStartM = refStart+( ((1<<OffsetBITS)-1) - ((1<<(2*8-0))-1) );
+	char* refStartL = refStart+( ((1<<OffsetBITS)-1) - ((1<<(2*8-0))-1) );
+	char* refStartHOTTERM = refStart+((1<<OffsetBITS)-16*8*128);
+	char* refStartHOTTERL = refStart+((1<<OffsetBITS)-16*8*128);
+	*ShortMediumLongOFFSET=0;
 	*retIndex=0;
 	*retMatch=0;
 
 #ifdef ReplaceBruteForceWithRailgunSwampshineBailOut
 	// Step #1: LONG MATCH is sought [
 	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
-	while (refStartHOTTER < refEnd) {
-	//FoundAtPosition = Railgun_Doublet(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
-	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
+	while (refStartHOTTERL < refEnd) {
+	//FoundAtPosition = Railgun_Doublet(refStartHOTTERL, encStart, (uint32_t)(refEnd-refStartHOTTERL), Min_Match_Length);	
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTERL, encStart, (uint32_t)(refEnd-refStartHOTTERL), Min_Match_Length);	
 		if (FoundAtPosition!=NULL) {
-			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
-			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
-			if ( (refEnd-FoundAtPosition) & 0xF0 ) { // Discard matches that have OFFSET with higher 4bits ALL zero.
+			if ( ((refEnd-FoundAtPosition) & 0x0E)!=0 && ((refEnd-FoundAtPosition) & 0x01)==0 ) { // Discard matches that have OFFSET with 2/3/4 bit zero.
 				*retMatch=Min_Match_Length;
 				*retIndex=refEnd-FoundAtPosition;
 				return;
 			}
-			refStartHOTTER=FoundAtPosition+1; // Exhaust the pool.
+			refStartHOTTERL=FoundAtPosition+1; // Exhaust the pool.
 		} else break;
 	}
 	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
-	while (refStart < refEnd) {
-		FoundAtPosition = Railgun_Swampshine_BailOut(refStart, encStart, (uint32_t)(refEnd-refStart), Min_Match_Length);
-		//FoundAtPosition = Railgun_Doublet(refStart, encStart, (uint32_t)(refEnd-refStart), 8);
-		// For bigger windows 'Doublet' is slower:
-		// Nakamichi, revision 1-RSSBO_1GB_15bit performance with 'Swampshine':
-		// Compressing 846351894 bytes ...
-		// RAM-to-RAM performance: 370 KB/s.
-		// Nakamichi, revision 1-RSSBO_1GB_15bit performance with 'Doublet':
-		// Compressing 846351894 bytes ...
-		// RAM-to-RAM performance: 213 KB/s.
+	while (refStartL < refEnd) {
+		FoundAtPosition = Railgun_Swampshine_BailOut(refStartL, encStart, (uint32_t)(refEnd-refStartL), Min_Match_Length);
 		if (FoundAtPosition!=NULL) {
-			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
-			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
-			if ( (refEnd-FoundAtPosition) & 0xF0 ) { // Discard matches that have OFFSET with higher 4bits ALL zero.
+			if ( ((refEnd-FoundAtPosition) & 0x0E)!=0 && ((refEnd-FoundAtPosition) & 0x01)==0 ) { // Discard matches that have OFFSET with 2/3/4 bit zero.
 				*retMatch=Min_Match_Length;
 				*retIndex=refEnd-FoundAtPosition;
 				return;
 			}
-			refStart=FoundAtPosition+1; // Exhaust the pool.
+			refStartL=FoundAtPosition+1; // Exhaust the pool.
 		} else break;
 	}
 	// Step #1: LONG MATCH is sought ]
+
+	// Step #2: SHORT MATCH is sought [
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOTTERM < refEnd) {
+	//FoundAtPosition = Railgun_Doublet(refStartHOTTERM, encStart, (uint32_t)(refEnd-refStartHOTTERM), Min_Match_Length);	
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTERM, encStart, (uint32_t)(refEnd-refStartHOTTERM), Min_Match_Length -3);	
+		if (FoundAtPosition!=NULL) {
+			if ( ((refEnd-FoundAtPosition) & 0x0E)!=0 && ((refEnd-FoundAtPosition) & 0x01)==1 ) { // Discard matches that have OFFSET with 2/3/4 bit zero.
+				*retMatch=Min_Match_Length -3;
+				*retIndex=refEnd-FoundAtPosition;
+				return;
+			}
+			refStartHOTTERM=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+	while (refStartM < refEnd) {
+		FoundAtPosition = Railgun_Swampshine_BailOut(refStartM, encStart, (uint32_t)(refEnd-refStartM), Min_Match_Length -3);
+		if (FoundAtPosition!=NULL) {
+			if ( ((refEnd-FoundAtPosition) & 0x0E)!=0 && ((refEnd-FoundAtPosition) & 0x01)==1 ) { // Discard matches that have OFFSET with 2/3/4 bit zero.
+				*retMatch=Min_Match_Length -3;
+				*retIndex=refEnd-FoundAtPosition;
+				return;
+			}
+			refStartM=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Step #2: SHORT MATCH is sought ]
 #else				
 	while(refStart < refEnd){
 		match=SlidingWindowVsLookAheadBuffer(refStart,refEnd,encStart,encEnd);
@@ -448,7 +545,7 @@ static void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMat
 #endif
 }
 
-static unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char* encStart,char* encEnd){
+unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char* encStart,char* encEnd){
 	int ret = 0;
 	while(refStart[ret] == encStart[ret]){
 		if(&refStart[ret] >= refEnd) break;
@@ -459,9 +556,10 @@ static unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd
 	return ret;
 }
 
-unsigned int KaibutsuCompress(char* ret, char* src, unsigned int srcSize){
+unsigned int HanabiCompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
+	unsigned int ShortMediumLongOFFSET=0;
 	unsigned int index=0;
 	unsigned int match=0;
 	unsigned int notMatch=0;
@@ -485,7 +583,7 @@ unsigned int KaibutsuCompress(char* ret, char* src, unsigned int srcSize){
 			encEnd=&src[srcIndex+ENC_SIZE];
 		// Fixing the stupid 'search-beyond-end' bug:
 		if(srcIndex+ENC_SIZE < srcSize)
-			SearchIntoSlidingWindow(&index,&match,refStart,&src[srcIndex],&src[srcIndex],encEnd);
+			SearchIntoSlidingWindow(&ShortMediumLongOFFSET,&index,&match,refStart,&src[srcIndex],&src[srcIndex],encEnd);
 		else
 			match=0; // Nothing to find.
 		//if ( match<Min_Match_Length ) {
@@ -495,11 +593,9 @@ unsigned int KaibutsuCompress(char* ret, char* src, unsigned int srcSize){
 				notMatchStart=&ret[retIndex];
 				retIndex++;
 			}
-			//else if (notMatch==(127-64-32)) {
 			else if (notMatch==(127-64-32-16)) {
 NumberOfFullLiterals++;
-				//*notMatchStart=(unsigned char)((127-64-32)<<3);
-				*notMatchStart=(unsigned char)((127-64-32-16)<<(4-4));
+				*notMatchStart=(unsigned char)( ((127-64-32-16)<<4) );
 				notMatch=0;
 				notMatchStart=&ret[retIndex];
 				retIndex++;
@@ -515,7 +611,7 @@ NumberOfFullLiterals++;
 			}*/
 		} else {
 			if(notMatch > 0){
-				*notMatchStart=(unsigned char)((notMatch)<<(4-4));
+				*notMatchStart=(unsigned char)( ((notMatch)<<4) );
 				notMatch=0;
 			}
 // ---------------------| 
@@ -555,10 +651,20 @@ NumberOfFullLiterals++;
 			retIndex++;
 */
 // No need of above, during compression we demanded lowest 2bits to be not 00, use the full 16bits and get rid of the stupid '+/-' Min_Match_Length.
-			if (index>0xFFFF) {return 0;}
-			memcpy(&ret[retIndex],&index,2); // copy lower 2 bytes
-			retIndex++;
-			retIndex++;
+			//if (index>0xFFFF) {printf ("\nFatal error: Overflow!\n"); exit(13);}
+			//ShortMediumLongOFFSET = 0x01;
+			//ShortMediumLongOFFSET = 0x02;
+			//ShortMediumLongOFFSET = 0x03;
+			//index = (index)<<3;
+			//memcpy(&ret[retIndex],&index,(ShortMediumLongOFFSET & 0x03)); // copy lower 'ShortMediumLong' bytes
+			//ret[retIndex] = ret[retIndex] | ShortMediumLongOFFSET; // two roles, plus Short/Long Match
+			//retIndex = retIndex + (ShortMediumLongOFFSET & 0x03);
+
+			//ShortMediumLongOFFSET = 0x02; // if 2 bytes long OFFSET
+			//ShortMediumLongOFFSET = 0x03; // if 3 bytes long OFFSET
+			ShortMediumLongOFFSET = 0x02; // if 2 bytes long OFFSET
+			memcpy(&ret[retIndex],&index,ShortMediumLongOFFSET); // copy lower 'ShortMediumLong' bytes
+			retIndex = retIndex + ShortMediumLongOFFSET;
 //                     / \
 // ---------------------|
 			srcIndex+=match;
@@ -570,22 +676,114 @@ NumberOfFullLiterals++;
 		}
 	}
 	if(notMatch > 0){
-		*notMatchStart=(unsigned char)((notMatch)<<(4-4));
+		*notMatchStart=(unsigned char)( ((notMatch)<<4) );
 	}
 	//printf("%s; Each rotation means 64KB are encoded; Done %d%%\n", Auberge[Melnitchka], 100 );
 	//printf("NumberOfFullLiterals (lower-the-better): %d\n", NumberOfFullLiterals );
 	return retIndex;
 }
 
-unsigned int KaibutsuDecompress(char* ret, char* src, unsigned int srcSize){
+/*
+Sanshi will fetch DWORD (instead of WORD) in decompression loop and will use respectively 1|2|3 bytes,
+with such layout:
+[1bit][1bit][6bits][8bits][8bits]
+First two bits used as Literal/Match flag and as MatchLength selector at the same time:
+- if 00 then Literals, yeah, one ZMM store (or 8 QWORDS) with no branching;
+- if 01, 10, 11 then Offsets are 1*8-2/2*8-2/3*8-2 bit, Matches with length 8|8|8, yeah, 1/1/1 QWORD store.
+The nasty SHR (shifting by 2bits) returns (preceded by one AND), however compactness is good.
+Also the order for searching will be 1/2/3, thus speed is favored (1*8-2bits=64bytes/2*8-2bits=16KB/3*8-2bits=4MB),
+the 1 byte Offsets will use 6bit window, crazy, with 8:1 eventual gain, double-crazy!
+For 8/8/8:
+05/07/2014  06:57 AM        10,192,446 dickens
+05/07/2014  10:54 AM         4,617,821 dickens.Nakamichi
+05/07/2014  07:44 AM        11,546,860 Goyathlay.txt
+05/07/2014  11:19 AM         4,413,175 Goyathlay.txt.Nakamichi
+05/07/2014  10:32 AM         3,903,143 MASAKARI_General-Purpose_Grade_English_Wordlist.wrd
+05/07/2014  10:27 AM         2,106,310 MASAKARI_General-Purpose_Grade_English_Wordlist.wrd.Nakamichi
+05/05/2014  04:41 AM       206,908,949 OSHO.TXT
+05/07/2014  04:21 PM        76,483,638 OSHO.TXT.Nakamichi
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_Sanshi>Nakamichi_Sanshi_GP.exe dickens
+Nakamichi 'Sanshi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 10192446 bytes ...
+\; Each rotation means 128KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 1079
+RAM-to-RAM performance: 7 KB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_Sanshi>Nakamichi_Sanshi_GP.exe OSHO.TXT
+Nakamichi 'Sanshi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 206908949 bytes ...
+/; Each rotation means 128KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 5964
+RAM-to-RAM performance: 11 KB/s.
+*/
+
+/*
+The basic change is to avoid bit operations, schocker, like this:
+|1stLSB      |2ndLSB  |3rdLSB  |
+-------------------------------
+|x|0|0|0|xxxx|xxxxxxxx|xxxxxxxx|
+-------------------------------
+[1bit                     32bit]
+The first four bits are the TAG, the TAG is within the OFFSET area, thus OFFSETS are byte-aligned i.e. SHRless.
+In a way 'Hanabi' is an extended 'Kaidanji', first bit says whether OFFSET is 2 or 3 bytes long i.e. windows are 64KB/16MB.
+Of course all OFFSETS with first 4 bits being either 0000 or 1000 are to be discarded.
+The tradeoff is brutal but I don't care, I've made my mind, literal MAX length will be 15, handled by one XMM transfer.
+*/
+/*
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_GP.exe enwik8
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Compressing 100000000 bytes ...
+/; Each rotation means 64KB are encoded; Done 100%
+NumberOfFullLiterals (lower-the-better): 20744
+RAM-to-RAM performance: 4 KB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>dir
+
+05/22/2014  08:07 AM         3,153,408 CalgaryCorpus.tar
+05/22/2014  08:01 AM         1,827,982 CalgaryCorpus.tar.Nakamichi
+05/22/2014  03:10 PM       100,000,000 enwik8
+05/22/2014  02:23 PM        51,197,706 enwik8.Nakamichi
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_GP.exe enwik8.Nakamichi
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 51197706 bytes ...
+RAM-to-RAM performance: 254 MB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Hanabi>Nakamichi_Hanabi_xmm.exe enwik8.Nakamichi
+Nakamichi 'Hanabi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 51197706 bytes ...
+RAM-to-RAM performance: 254 MB/s.
+*/
+unsigned int HanabiDecompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
-	unsigned int WORDpair;
+	unsigned int DWORD;
+	unsigned short int WORD;
+	unsigned int TAG;
+
+	signed int mm;
+	unsigned int Fantagiro;
 
 	while(srcIndex < srcSize){
-		WORDpair = *(unsigned short int*)&src[srcIndex];
-		//if((WORDpair & 0xF0) == 0){ // It is tempting to reduce literals even more, to 15:
-		if((WORDpair & 0xFF) < 16){ // Better that way to say higher 4bits are not set
+		WORD = *(uint16_t*)&src[srcIndex]; // Padding by 4, the input should be padded accordingly.
+		if((WORD & 0x0E)){ 
+			srcIndex=srcIndex+2;
+				#ifdef _N_GP
+			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORD);
+				#endif
+				#ifdef _N_XMM
+			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORD);
+				#endif
+				#ifdef _N_YMM
+			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORD);
+				#endif
+				#ifdef _N_ZMM
+			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORD);
+				#endif
+			retIndex+=Min_Match_Length -3*(WORD & 0x01);
+		}
+		else{
 				#ifdef _N_GP
 				*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(src+srcIndex+1+8*(0));
 				*(uint64_t*)(ret+retIndex+8*(1)) = *(uint64_t*)(src+srcIndex+1+8*(1));
@@ -593,56 +791,185 @@ unsigned int KaibutsuDecompress(char* ret, char* src, unsigned int srcSize){
 				#ifdef _N_XMM
 				SlowCopy128bit((src+srcIndex+1+16*(0)), (ret+retIndex+16*(0)));
 				#endif
-			//retIndex+=(WORDpair & 0x0F);
-			//srcIndex+=((WORDpair & 0x0F)+1);
-			retIndex+=(WORDpair & 0xFF);
-			srcIndex+=((WORDpair & 0xFF)+1);
-		}
-		else{
-			srcIndex=srcIndex+2;
-			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORDpair);
-			retIndex+=Min_Match_Length;
+				#ifdef _N_YMM
+				SlowCopy128bit((src+srcIndex+1+16*(0)), (ret+retIndex+16*(0)));
+				#endif
+				#ifdef _N_ZMM
+				SlowCopy128bit((src+srcIndex+1+16*(0)), (ret+retIndex+16*(0)));
+				#endif
+			retIndex+=(WORD & 0xFF)>>4;
+			srcIndex+=(((WORD & 0xFF)>>4)+1);
 		}
 	}
 	return retIndex;
 }
 
-
-// Kaibutsu
+// Hanabi:
 // Decompression main loop:
 /*
-; mark_description "Intel(R) C++ Compiler XE for applications running on IA-32, Version 12.1.1.258 Build 20111011";
+; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
 ; mark_description "-O3 -QxSSE2 -D_N_XMM -FAcs";
 
-.B7.3:                          
-  0001e 0f b7 34 3a      movzx esi, WORD PTR [edx+edi]          
-  00022 8b de            mov ebx, esi                           
-  00024 81 e3 ff 00 00 
-        00               and ebx, 255                           
-  0002a 83 fb 10         cmp ebx, 16                            
-  0002d 72 1d            jb .B7.5 
-.B7.4:                          
-  0002f 8b 4c 24 10      mov ecx, DWORD PTR [16+esp]            
-  00033 f7 de            neg esi                                
-  00035 83 c2 02         add edx, 2                             
-  00038 8d 1c 01         lea ebx, DWORD PTR [ecx+eax]           
-  0003b 83 c0 07         add eax, 7                             
-  0003e 03 f3            add esi, ebx                           
-  00040 8b 0e            mov ecx, DWORD PTR [esi]               
-  00042 8b 76 04         mov esi, DWORD PTR [4+esi]             
-  00045 89 0b            mov DWORD PTR [ebx], ecx               
-  00047 89 73 04         mov DWORD PTR [4+ebx], esi             
-  0004a eb 15            jmp .B7.6 
-.B7.5:                          
-  0004c f3 0f 6f 44 3a 
-        01               movdqu xmm0, XMMWORD PTR [1+edx+edi]   
-  00052 8b 4c 24 10      mov ecx, DWORD PTR [16+esp]            
-  00056 8d 54 1a 01      lea edx, DWORD PTR [1+edx+ebx]         
-  0005a f3 0f 7f 04 08   movdqu XMMWORD PTR [eax+ecx], xmm0     
-  0005f 03 c3            add eax, ebx                           
-.B7.6:                          
-  00061 3b 54 24 18      cmp edx, DWORD PTR [24+esp]            
-  00065 72 b7            jb .B7.3 
+.B7.3::                         
+  00013 44 89 d3         mov ebx, r10d                          
+  00016 44 0f b7 0c 13   movzx r9d, WORD PTR [rbx+rdx]          
+  0001b 41 f7 c1 0e 00 
+        00 00            test r9d, 14                           
+  00022 74 2a            je .B7.5 
+.B7.4::                         
+  00024 45 89 cb         mov r11d, r9d                          
+  00027 41 83 e1 01      and r9d, 1                             
+  0002b 89 c3            mov ebx, eax                           
+  0002d 49 f7 db         neg r11                                
+  00030 48 03 d9         add rbx, rcx                           
+  00033 41 83 c2 02      add r10d, 2                            
+  00037 4c 03 db         add r11, rbx                           
+  0003a 47 8d 0c 49      lea r9d, DWORD PTR [r9+r9*2]           
+  0003e 41 f7 d9         neg r9d                                
+  00041 4d 8b 1b         mov r11, QWORD PTR [r11]               
+  00044 4c 89 1b         mov QWORD PTR [rbx], r11               
+  00047 42 8d 44 08 08   lea eax, DWORD PTR [8+rax+r9]          
+  0004c eb 1b            jmp .B7.6 
+.B7.5::                         
+  0004e 45 0f b6 c9      movzx r9d, r9b                         
+  00052 41 c1 e9 04      shr r9d, 4                             
+  00056 f3 0f 6f 44 13 
+        01               movdqu xmm0, XMMWORD PTR [1+rbx+rdx]   
+  0005c f3 0f 7f 04 08   movdqu XMMWORD PTR [rax+rcx], xmm0     
+  00061 41 03 c1         add eax, r9d                           
+  00064 47 8d 54 0a 01   lea r10d, DWORD PTR [1+r10+r9]         
+.B7.6::                         
+  00069 45 3b d0         cmp r10d, r8d                          
+  0006c 72 a5            jb .B7.3 
+*/
+
+// Sanagi:
+// Decompression main loop:
+/*
+; mark_description "Intel(R) C++ Compiler XE for applications running on IA-32, Version 14.0.1.139 Build 20131008";
+; mark_description "-O3 -QxCORE-AVX2 -D_N_ZMM -FAcs";
+
+.B8.3:                          
+  0001e 8b 4c 24 14      mov ecx, DWORD PTR [20+esp]            
+  00022 8b 1c 0a         mov ebx, DWORD PTR [edx+ecx]           
+  00025 8b f3            mov esi, ebx                           
+  00027 83 e6 03         and esi, 3                             
+  0002a 75 28            jne .B8.5 
+.B8.4:                          
+  0002c 8b 4c 24 14      mov ecx, DWORD PTR [20+esp]            
+  00030 0f b6 db         movzx ebx, bl                          
+  00033 c1 eb 02         shr ebx, 2                             
+  00036 62 f1 7c 48 10 
+        84 0a 01 00 00 
+        00               vmovups zmm0, ZMMWORD PTR [1+edx+ecx]  
+  00041 8b 74 24 10      mov esi, DWORD PTR [16+esp]            
+  00045 8d 54 1a 01      lea edx, DWORD PTR [1+edx+ebx]         
+  00049 62 f1 7c 48 11 
+        04 30            vmovups ZMMWORD PTR [eax+esi], zmm0    
+  00050 03 c3            add eax, ebx                           
+  00052 eb 2f            jmp .B8.6 
+.B8.5:                          
+  00054 8b 7c 24 10      mov edi, DWORD PTR [16+esp]            
+  00058 03 d6            add edx, esi                           
+  0005a c1 e6 03         shl esi, 3                             
+  0005d f7 de            neg esi                                
+  0005f 83 c6 18         add esi, 24                            
+  00062 8d 0c 07         lea ecx, DWORD PTR [edi+eax]           
+  00065 bf ff ff ff 00   mov edi, 16777215                      
+  0006a 83 c0 09         add eax, 9                             
+  0006d c4 e2 4b f7 f7   shrx esi, edi, esi                     
+  00072 23 de            and ebx, esi                           
+  00074 c1 eb 02         shr ebx, 2                             
+  00077 f7 db            neg ebx                                
+  00079 03 d9            add ebx, ecx                           
+  0007b c5 fa 6f 03      vmovdqu xmm0, XMMWORD PTR [ebx]        
+  0007f c5 fa 7f 01      vmovdqu XMMWORD PTR [ecx], xmm0        
+.B8.6:                          
+  00083 3b 54 24 18      cmp edx, DWORD PTR [24+esp]            
+  00087 72 95            jb .B8.3 
+*/
+
+// Sanshi:
+// Decompression main loop:
+/*
+; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
+; mark_description "-O3 -D_N_GP -FAcs";
+
+.B6.3::                         
+  00022 41 8b 1c 13      mov ebx, DWORD PTR [r11+rdx]           
+  00026 89 d9            mov ecx, ebx                           
+  00028 83 e1 03         and ecx, 3                             
+  0002b 4b 8d 34 11      lea rsi, QWORD PTR [r9+r10]            
+  0002f 75 2a            jne .B6.5 
+.B6.4::                         
+  00031 0f b6 db         movzx ebx, bl                          
+  00034 c1 eb 02         shr ebx, 2                             
+  00037 49 8b 4c 13 01   mov rcx, QWORD PTR [1+r11+rdx]         
+  0003c 44 03 d3         add r10d, ebx                          
+  0003f 48 89 0e         mov QWORD PTR [rsi], rcx               
+  00042 49 8b 4c 13 09   mov rcx, QWORD PTR [9+r11+rdx]         
+  00047 4d 8b 5c 13 11   mov r11, QWORD PTR [17+r11+rdx]        
+  0004c 4c 89 5e 10      mov QWORD PTR [16+rsi], r11            
+  00050 44 8d 5c 18 01   lea r11d, DWORD PTR [1+rax+rbx]        
+  00055 48 89 4e 08      mov QWORD PTR [8+rsi], rcx             
+  00059 eb 29            jmp .B6.6 
+.B6.5::                         
+  0005b 03 c1            add eax, ecx                           
+  0005d c1 e1 03         shl ecx, 3                             
+  00060 41 83 c2 08      add r10d, 8                            
+  00064 f7 d9            neg ecx                                
+  00066 83 c1 18         add ecx, 24                            
+  00069 41 89 c3         mov r11d, eax                          
+  0006c b8 ff ff ff 00   mov eax, 16777215                      
+  00071 d3 e8            shr eax, cl                            
+  00073 23 d8            and ebx, eax                           
+  00075 c1 eb 02         shr ebx, 2                             
+  00078 48 f7 db         neg rbx                                
+  0007b 48 03 de         add rbx, rsi                           
+  0007e 48 8b 03         mov rax, QWORD PTR [rbx]               
+  00081 48 89 06         mov QWORD PTR [rsi], rax               
+.B6.6::                         
+  00084 44 89 d8         mov eax, r11d                          
+  00087 41 3b c0         cmp eax, r8d                           
+  0008a 72 96            jb .B6.3 
+*/
+
+// Kaidanji:
+// Decompression main loop, 30 nifty lines:
+/*
+; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
+; mark_description "-O3 -D_N_GP -FAcs";
+
+.B6.3::                         
+  00017 41 0f b7 04 12   movzx eax, WORD PTR [r10+rdx]          
+  0001c a8 07            test al, 7                             
+  0001e 75 37            jne .B6.5 
+.B6.4::                         
+  00020 0f b6 c0         movzx eax, al                          
+  00023 49 8b 5c 12 01   mov rbx, QWORD PTR [1+r10+rdx]         
+  00028 c1 e8 03         shr eax, 3                             
+  0002b 49 89 1c 0b      mov QWORD PTR [r11+rcx], rbx           
+  0002f 49 8b 5c 12 09   mov rbx, QWORD PTR [9+r10+rdx]         
+  00034 49 89 5c 0b 08   mov QWORD PTR [8+r11+rcx], rbx         
+  00039 49 8b 5c 12 11   mov rbx, QWORD PTR [17+r10+rdx]        
+  0003e 4d 8b 54 12 19   mov r10, QWORD PTR [25+r10+rdx]        
+  00043 49 89 5c 0b 10   mov QWORD PTR [16+r11+rcx], rbx        
+  00048 4d 89 54 0b 18   mov QWORD PTR [24+r11+rcx], r10        
+  0004d 45 8d 54 01 01   lea r10d, DWORD PTR [1+r9+rax]         
+  00052 44 03 d8         add r11d, eax                          
+  00055 eb 19            jmp .B6.6 
+.B6.5::                         
+  00057 41 83 c1 02      add r9d, 2                             
+  0005b 48 f7 d8         neg rax                                
+  0005e 48 03 c1         add rax, rcx                           
+  00061 45 89 ca         mov r10d, r9d                          
+  00064 49 8b 1c 03      mov rbx, QWORD PTR [r11+rax]           
+  00068 49 89 1c 0b      mov QWORD PTR [r11+rcx], rbx           
+  0006c 41 83 c3 08      add r11d, 8                            
+.B6.6::                         
+  00070 45 89 d1         mov r9d, r10d                          
+  00073 45 3b c8         cmp r9d, r8d                           
+  00076 72 9f            jb .B6.3 
 */
 
 // Decompression main loop:
@@ -758,7 +1085,7 @@ if ( count <= 0 ) {
 // Railgun_Swampshine_BailOut, copyleft 2014-Jan-31, Kaze.
 // Caution: For better speed the case 'if (cbPattern==1)' was removed, so Pattern must be longer than 1 char.
 #define NeedleThreshold2vs4swampLITE 9+10 // Should be bigger than 9. BMH2 works up to this value (inclusive), if bigger then BMH4 takes over.
-static char * Railgun_Swampshine_BailOut (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
+char * Railgun_Swampshine_BailOut (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
 {
 	char * pbTargetMax = pbTarget + cbTarget;
 	register uint32_t ulHashPattern;
@@ -1178,7 +1505,7 @@ if ( count <= 0 ) {
 
 // Fixed version from 2012-Feb-27.
 // Caution: For better speed the case 'if (cbPattern==1)' was removed, so Pattern must be longer than 1 char.
-static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
+char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern)
 {
 	char * pbTargetMax = pbTarget + cbTarget;
 	register uint32_t ulHashPattern;
@@ -1204,6 +1531,6 @@ static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTar
 	}
 }
 
-// Last change: 2014-Apr-29
+// Last change: 2014-May-21
 // If you want to help me to improve it, email me at: sanmayce@sanmayce.com
 // Enfun!

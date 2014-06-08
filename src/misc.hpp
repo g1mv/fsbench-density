@@ -4,6 +4,8 @@
 #define UNUSED(p) (void)(p)
 #define ARRAY_ELEMS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+#define STRIGIFY(x) #x
+
 
 #define __STDC_CONSTANT_MACROS
 #define __STDC_LIMIT_MACROS
