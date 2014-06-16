@@ -289,16 +289,18 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_NAKAMICHI
 #define NAKAMICHI_CODEC(name) new Codec("Nakamichi-" STRIGIFY(name), _NAKAMICHI_VERSION(name), nakamichi_ ## name ## _c, nakamichi_ ## name ## _d),
               new Codec("Nakamichi",          _NAKAMICHI_VERSION(Kaidanji FIX),    nakamichi_Kaidanji_c, nakamichi_Kaidanji_d),
-              NAKAMICHI_CODEC(Sanbashi)
-              NAKAMICHI_CODEC(Sanagi)
-              NAKAMICHI_CODEC(Sanshi)
+              NAKAMICHI_CODEC(Aratama)
               NAKAMICHI_CODEC(Daikuni)
-              NAKAMICHI_CODEC(Kaibutsu)
               NAKAMICHI_CODEC(Hanabi)
               NAKAMICHI_CODEC(Hanazakari)
               NAKAMICHI_CODEC(Inazuma)
+              NAKAMICHI_CODEC(Kaibutsu)
+              NAKAMICHI_CODEC(Kinezumi)
               NAKAMICHI_CODEC(Nirenpatsu)
+              NAKAMICHI_CODEC(Sanagi)
+              NAKAMICHI_CODEC(Sanbashi)
               NAKAMICHI_CODEC(Sanrenpatsu)
+              NAKAMICHI_CODEC(Sanshi)
               NAKAMICHI_CODEC(Zangetsu)
               new Codec("Nakamichi-M",        _NAKAMICHI_M_VERSION,  nakamichi_m_c,        nakamichi_m_d),
 #endif

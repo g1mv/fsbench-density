@@ -141,17 +141,19 @@ void murmur_x64_128(char * in, size_t isize, char * out);
 #define NAKAMICHI_VARIANT_DECL(name)                                                      \
     size_t nakamichi_ ## name ## _c(char * in, size_t isize, char * out, size_t, void *); \
     size_t nakamichi_ ## name ## _d(char * in, size_t isize, char * out, size_t, void *);
-NAKAMICHI_VARIANT_DECL(Kaidanji)
-NAKAMICHI_VARIANT_DECL(Sanbashi)
-NAKAMICHI_VARIANT_DECL(Sanagi)
-NAKAMICHI_VARIANT_DECL(Sanshi)
+NAKAMICHI_VARIANT_DECL(Aratama)
 NAKAMICHI_VARIANT_DECL(Daikuni)
-NAKAMICHI_VARIANT_DECL(Kaibutsu)
 NAKAMICHI_VARIANT_DECL(Hanabi)
 NAKAMICHI_VARIANT_DECL(Hanazakari)
 NAKAMICHI_VARIANT_DECL(Inazuma)
+NAKAMICHI_VARIANT_DECL(Kaibutsu)
+NAKAMICHI_VARIANT_DECL(Kaidanji)
+NAKAMICHI_VARIANT_DECL(Kinezumi)
 NAKAMICHI_VARIANT_DECL(Nirenpatsu)
+NAKAMICHI_VARIANT_DECL(Sanagi)
+NAKAMICHI_VARIANT_DECL(Sanbashi)
 NAKAMICHI_VARIANT_DECL(Sanrenpatsu)
+NAKAMICHI_VARIANT_DECL(Sanshi)
 NAKAMICHI_VARIANT_DECL(Zangetsu)
 size_t nakamichi_m_c(char * in, size_t isize, char * out, size_t, void *);
 size_t nakamichi_m_d(char * in, size_t isize, char * out, size_t osize, void *);

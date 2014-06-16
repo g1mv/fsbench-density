@@ -181,17 +181,19 @@ LZSS                                | Nobuo Ito                                 
 LZV1                                | Hermann Vogt                                     | 0.5             | no       | http://encode.ru/threads/1661-LZWC-A-fast-tree-based-LZW-compressor
 lzx_compress                        | Matthew T. Russotto                              | 2005-07-06      | no       | http://www.russotto.net/chm/
 miniz                               | Richard Geldreich, Jr.                           | 1.11            | yes      | https://code.google.com/p/miniz
-Nakamichi                           | Georgi Marinov                                   | Kaidanji FIX    | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Sanbashi        | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Sanagi          | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Sanshi          | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Aratama         | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | Georgi Marinov                                   | Daikuni         | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Kaibutsu        | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | Georgi Marinov                                   | Hanabi          | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | Georgi Marinov                                   | Hanazakari      | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | Georgi Marinov                                   | Inazuma         | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kaibutsu        | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kaidanji FIX    | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kinezumi        | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | Georgi Marinov                                   | Nirenpatsu      | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Sanagi          | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Sanbashi        | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | Georgi Marinov                                   | Sanrenpatsu     | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Sanshi          | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | Georgi Marinov                                   | Zangetsu        | yes      | http://www.sanmayce.com/Nakamichi/
 Nakamichi                           | m^2, Georgi Marinov                              | M2.0            | yes      |
 nrv2a                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl

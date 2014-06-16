@@ -700,17 +700,19 @@ void murmur_x64_128(char * in, size_t isize, char * out)
     {                                                                                    \
         return name ## Decompress(out, in, isize);                                       \
     }
-NAKAMICHI_VARIANT(Kaidanji)
-NAKAMICHI_VARIANT(Sanbashi)
-NAKAMICHI_VARIANT(Sanagi)
-NAKAMICHI_VARIANT(Sanshi)
+NAKAMICHI_VARIANT(Aratama)
 NAKAMICHI_VARIANT(Daikuni)
-NAKAMICHI_VARIANT(Kaibutsu)
 NAKAMICHI_VARIANT(Hanabi)
 NAKAMICHI_VARIANT(Hanazakari)
 NAKAMICHI_VARIANT(Inazuma)
+NAKAMICHI_VARIANT(Kaibutsu)
+NAKAMICHI_VARIANT(Kaidanji)
+NAKAMICHI_VARIANT(Kinezumi)
 NAKAMICHI_VARIANT(Nirenpatsu)
+NAKAMICHI_VARIANT(Sanagi)
+NAKAMICHI_VARIANT(Sanbashi)
 NAKAMICHI_VARIANT(Sanrenpatsu)
+NAKAMICHI_VARIANT(Sanshi)
 NAKAMICHI_VARIANT(Zangetsu)
 
 extern "C"

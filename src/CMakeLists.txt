@@ -482,10 +482,12 @@ IF(USE_NAKAMICHI)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/nakamichi)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/nakamichi/divsufsort)
     set(OTHER_SRC ${OTHER_SRC} codecs/nakamichi/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c
+                               codecs/nakamichi/Nakamichi_Aratama.c
                                codecs/nakamichi/Nakamichi_Daikuni.c
                                codecs/nakamichi/Nakamichi_Hanabi.c
                                codecs/nakamichi/Nakamichi_Hanazakari.c
                                codecs/nakamichi/Nakamichi_Inazuma.c
+                               codecs/nakamichi/Nakamichi_Kinezumi.c
                                codecs/nakamichi/Nakamichi_Kaibutsu.c
                                codecs/nakamichi/Nakamichi_Nirenpatsu.c
                                codecs/nakamichi/Nakamichi_Sanbashi.c
