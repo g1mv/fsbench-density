@@ -369,6 +369,9 @@ IF(USE_ZLIB_INTEL)
                  codecs/zlib-intel/zutil.c)
 
     add_definitions(-DFSBENCH_USE_ZLIB_INTEL)
+    IF(USE_SSE2)
+        add_definitions(-DHAVE_SSE2)
+    ENDIF(USE_SSE2)
 
     add_definitions(-DNO_VIZ) # Lack of this definition causes troubles sometimes
 ENDIF(USE_ZLIB_INTEL)
