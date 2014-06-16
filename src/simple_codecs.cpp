@@ -1010,7 +1010,7 @@ void fletcher4(char * in, size_t isize, char * out)
     fletcher_4_native(in, isize, (uint64_t*)out);
 }
 #endif//FSBENCH_USE_ZFS
-#ifdef FSBENCH_USE_ZLIB
+#if defined(FSBENCH_USE_ZLIB) || defined(FSBENCH_USE_ZLIB_INTEL)
 extern "C"
 {
 #include "zlib/zlib.h"
@@ -1063,7 +1063,7 @@ size_t zlib_d(char * in, size_t isize, char * out, size_t osize, void *)
     }
     return stream.total_out;
 }
-#endif //FSBENCH_USE_ZLIB
+#endif //defined(FSBENCH_USE_ZLIB) || defined(FSBENCH_USE_ZLIB_INTEL)
 #ifdef FSBENCH_USE_ZOPFLI
 extern "C"
 {

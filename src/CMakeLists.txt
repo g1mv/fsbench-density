@@ -63,6 +63,7 @@ set(USE_YAPPY             0) # Nothing great
 set(USE_Z3LIB             0) # Nothing great
 set(USE_ZFS               0) # Nothing great
 set(USE_ZLIB              1)
+set(USE_ZLIB_INTEL        0)
 set(USE_ZLING             1)
 set(USE_ZOPFLI            1)
 
@@ -92,6 +93,12 @@ project (FSBENCH)
 
 include_directories (${FSBENCH_SOURCE_DIR})
 include_directories (${FSBENCH_SOURCE_DIR}/codecs)
+#------------#
+# validation #
+#------------#
+IF(USE_ZLIB AND USE_ZLIB_INTEL)
+    message(FATAL_ERROR "This project doesn't allow you to build both intel and non-intel versions of zlib at the same time")
+ENDIF(USE_ZLIB AND USE_ZLIB_INTEL)
 
 
 #-------------------#
@@ -342,6 +349,29 @@ IF(USE_ZLIB)
 
     add_definitions(-DNO_VIZ) # Lack of this definition causes troubles sometimes
 ENDIF(USE_ZLIB)
+
+IF(USE_ZLIB_INTEL)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/zlib-intel) 
+    set(ZLIB_SRC codecs/zlib-intel/adler32.c
+                 codecs/zlib-intel/compress.c
+                 codecs/zlib-intel/crc32.c
+                 codecs/zlib-intel/crc_folding.c
+                 codecs/zlib-intel/deflate.c
+                 codecs/zlib-intel/fill_window_sse.c
+                 codecs/zlib-intel/infback.c
+                 codecs/zlib-intel/inffast.c
+                 codecs/zlib-intel/inflate.c
+                 codecs/zlib-intel/inftrees.c
+                 codecs/zlib-intel/match.c
+                 codecs/zlib-intel/trees.c
+                 codecs/zlib-intel/uncompr.c
+                 codecs/zlib-intel/x86.c
+                 codecs/zlib-intel/zutil.c)
+
+    add_definitions(-DFSBENCH_USE_ZLIB_INTEL)
+
+    add_definitions(-DNO_VIZ) # Lack of this definition causes troubles sometimes
+ENDIF(USE_ZLIB_INTEL)
 
 IF(USE_ZLING)
     set(ZLING_SRC 

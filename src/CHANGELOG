@@ -1,4 +1,5 @@
 0.15
+[+] added Intel's fork of zlib
 [+] added memcpy, memmove, memset codecs
 [+] added crush 0.0.1
 [+] added zling 20140324

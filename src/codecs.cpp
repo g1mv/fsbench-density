@@ -228,6 +228,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_ZLIB
               new CodecWithIntModes("zlib", _ZLIB_VERSION, zlib_c, zlib_d, 1, 9, "6", no_blowup),
 #endif
+#ifdef FSBENCH_USE_ZLIB_INTEL
+              new CodecWithIntModes("zlib", _ZLIB_INTEL_VERSION, zlib_c, zlib_d, 1, 9, "6", no_blowup),
+#endif
 #ifdef FSBENCH_USE_ZLING
               new CodecWithIntModes("zling", _ZLING_VERSION, FsBenchZling::zling_c, FsBenchZling::zling_d, 0, 4, "0", no_blowup),
 #endif

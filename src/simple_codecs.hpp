@@ -227,10 +227,10 @@ size_t LZJB_d(char * in,size_t isize, char * out, size_t osize, void * _);
 void fletcher2(char * in, size_t isize, char * out);
 void fletcher4(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_ZFS
-#ifdef FSBENCH_USE_ZLIB
+#if defined(FSBENCH_USE_ZLIB) || defined(FSBENCH_USE_ZLIB_INTEL)
 size_t zlib_c(char * in, size_t isize, char * out, size_t osize, void * mode);
 size_t zlib_d(char * in, size_t isize, char * out, size_t osize, void * _);
-#endif //FSBENCH_USE_ZLIB
+#endif //defined(FSBENCH_USE_ZLIB) || defined(FSBENCH_USE_ZLIB_INTEL)
 #ifdef FSBENCH_USE_ZOPFLI
 size_t zopfli_c(char * in, size_t isize, char * out, size_t osize, void * mode);
 #endif //FSBENCH_USE_ZOPFLI
