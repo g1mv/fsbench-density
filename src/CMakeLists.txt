@@ -369,6 +369,10 @@ IF(USE_ZLIB_INTEL)
                  codecs/zlib-intel/zutil.c)
 
     add_definitions(-DFSBENCH_USE_ZLIB_INTEL)
+
+    # quick mode doesn't compile on clang 3.1
+    # add_definitions(-DUSE_QUICK)
+    add_definitions(-DUSE_MEDIUM)
     IF(USE_SSE2)
         add_definitions(-DHAVE_SSE2)
     ENDIF(USE_SSE2)
