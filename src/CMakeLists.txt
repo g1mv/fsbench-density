@@ -524,8 +524,10 @@ IF(USE_NAKAMICHI)
                                codecs/nakamichi/Nakamichi_Hanabi.c
                                codecs/nakamichi/Nakamichi_Hanazakari.c
                                codecs/nakamichi/Nakamichi_Inazuma.c
-                               codecs/nakamichi/Nakamichi_Kinezumi.c
                                codecs/nakamichi/Nakamichi_Kaibutsu.c
+                               codecs/nakamichi/Nakamichi_Kaiko.c
+                               codecs/nakamichi/Nakamichi_Kinezumi.c
+                               codecs/nakamichi/Nakamichi_Kitsune.c
                                codecs/nakamichi/Nakamichi_Nirenpatsu.c
                                codecs/nakamichi/Nakamichi_Sanbashi.c
                                codecs/nakamichi/Nakamichi_Sanagi.c
