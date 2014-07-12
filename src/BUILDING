@@ -2,3 +2,15 @@ First, open CMakeLists.txt and check if you want to edit some options.
 
 Then, regular CMake.
 If you're new to CMake, read http://www.cmake.org/cmake/help/runningcmake.html
+
+Please note that on some platforms the default CMake compilation mode is with optimisations disabled.
+To make sure they are enabled,
+a) if you're using command line, pass a flag to cmake:
+
+-DCMAKE_BUILD_TYPE=Release
+
+i.e.
+
+cmake -DCMAKE_BUILD_TYPE=Release .
+
+b) if you're using GUI, set CMAKE_BUILD_TYPE variable to 'Release' (w/out quotes).
