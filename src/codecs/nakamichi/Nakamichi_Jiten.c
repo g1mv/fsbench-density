@@ -1,4 +1,37 @@
 // Nakamichi is 100% FREE LZSS SUPERFAST decompressor.
+// Home of Nakamichi: www.sanmayce.com/Nakamichi/index.html
+
+// Nakamichi_Jiten.c, a 2bytes 'Washi', with 4/8 long matches, it uses only 64bit registers.
+// Nakamichi_Washi.c, a branchless 'Kaibutsu' it is using 4MB window.
+// Nakamichi_Kumataka.c, a branchless 'Kaibutsu' it is but with two Match_Length values and using only 31KB window.
+// Min_Match_Length=16-1 i.e. 15/7
+// 152,089 alice29.txt
+// 106,023 alice29.txt.Nakamichi
+// Min_Match_Length=16-3 i.e. 13/6
+// 152,089 alice29.txt
+// 100,555 alice29.txt.Nakamichi
+// Min_Match_Length=16-5 i.e. 11/5
+// 152,089 alice29.txt
+//  96,350 alice29.txt.Nakamichi
+// Min_Match_Length=16-7 i.e. 9/4
+// 152,089 alice29.txt
+//  93,693 alice29.txt.Nakamichi
+
+// Nakamichi_Kaiju.c, a branchless 'Kaibutsu' it is.
+// ML=9
+// 68,352,060 enwik8.Kaiju.Nakamichi
+// ML=8
+// 63,748,036 enwik8.Kaiju.Nakamichi
+// ML=7
+// 59,771,603 enwik8.Kaiju.Nakamichi
+// ML=6
+// 57,090,382 enwik8.Kaiju.Nakamichi
+// ML=5
+// 56,188,976
+// ML=4
+// 58,954,436 enwik8.Kaiju.Nakamichi
+// Nakamichi_Kaibutsu.c, three small tweaks in Kaidanji, a good idea to remove shiftings altogether by m^2 was used.
+// Nakamichi_Kaidanji.c, is the very same '1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX'.
 
 // Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX, written by Kaze, babealicious suggestion by m^2 enforced.
 // Fixed! TO-DO: Known bug: the decompressed file sometimes has few additional bytes at the end.
@@ -242,6 +275,8 @@ void SlowCopy512bit (const char *SOURCE, char *TARGET) { _mm512_storeu_si512((__
 
 static void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd);
 static unsigned int SlidingWindowVsLookAheadBuffer(char* refStart, char* refEnd, char* encStart, char* encEnd);
+unsigned int JitenCompress(char* ret, char* src, unsigned int srcSize);
+unsigned int JitenDecompress(char* ret, char* src, unsigned int srcSize);
 static char * Railgun_Swampshine_BailOut(char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
 static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, uint32_t cbPattern);
 
@@ -277,7 +312,7 @@ static char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTar
 #define Min_Match_BAILOUT_Length (8)
 #define Min_Match_Length (8)
 #define Min_Match_Length_SHORT (5)
-#define OffsetBITS (16)
+#define OffsetBITS (24-2 -7)
 #define LengthBITS (1)
 
 //12bit
@@ -302,13 +337,15 @@ char *pointerALIGN;
 int i, j;
 clock_t clocks3, clocks4;
 double duration;
+int BandwidthFlag=0;
 
 unsigned long long k;
 
-	printf("Nakamichi, revision 1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX, written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.\n");
+	printf("Nakamichi 'Jiten', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced, muffinesque suggestion by Jim Dempsey enforced.\n");
 	if (argc==1) {
 		printf("Usage: Nakamichi filename\n"); exit(13);
 	}
+	if (argc==3) BandwidthFlag=1;
 	if ((fp = fopen(argv[1], "rb")) == NULL) {
 		printf("Nakamichi: Can't open '%s' file.\n", argv[1]); exit(13);
 	}
@@ -319,7 +356,7 @@ unsigned long long k;
 	if (strcmp(argv[1]+(strlen(argv[1])-strlen(Nakamichi)), Nakamichi) == 0) {
 	SourceBlock = (char*)malloc(SourceSize+512);
 	//TargetBlock = (char*)malloc(5*SourceSize+512);
-	TargetBlock = (char*)malloc(1024*1024*1024+512);
+	TargetBlock = (char*)malloc(1111*1024*1024+512);
 	fread(SourceBlock, 1, SourceSize, fp);
 	fclose(fp);
 		printf("Decompressing %d bytes ...\n", SourceSize );
@@ -354,7 +391,7 @@ unsigned long long k;
 	fwrite(TargetBlock, 1, TargetSize, fp);
 	fclose(fp);
 
-	if (strcmp(argv[1]+(strlen(argv[1])-strlen(Nakamichi)), Nakamichi) == 0) {
+	if (BandwidthFlag) {
 // Benchmark memcpy() [
 pointerALIGN = TargetBlock + 64 - (((size_t)TargetBlock) % 64);
 //offset=64-int((long)data&63);
@@ -384,50 +421,202 @@ printf("RAM-to-RAM performance vs memcpy() ratio (bigger-the-better): %d%%\n", (
 void SearchIntoSlidingWindow(unsigned int* retIndex, unsigned int* retMatch, char* refStart,char* refEnd,char* encStart,char* encEnd){
 	char* FoundAtPosition;
 	unsigned int match=0;
-	char* refStartHOTTER = refStart+((1<<OffsetBITS)-16*8*128);
+	char* refStartCOLD1 = refStart;
+	char* refStartHOT1 = refStart+((1<<OffsetBITS)-255*8*128);
+	char* refStartHOTTER1 = refStart+((1<<OffsetBITS)-31*8*128);
+	char* refStartCOLD2 = refStart;
+	char* refStartHOT2 = refStart+((1<<OffsetBITS)-255*8*128);
+	char* refStartHOTTER2 = refStart+((1<<OffsetBITS)-31*8*128);
+	char* refStartCOLD3 = refStart;
+	char* refStartHOT3 = refStart+((1<<OffsetBITS)-255*8*128);
+	char* refStartHOTTER3 = refStart+((1<<OffsetBITS)-31*8*128);
+	char* refStartCOLD4 = refStart;
+	char* refStartHOT4 = refStart+((1<<OffsetBITS)-255*8*128);
+	char* refStartHOTTER4 = refStart+((1<<OffsetBITS)-31*8*128);
 	*retIndex=0;
 	*retMatch=0;
 
 #ifdef ReplaceBruteForceWithRailgunSwampshineBailOut
-	// Step #1: LONG MATCH is sought [
+
+// 32>>0:
+/*
 	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
-	while (refStartHOTTER < refEnd) {
-	//FoundAtPosition = Railgun_Doublet(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
-	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER, encStart, (uint32_t)(refEnd-refStartHOTTER), Min_Match_Length);	
+	while (refStartHOTTER1 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER1, encStart, (uint32_t)(refEnd-refStartHOTTER1), (Min_Match_Length>>0));	
 		if (FoundAtPosition!=NULL) {
-			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
-			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
-			if ( (refEnd-FoundAtPosition) & 0x07 ) { // Discard matches that have OFFSET with lower 3bits ALL zero.
-				*retMatch=Min_Match_Length;
-				*retIndex=refEnd-FoundAtPosition;
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>0);
+				*retIndex=(refEnd-FoundAtPosition)&0x3FFF; // [00]11
 				return;
 			}
-			refStartHOTTER=FoundAtPosition+1; // Exhaust the pool.
+			refStartHOTTER1=FoundAtPosition+1; // Exhaust the pool.
 		} else break;
 	}
 	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
-	while (refStart < refEnd) {
-		FoundAtPosition = Railgun_Swampshine_BailOut(refStart, encStart, (uint32_t)(refEnd-refStart), Min_Match_Length);
-		//FoundAtPosition = Railgun_Doublet(refStart, encStart, (uint32_t)(refEnd-refStart), 8);
-		// For bigger windows 'Doublet' is slower:
-		// Nakamichi, revision 1-RSSBO_1GB_15bit performance with 'Swampshine':
-		// Compressing 846351894 bytes ...
-		// RAM-to-RAM performance: 370 KB/s.
-		// Nakamichi, revision 1-RSSBO_1GB_15bit performance with 'Doublet':
-		// Compressing 846351894 bytes ...
-		// RAM-to-RAM performance: 213 KB/s.
+
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOT1 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOT1, encStart, (uint32_t)(refEnd-refStartHOT1), (Min_Match_Length>>0));	
 		if (FoundAtPosition!=NULL) {
-			// Stupid sanity check, in next revision I will discard 'Min_Match_Length' additions/subtractions altogether:
-			//if ( refEnd-FoundAtPosition >= Min_Match_Length ) {
-			if ( (refEnd-FoundAtPosition) & 0x07 ) { // Discard matches that have OFFSET with lower 3bits ALL zero.
-				*retMatch=Min_Match_Length;
-				*retIndex=refEnd-FoundAtPosition;
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>0);
+				*retIndex=(refEnd-FoundAtPosition)&0x3FFF; // [00]11
 				return;
 			}
-			refStart=FoundAtPosition+1; // Exhaust the pool.
+			refStartHOT1=FoundAtPosition+1; // Exhaust the pool.
 		} else break;
 	}
-	// Step #1: LONG MATCH is sought ]
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+*/
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartCOLD1 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartCOLD1, encStart, (uint32_t)(refEnd-refStartCOLD1), (Min_Match_Length>>0));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xF8 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>0);
+				*retIndex=(refEnd-FoundAtPosition)&0x7FFF; // [00]11
+				return;
+			}
+			refStartCOLD1=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+
+
+// 32>>1:
+/*
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOTTER2 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER2, encStart, (uint32_t)(refEnd-refStartHOTTER2), (Min_Match_Length>>1));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>1);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0x4000; // [01]11
+				return;
+			}
+			refStartHOTTER2=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOT2 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOT2, encStart, (uint32_t)(refEnd-refStartHOT2), (Min_Match_Length>>1));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>1);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0x4000; // [01]11
+				return;
+			}
+			refStartHOT2=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+*/
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartCOLD2 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartCOLD2, encStart, (uint32_t)(refEnd-refStartCOLD2), (Min_Match_Length>>1));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xF8 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>1);
+				*retIndex=((refEnd-FoundAtPosition)&0x7FFF)|0x8000; // [10]11
+				return;
+			}
+			refStartCOLD2=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+
+// 32>>2:
+/*
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOTTER3 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER3, encStart, (uint32_t)(refEnd-refStartHOTTER3), (Min_Match_Length>>2));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>2);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0x8000; // [10]11
+				return;
+			}
+			refStartHOTTER3=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOT3 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOT3, encStart, (uint32_t)(refEnd-refStartHOT3), (Min_Match_Length>>2));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>2);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0x8000; // [10]11
+				return;
+			}
+			refStartHOT3=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartCOLD3 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartCOLD3, encStart, (uint32_t)(refEnd-refStartCOLD3), (Min_Match_Length>>2));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xF0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>2);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0x8000; // [10]11
+				return;
+			}
+			refStartCOLD3=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+*/
+
+// 32>>3:
+/*
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOTTER4 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOTTER4, encStart, (uint32_t)(refEnd-refStartHOTTER4), (Min_Match_Length>>3));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>3);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0xC000; // [11]11
+				return;
+			}
+			refStartHOTTER4=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartHOT4 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartHOT4, encStart, (uint32_t)(refEnd-refStartHOT4), (Min_Match_Length>>3));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xE0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>3);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0xC000; // [11]11
+				return;
+			}
+			refStartHOT4=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) [
+	while (refStartCOLD4 < refEnd) {
+	FoundAtPosition = Railgun_Swampshine_BailOut(refStartCOLD4, encStart, (uint32_t)(refEnd-refStartCOLD4), (Min_Match_Length>>3));	
+		if (FoundAtPosition!=NULL) {
+			if ( (refEnd-FoundAtPosition) & 0xF0 ) { // Discard matches that have OFFSET with higher 3bits ALL zero.
+				*retMatch=(Min_Match_Length>>3);
+				*retIndex=((refEnd-FoundAtPosition)&0x3FFF)|0xC000; // [11]11
+				return;
+			}
+			refStartCOLD4=FoundAtPosition+1; // Exhaust the pool.
+		} else break;
+	}
+	// Pre-emptive strike, matches should be sought close to the lookahead (cache-friendliness) ]
+*/
+
 #else				
 	while(refStart < refEnd){
 		match=SlidingWindowVsLookAheadBuffer(refStart,refEnd,encStart,encEnd);
@@ -452,7 +641,7 @@ unsigned int SlidingWindowVsLookAheadBuffer( char* refStart, char* refEnd, char*
 	return ret;
 }
 
-unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
+unsigned int JitenCompress(char* ret, char* src, unsigned int srcSize){
 	unsigned int srcIndex=0;
 	unsigned int retIndex=0;
 	unsigned int index=0;
@@ -465,6 +654,12 @@ unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
 	char *Auberge[4] = {"|\0","/\0","-\0","\\\0"};
 	int ProgressIndicator;*/
 
+	unsigned int NumberOfFullLiterals=0;
+	int GLOBALlongM=0;
+	int GLOBALmediumM=0;
+	int GLOBALshortM=0;
+	int GLOBALtinyM=0;
+
 	while(srcIndex < srcSize){
 		if(srcIndex>=REF_SIZE)
 			refStart=&src[srcIndex-REF_SIZE];
@@ -475,8 +670,13 @@ unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
 		else
 			encEnd=&src[srcIndex+ENC_SIZE];
 		// Fixing the stupid 'search-beyond-end' bug:
-		if(srcIndex+ENC_SIZE < srcSize)
+		if(srcIndex+ENC_SIZE < srcSize) {
 			SearchIntoSlidingWindow(&index,&match,refStart,&src[srcIndex],&src[srcIndex],encEnd);
+			if ( match==4 ) GLOBALtinyM++;
+			if ( match==8 ) GLOBALshortM++;
+			if ( match==16 ) GLOBALmediumM++;
+			if ( match==32 ) GLOBALlongM++;
+		}
 		else
 			match=0; // Nothing to find.
 		//if ( match<Min_Match_Length ) {
@@ -486,8 +686,11 @@ unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
 				notMatchStart=&ret[retIndex];
 				retIndex++;
 			}
-			else if (notMatch==(127-64-32)) {
-				*notMatchStart=(unsigned char)((127-64-32)<<3);
+			//else if (notMatch==(127-64-32)) {
+			else if (notMatch==(127-64-32-16-8)) {
+NumberOfFullLiterals++;
+				//*notMatchStart=(unsigned char)((127-64-32)<<3);
+				*notMatchStart=(unsigned char)((127-64-32-16-8)<<(4-4));
 				notMatch=0;
 				notMatchStart=&ret[retIndex];
 				retIndex++;
@@ -503,7 +706,7 @@ unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
 			}*/
 		} else {
 			if(notMatch > 0){
-				*notMatchStart=(unsigned char)((notMatch)<<3);
+				*notMatchStart=(unsigned char)((notMatch)<<(4-4));
 				notMatch=0;
 			}
 // ---------------------| 
@@ -543,10 +746,11 @@ unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
 			retIndex++;
 */
 // No need of above, during compression we demanded lowest 2bits to be not 00, use the full 16bits and get rid of the stupid '+/-' Min_Match_Length.
-			if (index>0xFFFF) {return 0;}
-			memcpy(&ret[retIndex],&index,2); // copy lower 2 bytes
+			//if (index>0xFFFF) {printf ("\nFatal error: Overflow!\n"); exit(13);}
+			memcpy(&ret[retIndex],&index,2+1 -1); // copy lower 2 bytes
 			retIndex++;
 			retIndex++;
+			 //retIndex++;
 //                     / \
 // ---------------------|
 			srcIndex+=match;
@@ -558,81 +762,369 @@ unsigned int KaidanjiCompress(char* ret, char* src, unsigned int srcSize){
 		}
 	}
 	if(notMatch > 0){
-		*notMatchStart=(unsigned char)((notMatch)<<3);
-	}
-	//printf("%s; Each rotation means 128KB are encoded; Done %d%%\n", Auberge[Melnitchka], 100 );
+		*notMatchStart=(unsigned char)((notMatch)<<(4-4));
+	}/*
+	printf("%s; Each rotation means 64KB are encoded; Done %d%%\n", Auberge[Melnitchka], 100 );
+	printf("NumberOfFullLiterals (lower-the-better): %d\n", NumberOfFullLiterals );
+printf("NumberOfTinyMatches: %d\n", GLOBALtinyM);
+printf("NumberOfShortMatches: %d\n", GLOBALshortM);
+printf("NumberOfMediumMatches: %d\n", GLOBALmediumM);
+printf("NumberOfLongMatches: %d\n", GLOBALlongM);*/
+
 	return retIndex;
 }
 
-unsigned int KaidanjiDecompress(char* ret, char* src, unsigned int srcSize){
-	unsigned int srcIndex=0;
-	unsigned int retIndex=0;
-	unsigned int WORDpair;
-
-	while(srcIndex < srcSize){
-		WORDpair = *(unsigned short int*)&src[srcIndex];
-		if((WORDpair & 0x07) == 0){ // It is tempting to reduce literals even more, to 3x8 (instead of 31) would be nice:
-				#ifdef _N_GP
-				*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(src+srcIndex+1+8*(0));
-				*(uint64_t*)(ret+retIndex+8*(1)) = *(uint64_t*)(src+srcIndex+1+8*(1));
-				*(uint64_t*)(ret+retIndex+8*(2)) = *(uint64_t*)(src+srcIndex+1+8*(2));
-				*(uint64_t*)(ret+retIndex+8*(3)) = *(uint64_t*)(src+srcIndex+1+8*(3));
-				#endif
-				#ifdef _N_XMM
-				SlowCopy128bit((src+srcIndex+1+16*(0)), (ret+retIndex+16*(0)));
-				SlowCopy128bit((src+srcIndex+1+16*(1)), (ret+retIndex+16*(1)));
-				#endif
-				#ifdef _N_YMM
-				SlowCopy256bit((src+srcIndex+1+32*(0)), (ret+retIndex+32*(0)));
-				#endif
-			retIndex+=(WORDpair & 0xFF)>>3;
-			srcIndex+=(((WORDpair & 0xFF)>>3)+1);
-		}
-		else{
-			srcIndex=srcIndex+2;
-			*(uint64_t*)(ret+retIndex) = *(uint64_t*)(ret+retIndex-WORDpair);
-			retIndex+=Min_Match_Length;
-		}
-	}
-	return retIndex;
-}
-
-
-// Decompression main loop, 30 nifty lines:
+// Core 2 T7500 2200MHz:
 /*
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Jiten_JB>dir
+
+05/16/2014  08:22 AM       206,908,949 OSHO.TXT
+08/29/2014  02:06 AM        87,532,655 OSHO.TXT.Nakamichi
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Jiten_JB>Nakamichi_Jiten_GP.exe OSHO.TXT.Nakamichi
+Nakamichi 'Jiten', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced, muffinesque suggestion by Jim Dempsey enforced.
+Decompressing 87532655 bytes ...
+RAM-to-RAM performance: 664 MB/s.
+
+D:\_KAZE\Nakamichi_Kaidanji_benchmark\Nakamichi_benchmark\Nakamichi_Jiten_JB>
+*/
+
+
+unsigned int JitenDecompress(char* ret, char* src, unsigned int srcSize){
+	//unsigned int srcIndex=0; // Dummy me
+	//unsigned int retIndex=0; // Dummy me
+	// The muffinesque suggestion by Jim Dempsey enforced:
+	char* retLOCAL = ret;
+	char* srcLOCAL = src;
+	char* srcEndLOCAL = src+srcSize;
+	unsigned int DWORDtrio;
+	//while(srcIndex < srcSize){ // Dummy me
+	while(srcLOCAL < srcEndLOCAL){
+		//DWORDtrio = *(unsigned short int*)&src[srcIndex]; // Dummy me
+		DWORDtrio = *(unsigned short int*)srcLOCAL;
+// |1stLSB   |2ndLSB   |
+// ---------------------
+// |xxxTT|TTT|xxxxxx|xL| ! For texts it is better to reduce LL to L i.e. 8/4 matches and 32KB window !
+// ---------------------
+// [1bit          16bit]
+// LL = 0 means MatchLength (8>>LL) or 8
+// LL = 1 means MatchLength (8>>LL) or 4
+		if ( (DWORDtrio & 0xF8) == 0 ) {
+			#ifdef _N_GP
+			//*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(src+srcIndex+1+16*(0)); // Dummy me
+			*(uint64_t*)(retLOCAL+8*(0)) = *(uint64_t*)(srcLOCAL+1+16*(0));
+			//memcpy(retLOCAL, (const char *)( (uint64_t)(srcLOCAL+1) ), 8);
+			#endif
+			//retIndex+= (DWORDtrio & 0xFF); // Dummy me
+			retLOCAL+= (DWORDtrio & 0xFF); 
+			//srcIndex+= ((DWORDtrio & 0xFF)+1); // Dummy me
+			srcLOCAL+= ((DWORDtrio & 0xFF)+1);
+		} else {
+			#ifdef _N_GP
+			//*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(ret+retIndex-(DWORDtrio&0x7FFF)); // Dummy me
+			*(uint64_t*)(retLOCAL+8*(0)) = *(uint64_t*)(retLOCAL-(DWORDtrio&0x7FFF));
+			//memcpy(retLOCAL, (const char *)( (uint64_t)(retLOCAL-(DWORDtrio&0x7FFF)) ), 8);
+			#endif
+			//retIndex+= (Min_Match_Length>>(DWORDtrio>>(23-8))); // Dummy me
+			retLOCAL+= (Min_Match_Length>>(DWORDtrio>>(23-8)));
+			//srcIndex+= (3-1); // Dummy me
+			srcLOCAL+= (3-1);
+		}
+	}
+	//return retIndex; // Dummy me
+	return (unsigned int)(retLOCAL - ret);
+}
+
+
+/*
+; 'Jiten' decompression loop, 60-11+2=81 bytes long:
 ; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
 ; mark_description "-O3 -D_N_GP -FAcs";
 
 .B6.3::                         
-  00017 41 0f b7 04 12   movzx eax, WORD PTR [r10+rdx]          
-  0001c a8 07            test al, 7                             
-  0001e 75 37            jne .B6.5 
+  00011 0f b7 0a         movzx ecx, WORD PTR [rdx]              
+  00014 f7 c1 f8 00 00 
+        00               test ecx, 248                          
+  0001a 75 18            jne .B6.5 
 .B6.4::                         
-  00020 0f b6 c0         movzx eax, al                          
-  00023 49 8b 5c 12 01   mov rbx, QWORD PTR [1+r10+rdx]         
-  00028 c1 e8 03         shr eax, 3                             
-  0002b 49 89 1c 0b      mov QWORD PTR [r11+rcx], rbx           
-  0002f 49 8b 5c 12 09   mov rbx, QWORD PTR [9+r10+rdx]         
-  00034 49 89 5c 0b 08   mov QWORD PTR [8+r11+rcx], rbx         
-  00039 49 8b 5c 12 11   mov rbx, QWORD PTR [17+r10+rdx]        
-  0003e 4d 8b 54 12 19   mov r10, QWORD PTR [25+r10+rdx]        
-  00043 49 89 5c 0b 10   mov QWORD PTR [16+r11+rcx], rbx        
-  00048 4d 89 54 0b 18   mov QWORD PTR [24+r11+rcx], r10        
-  0004d 45 8d 54 01 01   lea r10d, DWORD PTR [1+r9+rax]         
-  00052 44 03 d8         add r11d, eax                          
-  00055 eb 19            jmp .B6.6 
+  0001c 44 0f b6 d9      movzx r11d, cl                         
+  00020 0f b6 c9         movzx ecx, cl                          
+  00023 ff c1            inc ecx                                
+  00025 4c 8b 52 01      mov r10, QWORD PTR [1+rdx]             
+  00029 4d 89 11         mov QWORD PTR [r9], r10                
+  0002c 4d 03 cb         add r9, r11                            
+  0002f 48 03 d1         add rdx, rcx                           
+  00032 eb 29            jmp .B6.6 
 .B6.5::                         
-  00057 41 83 c1 02      add r9d, 2                             
-  0005b 48 f7 d8         neg rax                                
-  0005e 48 03 c1         add rax, rcx                           
-  00061 45 89 ca         mov r10d, r9d                          
-  00064 49 8b 1c 03      mov rbx, QWORD PTR [r11+rax]           
-  00068 49 89 1c 0b      mov QWORD PTR [r11+rcx], rbx           
-  0006c 41 83 c3 08      add r11d, 8                            
+  00034 41 89 ca         mov r10d, ecx                          
+  00037 48 83 c2 02      add rdx, 2                             
+  0003b 49 81 e2 ff 7f 
+        00 00            and r10, 32767                         
+  00042 49 f7 da         neg r10                                
+  00045 4d 03 d1         add r10, r9                            
+  00048 c1 e9 0f         shr ecx, 15                            
+  0004b 4d 8b 1a         mov r11, QWORD PTR [r10]               
+  0004e 41 ba 08 00 00 
+        00               mov r10d, 8                            
+  00054 41 d3 ea         shr r10d, cl                           
+  00057 4d 89 19         mov QWORD PTR [r9], r11                
+  0005a 4d 03 ca         add r9, r10                            
 .B6.6::                         
-  00070 45 89 d1         mov r9d, r10d                          
-  00073 45 3b c8         cmp r9d, r8d                           
-  00076 72 9f            jb .B6.3 
+  0005d 49 3b d0         cmp rdx, r8                            
+  00060 72 af            jb .B6.3 
+*/
+
+
+// Dirty-written 'Jiten':
+/*
+unsigned int Decompress(char* ret, char* src, unsigned int srcSize){
+	unsigned int srcIndex=0;
+	unsigned int retIndex=0;
+	unsigned int DWORDtrio;
+
+	while(srcIndex < srcSize){
+		DWORDtrio = *(unsigned short int*)&src[srcIndex];
+// |1stLSB   |2ndLSB   |
+// ---------------------
+// |xxxTT|TTT|xxxxxx|xL| ! For texts it is better to reduce LL to L i.e. 8/4 matches and 32KB window !
+// ---------------------
+// [1bit          16bit]
+// LL = 0 means MatchLength (8>>LL) or 8
+// LL = 1 means MatchLength (8>>LL) or 4
+		if( (DWORDtrio & 0xF8) == 0){
+			#ifdef _N_GP
+			*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(src+srcIndex+1+16*(0));
+			#endif
+			retIndex+= (DWORDtrio & 0xFF); 
+			srcIndex+= ((DWORDtrio & 0xFF)+1);
+		}
+		else{
+			#ifdef _N_GP
+			*(uint64_t*)(ret+retIndex+8*(0)) = *(uint64_t*)(ret+retIndex-(DWORDtrio&0x7FFF));
+			#endif
+			retIndex+= (Min_Match_Length>>(DWORDtrio>>(23-8)));
+			srcIndex+= (3-1);
+		}
+	}
+	return retIndex;
+}
+*/
+
+/*
+; 'Jiten' decompression loop, 68-16+2=84 bytes long:
+; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
+; mark_description "-O3 -D_N_GP -FAcs";
+
+.B6.3::                         
+  00016 44 89 cb         mov ebx, r9d                           
+  00019 0f b7 0c 13      movzx ecx, WORD PTR [rbx+rdx]          
+  0001d f7 c1 f8 00 00 
+        00               test ecx, 248                          
+  00023 75 15            jne .B6.5 
+.B6.4::                         
+  00025 0f b6 c9         movzx ecx, cl                          
+  00028 48 8b 5c 13 01   mov rbx, QWORD PTR [1+rbx+rdx]         
+  0002d 4a 89 1c 10      mov QWORD PTR [rax+r10], rbx           
+  00031 03 c1            add eax, ecx                           
+  00033 45 8d 4c 09 01   lea r9d, DWORD PTR [1+r9+rcx]          
+  00038 eb 2b            jmp .B6.6 
+.B6.5::                         
+  0003a 41 89 cb         mov r11d, ecx                          
+  0003d 41 83 c1 02      add r9d, 2                             
+  00041 89 c3            mov ebx, eax                           
+  00043 49 81 e3 ff 7f 
+        00 00            and r11, 32767                         
+  0004a 49 03 da         add rbx, r10                           
+  0004d 49 f7 db         neg r11                                
+  00050 4c 03 db         add r11, rbx                           
+  00053 c1 e9 0f         shr ecx, 15                            
+  00056 4d 8b 1b         mov r11, QWORD PTR [r11]               
+  00059 4c 89 1b         mov QWORD PTR [rbx], r11               
+  0005c bb 08 00 00 00   mov ebx, 8                             
+  00061 d3 eb            shr ebx, cl                            
+  00063 03 c3            add eax, ebx                           
+.B6.6::                         
+  00065 45 3b c8         cmp r9d, r8d                           
+  00068 72 ac            jb .B6.3 
+*/
+
+// Well-written 'Jiten':
+/*
+unsigned int Decompress(char* ret, char* src, unsigned int srcSize){
+	unsigned int srcIndex=0;
+	unsigned int retIndex=0;
+	unsigned int DWORDtrio;
+	unsigned int Flag;
+	uint64_t FlagMASK; //=       0xFFFFFFFFFFFFFFFF;
+	uint64_t FlagMASKnegated; //=0x0000000000000000;
+
+	while(srcIndex < srcSize){
+		DWORDtrio = *(unsigned int*)&src[srcIndex];
+// |1stLSB   |2ndLSB   |
+// ---------------------
+// |xxxxT|TTT|xxxxxx|LL| ! For texts it is better to reduce LL to L i.e. 8/4 matches and 32KB window !
+// ---------------------
+// [1bit          16bit]
+// LL = 0 UNUSED [means MatchLength (32>>LL) or 32]
+// LL = 1 means MatchLength (32>>LL) or 16
+// LL = 2 means MatchLength (32>>LL) or 8
+// LL = 3 means MatchLength (32>>LL) or 4
+		//Flag=!(DWORDtrio & 0xE0);
+		Flag=!(DWORDtrio & 0xF0);
+		// In here Flag=0|1
+		FlagMASKnegated= Flag - 1; // -1|0
+		FlagMASK= ~FlagMASKnegated;
+				#ifdef _N_XMM
+		SlowCopy128bit( (const char *)( ((uint64_t)(src+srcIndex+1+16*(0))&FlagMASK) + ((uint64_t)(ret+retIndex-(DWORDtrio&0x3FFF))&FlagMASKnegated) ), (ret+retIndex+16*(0)));
+//		SlowCopy128bit( (const char *)( ((uint64_t)(src+srcIndex+1+16*(1))&FlagMASK) + ((uint64_t)(ret+retIndex-(DWORDtrio&0x3FFF)+16*(1))&FlagMASKnegated) ), (ret+retIndex+16*(1)));
+				#endif
+//				#ifndef _N_YMM
+//		memcpy((ret+retIndex+16*(0)), (const char *)( ((uint64_t)(src+srcIndex+1)&FlagMASK) + ((uint64_t)(ret+retIndex-(DWORDtrio&0x3FFF))&FlagMASKnegated) ), 32);
+//				#endif
+//				#ifdef _N_YMM
+//		SlowCopy256bit( (const char *)( ((uint64_t)(src+srcIndex+1)&FlagMASK) + ((uint64_t)(ret+retIndex-(DWORDtrio&0x3FFF))&FlagMASKnegated) ), (ret+retIndex+16*(0)));
+//				#endif
+		srcIndex+= ((uint64_t)((DWORDtrio & 0xFF)+1)&FlagMASK) + ((uint64_t)(3-1)&FlagMASKnegated) ;
+		retIndex+= ((uint64_t)((DWORDtrio & 0xFF))&FlagMASK) +   ((uint64_t)(Min_Match_Length>>((DWORDtrio&0xFFFF)>>(22-8)))&FlagMASKnegated) ;
+	}
+	return retIndex;
+}
+*/
+/*
+; 'Jiten' decompression loop, b5-34+6=135 bytes long:
+; mark_description "Intel(R) C++ Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.1.1.258 Build 20111";
+; mark_description "-O3 -QxSSE2 -D_N_XMM -FAcs";
+
+.B7.3::                         
+  00034 42 8b 34 12      mov esi, DWORD PTR [rdx+r10]           
+  00038 45 33 e4         xor r12d, r12d                         
+  0003b f7 c6 f0 00 00 
+        00               test esi, 240                          
+  00041 44 0f 44 e0      cmove r12d, eax                        
+  00045 49 89 f5         mov r13, rsi                           
+  00048 41 ff cc         dec r12d                               
+  0004b 49 81 e5 ff 3f 
+        00 00            and r13, 16383                         
+  00052 49 f7 dd         neg r13                                
+  00055 4c 89 e7         mov rdi, r12                           
+  00058 4d 03 e9         add r13, r9                            
+  0005b 48 f7 d7         not rdi                                
+  0005e 4a 8d 5c 12 01   lea rbx, QWORD PTR [1+rdx+r10]         
+  00063 4d 03 eb         add r13, r11                           
+  00066 48 23 df         and rbx, rdi                           
+  00069 4d 23 ec         and r13, r12                           
+  0006c 0f b7 ce         movzx ecx, si                          
+  0006f c1 e9 0e         shr ecx, 14                            
+  00072 f3 41 0f 6f 44 
+        1d 00            movdqu xmm0, XMMWORD PTR [r13+rbx]     
+  00079 40 0f b6 de      movzx ebx, sil                         
+  0007d 4d 89 e5         mov r13, r12                           
+  00080 ff c3            inc ebx                                
+  00082 49 83 e5 02      and r13, 2                             
+  00086 48 23 df         and rbx, rdi                           
+  00089 49 03 dd         add rbx, r13                           
+  0008c 49 03 da         add rbx, r10                           
+  0008f 41 89 da         mov r10d, ebx                          
+  00092 40 0f b6 de      movzx ebx, sil                         
+  00096 be 20 00 00 00   mov esi, 32                            
+  0009b d3 ee            shr esi, cl                            
+  0009d 48 23 df         and rbx, rdi                           
+  000a0 49 23 f4         and rsi, r12                           
+  000a3 48 03 de         add rbx, rsi                           
+  000a6 49 03 db         add rbx, r11                           
+  000a9 f3 43 0f 7f 04 
+        19               movdqu XMMWORD PTR [r9+r11], xmm0      
+  000af 41 89 db         mov r11d, ebx                          
+  000b2 45 3b d0         cmp r10d, r8d                          
+  000b5 0f 82 79 ff ff 
+        ff               jb .B7.3 
+*/
+
+// With full use of the 64KB, Results_Core2_T7500.txt:
+/*
+Nakamichi 'Nekomata', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 52146282 bytes ...
+RAM-to-RAM performance: 433 MB/s.
+Nakamichi 'Nekomata', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 52146282 bytes ...
+RAM-to-RAM performance: 435 MB/s.
+Nakamichi 'Nekomata', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 52146282 bytes ...
+RAM-to-RAM performance: 433 MB/s.
+
+Nakamichi 'Hitomi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 52146282 bytes ...
+RAM-to-RAM performance: 435 MB/s.
+Nakamichi 'Hitomi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 52146282 bytes ...
+RAM-to-RAM performance: 433 MB/s.
+Nakamichi 'Hitomi', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 52146282 bytes ...
+RAM-to-RAM performance: 435 MB/s.
+
+Nakamichi 'Kaiju', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 63748036 bytes ...
+RAM-to-RAM performance: 607 MB/s.
+Nakamichi 'Kaiju', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 63748036 bytes ...
+RAM-to-RAM performance: 607 MB/s.
+Nakamichi 'Kaiju', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 63748036 bytes ...
+RAM-to-RAM performance: 607 MB/s.
+
+Nakamichi 'Kaidanji', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 63430147 bytes ...
+RAM-to-RAM performance: 676 MB/s.
+Nakamichi 'Kaidanji', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 63430147 bytes ...
+RAM-to-RAM performance: 676 MB/s.
+Nakamichi 'Kaidanji', written by Kaze, based on Nobuo Ito's LZSS source, babealicious suggestion by m^2 enforced.
+Decompressing 63430147 bytes ...
+RAM-to-RAM performance: 671 MB/s.
+
+YAPPY: [b 1K] bytes 100000000 -> 73533773  73.5%  comp  41.3 MB/s  uncomp 658.4 MB/s 
+YAPPY: [b 2K] bytes 100000000 -> 67516056  67.5%  comp  38.0 MB/s  uncomp 602.5 MB/s 
+YAPPY: [b 4K] bytes 100000000 -> 61757720  61.8%  comp  34.4 MB/s  uncomp 547.0 MB/s 
+YAPPY: [b 8K] bytes 100000000 -> 57701807  57.7%  comp  30.6 MB/s  uncomp 524.0 MB/s 
+YAPPY: [b 64K] bytes 100000000 -> 54162908  54.2%  comp  28.7 MB/s  uncomp 509.1 MB/s 
+YAPPY: [b 1024K] bytes 100000000 -> 53687370  53.7%  comp  28.3 MB/s  uncomp 509.5 MB/s 
+*/
+
+// Kaibutsu
+// Decompression main loop:
+/*
+; mark_description "Intel(R) C++ Compiler XE for applications running on IA-32, Version 12.1.1.258 Build 20111011";
+; mark_description "-O3 -QxSSE2 -D_N_XMM -FAcs";
+
+.B7.3:                          
+  0001e 0f b7 34 3a      movzx esi, WORD PTR [edx+edi]          
+  00022 8b de            mov ebx, esi                           
+  00024 81 e3 ff 00 00 
+        00               and ebx, 255                           
+  0002a 83 fb 10         cmp ebx, 16                            
+  0002d 72 1d            jb .B7.5 
+.B7.4:                          
+  0002f 8b 4c 24 10      mov ecx, DWORD PTR [16+esp]            
+  00033 f7 de            neg esi                                
+  00035 83 c2 02         add edx, 2                             
+  00038 8d 1c 01         lea ebx, DWORD PTR [ecx+eax]           
+  0003b 83 c0 07         add eax, 7                             
+  0003e 03 f3            add esi, ebx                           
+  00040 8b 0e            mov ecx, DWORD PTR [esi]               
+  00042 8b 76 04         mov esi, DWORD PTR [4+esi]             
+  00045 89 0b            mov DWORD PTR [ebx], ecx               
+  00047 89 73 04         mov DWORD PTR [4+ebx], esi             
+  0004a eb 15            jmp .B7.6 
+.B7.5:                          
+  0004c f3 0f 6f 44 3a 
+        01               movdqu xmm0, XMMWORD PTR [1+edx+edi]   
+  00052 8b 4c 24 10      mov ecx, DWORD PTR [16+esp]            
+  00056 8d 54 1a 01      lea edx, DWORD PTR [1+edx+ebx]         
+  0005a f3 0f 7f 04 08   movdqu XMMWORD PTR [eax+ecx], xmm0     
+  0005f 03 c3            add eax, ebx                           
+.B7.6:                          
+  00061 3b 54 24 18      cmp edx, DWORD PTR [24+esp]            
+  00065 72 b7            jb .B7.3 
 */
 
 // Decompression main loop:
@@ -1194,6 +1686,6 @@ char * Railgun_Doublet (char * pbTarget, char * pbPattern, uint32_t cbTarget, ui
 	}
 }
 
-// Last change: 2014-Apr-29
+// Last change: 2014-Aug-29
 // If you want to help me to improve it, email me at: sanmayce@sanmayce.com
 // Enfun!

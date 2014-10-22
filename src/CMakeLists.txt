@@ -520,19 +520,31 @@ IF(USE_NAKAMICHI)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/nakamichi/divsufsort)
     set(OTHER_SRC ${OTHER_SRC} codecs/nakamichi/Nakamichi_r1-RSSBO_1GB_Wordfetcher_TRIAD_NOmemcpy_FIX_Kaidanji_FIX.c
                                codecs/nakamichi/Nakamichi_Aratama.c
+                               codecs/nakamichi/Nakamichi_Butsuhira.c
+                               codecs/nakamichi/Nakamichi_Butsuhira_branchless.c
                                codecs/nakamichi/Nakamichi_Daikuni.c
                                codecs/nakamichi/Nakamichi_Hanabi.c
                                codecs/nakamichi/Nakamichi_Hanazakari.c
+                               codecs/nakamichi/Nakamichi_Hitomi.c
                                codecs/nakamichi/Nakamichi_Inazuma.c
+                               codecs/nakamichi/Nakamichi_Jiten.c
                                codecs/nakamichi/Nakamichi_Kaibutsu.c
                                codecs/nakamichi/Nakamichi_Kaiko.c
                                codecs/nakamichi/Nakamichi_Kinezumi.c
+                               codecs/nakamichi/Nakamichi_Kinroba.c
+                               codecs/nakamichi/Nakamichi_Kinutora.c
                                codecs/nakamichi/Nakamichi_Kitsune.c
+                               codecs/nakamichi/Nakamichi_Kumataka.c
+                               codecs/nakamichi/Nakamichi_Nekomata.c
+                               codecs/nakamichi/Nakamichi_Nin.c
                                codecs/nakamichi/Nakamichi_Nirenpatsu.c
                                codecs/nakamichi/Nakamichi_Sanbashi.c
                                codecs/nakamichi/Nakamichi_Sanagi.c
                                codecs/nakamichi/Nakamichi_Sanrenpatsu.c
                                codecs/nakamichi/Nakamichi_Sanshi.c
+                               codecs/nakamichi/Nakamichi_Suiken.c
+                               codecs/nakamichi/Nakamichi_Washi.c
+                               codecs/nakamichi/Nakamichi_Yoko.c
                                codecs/nakamichi/Nakamichi_Zangetsu.c
                                codecs/nakamichi/nakamichi.c
                                codecs/nakamichi/divsufsort/divsufsort.c

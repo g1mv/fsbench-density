@@ -144,78 +144,90 @@ Sosemanuk                           | Thomas Pornin                           | 
 Trivium                             | Christophe De Cannière                  | 2006-02-23 | yes      |
 
 Compressors:
-name                                | author                                           | version         | default? | source
-----------------------------------------------------------------------------------------------------------------------------
-7z - deflate                        | Igor Pavlov                                      | 9.20            | yes      | http://7-zip.org
-7z - deflate64                      | Igor Pavlov                                      | 9.20            | yes      | http://7-zip.org
-ar                                  | Haruhiko Okumura, Kerwin F. Medina, SanguineRose | 2013-06-03      | no       | https://github.com/Sanguinarious/lzh-improved
-Basic Compression Library - huffman | Marcus Geelnard                                  | 1.2.0           | no       | http://bcl.comli.eu
-Basic Compression Library - lz      | Marcus Geelnard                                  | 1.2.0           | no       | http://bcl.comli.eu
-Basic Compression Library - lzfast  | Marcus Geelnard                                  | 1.2.0           | no       | http://bcl.comli.eu
-Basic Compression Library - rle     | Marcus Geelnard                                  | 1.2.0           | no       | http://bcl.comli.eu
-blosc                               | Francesc Alted                                   | 1.2.3           | no       | http://blosc.pytables.org/trac
-BriefLZ                             | Joergen Ibsen                                    | 1.0.5           | no       | http://ibsensoftware.com/download.html
-bzip2                               | Julian Seward                                    | 1.0.6           | yes      | http://bzip.org
-crush                               | Ilia Muraviev                                    | 0.0.1           | yes      | http://encode.ru/threads/1289-CRUSH-0-01-is-here!
-crypto++ - deflate                  | Wei Dai                                          | 5.6.1           | yes      | www.cryptopp.com
-Doboz                               | Attila T. Áfra                                   | 2011-03-19      | no       | https://bitbucket.org/attila_afra/doboz/downloads
-FastLZ                              | Ariya Hidayat                                    | 0.1.0           | no       | http://fastlz.org
-FSE                                 | Yann Collet                                      | 2014-04-07      | no       | https://github.com/Cyan4973/FiniteStateEntropy
-gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala                 | 2011-10-19      | no       | https://code.google.com/p/gipfeli
-Halibut - deflate                   | Simon Tatham                                     | SVN r9550       | no       | http://www.chiark.greenend.org.uk/~sgtatham/halibut
-lodepng - deflate                   | Lode Vandevenne                                  | 20120729        | no       | http://lodev.org/lodepng
-lrrle                               | m^2                                              | 0               | yes      |
-LZ4                                 | Yann Collet                                      | r114            | yes      | https://code.google.com/p/lz4
-LZ4hc                               | Yann Collet                                      | r114            | yes      | https://code.google.com/p/lz4
-LZF                                 | Marc Alexander Lehmann                           | 3.6             | yes      | http://oldhome.schmorp.de/marc/liblzf.html
-LZFX                                | Andrew Collette                                  | r16             | no       | https://code.google.com/p/lzfx
-LZG                                 | Marcus Geelnard                                  | 1.0.6           | no       | http://liblzg.bitsnbites.eu
-LZHAM                               | Richard Geldreich, Jr.                           | SVN r96         | no       | https://code.google.com/p/lzham
-LZJB                                | Jeff Bonwick                                     | FreeBSD r263244 | no       |
-mmini - lzl                         | Adam Ierymenko                                   | 2010            | no       | https://code.google.com/p/mmini
-LZMAT                               | Vitaly Evseenko                                  | 1.1             | yes      | www.matcode.com/lzmat.htm
-LZO                                 | Markus Franz Xaver Johannes Oberhumer            | 2.06            | yes      | www.oberhumer.com/opensource/lzo
-LZP_ds                              | Dmitry Shkarin                                   | v0              | no       | http://www.ctxmodel.net/files/LZP-DS_v0.rar
-LZSS                                | Ilia Muraviev                                    | 2008-07-31      | no       | http://encode.ru/threads/143-LZSS-v0-01-is-here!
-LZSS                                | Nobuo Ito                                        | 1.0             | no       |
-LZV1                                | Hermann Vogt                                     | 0.5             | no       | http://encode.ru/threads/1661-LZWC-A-fast-tree-based-LZW-compressor
-lzx_compress                        | Matthew T. Russotto                              | 2005-07-06      | no       | http://www.russotto.net/chm/
-miniz                               | Richard Geldreich, Jr.                           | 1.11            | yes      | https://code.google.com/p/miniz
-Nakamichi                           | Georgi Marinov                                   | Aratama         | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Daikuni         | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Hanabi          | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Hanazakari      | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Inazuma         | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Kaibutsu        | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Kaidanji FIX    | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Kaiko           | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Kinezumi        | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Kitsune         | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Nirenpatsu      | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Sanagi          | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Sanbashi        | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Sanrenpatsu     | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Sanshi          | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | Georgi Marinov                                   | Zangetsu        | yes      | http://www.sanmayce.com/Nakamichi/
-Nakamichi                           | m^2, Georgi Marinov                              | M2.0            | yes      |
-nrv2a                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
-nrv2b                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
-nrv2d                               | Markus Franz Xaver Johannes Oberhumer            | 1.03            | no       | www.oberhumer.com/opensource/ucl
-PostreSQL                           | Jan Wieck                                        | 9.3.4           | no       | http://www.postgresql.org/
-QuickLZ                             | Lasse Mikkel Reinhold                            | 1.5.1b6         | yes      | www.quicklz.com
-QuickLZ zip                         | Lasse Mikkel Reinhold                            | 0.4             | no       | www.quicklz.com/zip.html
-RLE64                               | Javier Gutiérrez Chamorro                        | R3.00           | no       | http://nikkhokkho.sourceforge.net/static.php?page=RLE64
-SCZ                                 | Carl Kindman                                     | 2008-11-25      | no       |
-Shrinker                            | Fu Siyuan                                        | r5              | yes      | https://code.google.com/p/shrinker
-Snappy                              | ???                                              | 1.1.0           | yes      | https://code.google.com/p/snappy
-tinf                                | Joergen Ibsen                                    | 1.00            | no       | http://ibsensoftware.com/download.html
-Tornado                             | Joachim Henke, Bulat Ziganshin                   | 0.6a            | yes      | http://freearc.org:8002
-Yappy                               | Peter Popov                                      | v2              | yes      | http://blog.gamedeff.com/?p=371
-z3lib - deflate                     | Oskar Schirmer                                   | 1.3             | no       | http://scara.com/~schirmer/o/z3lib
-zlib - deflate                      | Mark Adler, Jean-loup Gailly                     | 1.2.8           | yes      | http://zlib.net
-zlib - deflate, Intel version       | Mark Adler, Jean-loup Gailly, Jim Kukunas        | 2014-06-16      | no       | https://github.com/jtkukunas/zlib
-zling                               | Zhang Li                                         | 20140324        | yes      | https://github.com/richox/libzling
-zopfli - deflate                    | Lode Vandevenne, Jyrki Alakuijala                | 1.0.0           | yes      | https://code.google.com/p/zopfli
+name                                | author                                           | version             | default? | source
+--------------------------------------------------------------------------------------------------------------------------------
+7z - deflate                        | Igor Pavlov                                      | 9.20                | yes      | http://7-zip.org
+7z - deflate64                      | Igor Pavlov                                      | 9.20                | yes      | http://7-zip.org
+ar                                  | Haruhiko Okumura, Kerwin F. Medina, SanguineRose | 2013-06-03          | no       | https://github.com/Sanguinarious/lzh-improved
+Basic Compression Library - huffman | Marcus Geelnard                                  | 1.2.0               | no       | http://bcl.comli.eu
+Basic Compression Library - lz      | Marcus Geelnard                                  | 1.2.0               | no       | http://bcl.comli.eu
+Basic Compression Library - lzfast  | Marcus Geelnard                                  | 1.2.0               | no       | http://bcl.comli.eu
+Basic Compression Library - rle     | Marcus Geelnard                                  | 1.2.0               | no       | http://bcl.comli.eu
+blosc                               | Francesc Alted                                   | 1.2.3               | no       | http://blosc.pytables.org/trac
+BriefLZ                             | Joergen Ibsen                                    | 1.0.5               | no       | http://ibsensoftware.com/download.html
+bzip2                               | Julian Seward                                    | 1.0.6               | yes      | http://bzip.org
+crush                               | Ilia Muraviev                                    | 0.0.1               | yes      | http://encode.ru/threads/1289-CRUSH-0-01-is-here!
+crypto++ - deflate                  | Wei Dai                                          | 5.6.1               | yes      | www.cryptopp.com
+Doboz                               | Attila T. Áfra                                   | 2011-03-19          | no       | https://bitbucket.org/attila_afra/doboz/downloads
+FastLZ                              | Ariya Hidayat                                    | 0.1.0               | no       | http://fastlz.org
+FSE                                 | Yann Collet                                      | 2014-04-07          | no       | https://github.com/Cyan4973/FiniteStateEntropy
+gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala                 | 2011-10-19          | no       | https://code.google.com/p/gipfeli
+Halibut - deflate                   | Simon Tatham                                     | SVN r9550           | no       | http://www.chiark.greenend.org.uk/~sgtatham/halibut
+lodepng - deflate                   | Lode Vandevenne                                  | 20120729            | no       | http://lodev.org/lodepng
+lrrle                               | m^2                                              | 0                   | yes      |
+LZ4                                 | Yann Collet                                      | r114                | yes      | https://code.google.com/p/lz4
+LZ4hc                               | Yann Collet                                      | r114                | yes      | https://code.google.com/p/lz4
+LZF                                 | Marc Alexander Lehmann                           | 3.6                 | yes      | http://oldhome.schmorp.de/marc/liblzf.html
+LZFX                                | Andrew Collette                                  | r16                 | no       | https://code.google.com/p/lzfx
+LZG                                 | Marcus Geelnard                                  | 1.0.6               | no       | http://liblzg.bitsnbites.eu
+LZHAM                               | Richard Geldreich, Jr.                           | SVN r96             | no       | https://code.google.com/p/lzham
+LZJB                                | Jeff Bonwick                                     | FreeBSD r263244     | no       |
+mmini - lzl                         | Adam Ierymenko                                   | 2010                | no       | https://code.google.com/p/mmini
+LZMAT                               | Vitaly Evseenko                                  | 1.1                 | yes      | www.matcode.com/lzmat.htm
+LZO                                 | Markus Franz Xaver Johannes Oberhumer            | 2.06                | yes      | www.oberhumer.com/opensource/lzo
+LZP_ds                              | Dmitry Shkarin                                   | v0                  | no       | http://www.ctxmodel.net/files/LZP-DS_v0.rar
+LZSS                                | Ilia Muraviev                                    | 2008-07-31          | no       | http://encode.ru/threads/143-LZSS-v0-01-is-here!
+LZSS                                | Nobuo Ito                                        | 1.0                 | no       |
+LZV1                                | Hermann Vogt                                     | 0.5                 | no       | http://encode.ru/threads/1661-LZWC-A-fast-tree-based-LZW-compressor
+lzx_compress                        | Matthew T. Russotto                              | 2005-07-06          | no       | http://www.russotto.net/chm/
+miniz                               | Richard Geldreich, Jr.                           | 1.11                | yes      | https://code.google.com/p/miniz
+Nakamichi                           | Georgi Marinov                                   | Aratama             | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Butsuhira           | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | ButsuhiraBranchless | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Daikuni             | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Hanabi              | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Hanazakari          | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Hitomi              | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Inazuma             | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Jiten               | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kaibutsu            | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kaidanji FIX        | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kaiko               | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kinezumi            | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kinroba             | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kinutora            | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kitsune             | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Kumataka            | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Nekomata            | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Nin                 | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Nirenpatsu          | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Sanagi              | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Sanbashi            | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Sanrenpatsu         | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Sanshi              | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Suiken              | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Washi               | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Yoko                | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | Georgi Marinov                                   | Zangetsu            | yes      | http://www.sanmayce.com/Nakamichi/
+Nakamichi                           | m^2, Georgi Marinov                              | M2.0                | yes      |
+nrv2a                               | Markus Franz Xaver Johannes Oberhumer            | 1.03                | no       | www.oberhumer.com/opensource/ucl
+nrv2b                               | Markus Franz Xaver Johannes Oberhumer            | 1.03                | no       | www.oberhumer.com/opensource/ucl
+nrv2d                               | Markus Franz Xaver Johannes Oberhumer            | 1.03                | no       | www.oberhumer.com/opensource/ucl
+PostreSQL                           | Jan Wieck                                        | 9.3.4               | no       | http://www.postgresql.org/
+QuickLZ                             | Lasse Mikkel Reinhold                            | 1.5.1b6             | yes      | www.quicklz.com
+QuickLZ zip                         | Lasse Mikkel Reinhold                            | 0.4                 | no       | www.quicklz.com/zip.html
+RLE64                               | Javier Gutiérrez Chamorro                        | R3.00               | no       | http://nikkhokkho.sourceforge.net/static.php?page=RLE64
+SCZ                                 | Carl Kindman                                     | 2008-11-25          | no       |
+Shrinker                            | Fu Siyuan                                        | r5                  | yes      | https://code.google.com/p/shrinker
+Snappy                              | ???                                              | 1.1.0               | yes      | https://code.google.com/p/snappy
+tinf                                | Joergen Ibsen                                    | 1.00                | no       | http://ibsensoftware.com/download.html
+Tornado                             | Joachim Henke, Bulat Ziganshin                   | 0.6a                | yes      | http://freearc.org:8002
+Yappy                               | Peter Popov                                      | v2                  | yes      | http://blog.gamedeff.com/?p=371
+z3lib - deflate                     | Oskar Schirmer                                   | 1.3                 | no       | http://scara.com/~schirmer/o/z3lib
+zlib - deflate                      | Mark Adler, Jean-loup Gailly                     | 1.2.8               | yes      | http://zlib.net
+zlib - deflate, Intel version       | Mark Adler, Jean-loup Gailly, Jim Kukunas        | 2014-06-16          | no       | https://github.com/jtkukunas/zlib
+zling                               | Zhang Li                                         | 20140324            | yes      | https://github.com/richox/libzling
+zopfli - deflate                    | Lode Vandevenne, Jyrki Alakuijala                | 1.0.0               | yes      | https://code.google.com/p/zopfli
 
 *************************
 Notes on included codecs:
