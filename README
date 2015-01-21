@@ -61,9 +61,9 @@ BlueMidnightWish224        | Danilo Gligoroski                           | SHA3 
 BlueMidnightWish256        | Danilo Gligoroski                           | SHA3 rnd 2, 64bit opt | no       |
 BlueMidnightWish384        | Danilo Gligoroski                           | SHA3 rnd 1, 64bit opt | no       |
 BlueMidnightWish512        | Danilo Gligoroski                           | SHA3 rnd 1, 64bit opt | no       |
-CityHash32                 | Geoff Pike, Jyrki Alakuijala                | 1.1.0                 | yes      | https://code.google.com/p/cityhash
-CityHash64                 | Geoff Pike, Jyrki Alakuijala                | 1.1.0                 | yes      | https://code.google.com/p/cityhash
-CityHash128                | Geoff Pike, Jyrki Alakuijala                | 1.1.0                 | yes      | https://code.google.com/p/cityhash
+CityHash32                 | Geoff Pike, Jyrki Alakuijala                | 1.1.0                 | no       | https://code.google.com/p/cityhash
+CityHash64                 | Geoff Pike, Jyrki Alakuijala                | 1.1.0                 | no       | https://code.google.com/p/cityhash
+CityHash128                | Geoff Pike, Jyrki Alakuijala                | 1.1.0                 | no       | https://code.google.com/p/cityhash
 CrapWow                    | Andrew@Team5150.com                         | 2012-06-07            | no       | www.team5150.com/~andrew/noncryptohashzoo
 crypto++ - adler32         | Wei Dai                                     | 5.6.1                 | no       | www.cryptopp.com
 crypto++ - crc32           | Wei Dai                                     | 5.6.1                 | no       | www.cryptopp.com
@@ -80,6 +80,9 @@ Edon-R224                  | multiple                                    | v20  
 Edon-R256                  | multiple                                    | v20                   | no       | www.item.ntnu.no/people/personalpages/fac/danilog/edon-r
 Edon-R384                  | multiple                                    | v20                   | no       | www.item.ntnu.no/people/personalpages/fac/danilog/edon-r
 Edon-R512                  | multiple                                    | v20                   | no       | www.item.ntnu.no/people/personalpages/fac/danilog/edon-r
+FarmHash32                 | ?                                           | SVN r4                | yes      | https://code.google.com/p/farmhash
+FarmHash64                 | ?                                           | SVN r4                | yes      | https://code.google.com/p/farmhash
+FarmHash128                | ?                                           | SVN r4                | yes      | https://code.google.com/p/farmhash
 fletcher2                  | ?? (used in ZFS)                            | 2010                  | no       |
 fletcher4                  | ?? (used in ZFS)                            | 2010                  | no       |
 FNV1a-Jesteress            | Georgi Marinov                              | 2012-06-09            | yes      | www.sanmayce.com/Fastest_Hash/index.html

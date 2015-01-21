@@ -56,6 +56,11 @@ size_t crush_d(char * in, size_t isize, char * out, size_t osize, void *);
 size_t Doboz_c(char * in, size_t isize, char * out, size_t osize, void * _);
 size_t Doboz_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #endif//FSBENCH_USE_DOBOZ
+#ifdef FSBENCH_USE_FARMHASH
+void FarmHash32(char * in, size_t isize, char * out);
+void FarmHash64(char * in, size_t isize, char * out);
+void FarmHash128(char * in, size_t isize, char * out);
+#endif//FSBENCH_USE_FARMHASH
 #ifdef FSBENCH_USE_FASTCRYPTO
 namespace FsBenchFastCrypto
 {

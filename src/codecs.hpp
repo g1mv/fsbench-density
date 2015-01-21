@@ -182,6 +182,7 @@ Codec * find_codec(const std::string & name);
 #define _DOBOZ_VERSION          "2011-03-19"
 #define _ECRYPT_VERSION         "2012-06-10"
 #define _EDON_R_VERSION         "v20"
+#define _FARMHASH_VERSION       "SVN r4"
 #define _FASTCRYPTO_VERSION     "2007-04-17"
 #define _FASTLZ_VERSION         "0.1.0"
 #define _FSE_VERSION            "2014-04-07"

@@ -391,6 +391,11 @@ Codec * codecs[] =
               new Checksum<384/CHAR_BIT> ("cryptopp-sha384",     _CRYPTOPP_VERSION, FsBenchCryptoPP::sha384),
               new Checksum<512/CHAR_BIT> ("cryptopp-sha512",     _CRYPTOPP_VERSION, FsBenchCryptoPP::sha512),
 #endif
+#ifdef FSBENCH_USE_FARMHASH
+              new Checksum<    sizeof(uint32_t)>("FarmHash32",  _FARMHASH_VERSION, FarmHash32),
+              new Checksum<    sizeof(uint64_t)>("FarmHash64",  _FARMHASH_VERSION, FarmHash64),
+              new Checksum<2 * sizeof(uint64_t)>("FarmHash128", _FARMHASH_VERSION, FarmHash128),
+#endif
 #ifdef FSBENCH_USE_FASTCRYPTO
               new Checksum<64/CHAR_BIT> ("uhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::uhash),
               new Checksum<128/CHAR_BIT>("vhash", _FASTCRYPTO_VERSION, FsBenchFastCrypto::vhash),

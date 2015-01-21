@@ -11,12 +11,13 @@ set(USE_BLAKE2            0) # doesn't compile with MSVC10. Requires SSE2, so yo
 set(USE_BLOSC             0) # inefficient
 set(USE_BLZ               0) # inefficient
 set(USE_BZ2               0) # there are barely any competitors for it
-set(USE_CITYHASH          1)
+set(USE_CITYHASH          0) # superseeded by farmhash
 set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
 set(USE_CRUSH             0) # Nothing great
 set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
 set(USE_DOBOZ             0) # inefficient
 set(USE_ECRYPT            1)
+set(USE_FARMHASH          1)
 set(USE_FASTCRYPTO        1)
 set(USE_FASTLZ            0) # inefficient
 set(USE_FSE               0) # crashes on scc/clang 3.1; decoding fails on anything with gcc 4.2 on my FreeBSD box
@@ -433,10 +434,15 @@ IF(USE_DOBOZ)
     set(OTHER_SRC ${OTHER_SRC} codecs/Doboz/Compressor.cpp codecs/Doboz/Decompressor.cpp codecs/Doboz/Dictionary.cpp)
     add_definitions(-DFSBENCH_USE_DOBOZ)
 ENDIF(USE_DOBOZ)
+IF(USE_FARMHASH)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/farmhash/)
+    set(OTHER_SRC ${OTHER_SRC} codecs/farmhash/farmhash.cc)
+    add_definitions(-DFSBENCH_USE_FARMHASH)
+ENDIF(USE_FARMHASH)
 IF(USE_FASTCRYPTO)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/fastcrypto)
     set(OTHER_SRC ${OTHER_SRC} codecs/fastcrypto/rijndael-alg-fst.c codecs/fastcrypto/umac.c codecs/fastcrypto/vmac.c)
-    add_definitions(-DFSBENCH_USE_FASTCRYPTO)
+    add_definitions(-DFSBENCH_USE_FASTCRYPTO -DNAMESPACE_FOR_HASH_FUNCTIONS=farmhash)
 ENDIF(USE_FASTCRYPTO)
 IF(USE_FASTLZ)
     set(OTHER_SRC ${OTHER_SRC} codecs/fastlz.c)

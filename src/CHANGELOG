@@ -1,4 +1,5 @@
 0.15
+[+] added FarmHash SVN r4
 [+] added Intel's fork of zlib
 [+] added memcpy, memmove, memset codecs
 [+] added crush 0.0.1
@@ -12,6 +13,7 @@
 [~] updated lz4 to r114
 [~] updated LZJB to the latest FreeBSD version
 [~] updated tornado to 0.6a
+[~] made CityHash optional as it's superseeded by FarmHash
 [-] removed xxhash256, it's dangerously weak
 [!] fixed integer underflow
 [!] fixed a segfault with nop codec

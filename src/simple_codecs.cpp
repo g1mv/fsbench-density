@@ -198,6 +198,26 @@ size_t Doboz_d(char * in, size_t isize, char * out, size_t osize, void *)
     return d.decompress(in,isize,out,osize) == doboz::RESULT_OK ? osize : CODING_ERROR;
 }
 #endif//FSBENCH_USE_DOBOZ
+#ifdef FSBENCH_USE_FARMHASH
+#define NAMESPACE_FOR_HASH_FUNCTIONS farmhash
+#include "farmhash/farmhash.h"
+#undef NAMESPACE_FOR_HASH_FUNCTIONS
+
+void FarmHash32(char * in, size_t isize, char * out)
+{
+    *(uint32_t*) out = farmhash::Hash32((const char*)in, isize);
+}
+void FarmHash64(char * in, size_t isize, char * out)
+{
+    *(uint64_t*) out = farmhash::Hash64((const char*)in, isize);
+}
+void FarmHash128(char * in, size_t isize, char * out)
+{
+    farmhash::uint128_t ret = farmhash::Hash128((const char*)in, isize);
+    ((uint64_t*)out)[0] = farmhash::Uint128Low64(ret);
+    ((uint64_t*)out)[1] = farmhash::Uint128High64(ret);
+}
+#endif//FSBENCH_USE_FARMHASH
 #ifdef FSBENCH_USE_FASTCRYPTO
 extern "C"
 {
