@@ -125,7 +125,8 @@ uhash                      | Ted Krovetz                                 | 2007-
 vhash                      | Ted Krovetz, Wei Dai                        | 2007-04-17            | yes      | www.fastcrypto.com
 umac                       | Ted Krovetz                                 | 2007-04-17            | yes      | www.fastcrypto.com
 vmac                       | Ted Krovetz, Wei Dai                        | 2007-04-17            | yes      | www.fastcrypto.com
-xxhash                     | Yann Collet                                 | r29                   | yes      | https://code.google.com/p/xxhash
+xxhash                     | Yann Collet                                 | r39                   | yes      | https://code.google.com/p/xxhash
+xxhash64                   | Yann Collet                                 | r39                   | yes      | https://code.google.com/p/xxhash
 
 
 Ciphers:

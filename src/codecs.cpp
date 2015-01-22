@@ -485,7 +485,8 @@ Codec * codecs[] =
 #   endif
 #endif // defined(FSBENCH_USE_SHA3_RND1) || defined(FSBENCH_USE_SHA3_RND2) || defined(FSBENCH_USE_SHA3_RND3)
 #ifdef FSBENCH_USE_XXHASH
-              new Checksum<sizeof(unsigned int)>("xxhash", _XXHASH_VERSION, xxhash),
+              new Checksum<sizeof(unsigned int)>("xxhash",   _XXHASH_VERSION, xxhash),
+              new Checksum<sizeof(unsigned int)>("xxhash64", _XXHASH_VERSION, xxhash64),
 #endif
 #ifdef FSBENCH_USE_ZFS
               new Checksum<4 * sizeof(uint64_t)>("fletcher2", _ZFS_VERSION, fletcher2),
@@ -700,6 +701,7 @@ static const pair<Codec*, const string> all_checksums[] =
           make_pair(raw_find_codec("Groestl384"), ""),
           make_pair(raw_find_codec("Groestl512"), ""),
           make_pair(raw_find_codec("xxhash"), ""),
+          make_pair(raw_find_codec("xxhash64"), ""),
           make_pair(raw_find_codec("fletcher2"), ""),
           make_pair(raw_find_codec("fletcher4"), "")
         };

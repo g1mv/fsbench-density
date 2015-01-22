@@ -238,7 +238,7 @@ void spooky(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_SPOOKY
 #ifdef FSBENCH_USE_XXHASH
 void xxhash(char * in, size_t isize, char * out);
-void xxhash_256(char * in, size_t isize, char * out);
+void xxhash64(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_XXHASH
 #ifdef FSBENCH_USE_ZFS
 size_t LZJB_c(char * in,size_t isize, char * out, size_t osize, void * _);

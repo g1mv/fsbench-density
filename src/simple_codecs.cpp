@@ -1019,6 +1019,10 @@ void xxhash(char * in, size_t isize, char * out)
 {
     *(unsigned int*) out = XXH32(in, isize, 0);
 }
+void xxhash64(char * in, size_t isize, char * out)
+{
+    *(unsigned long long*) out = XXH64(in, isize, 0);
+}
 #endif//FSBENCH_USE_XXHASH
 #ifdef FSBENCH_USE_ZFS
 
