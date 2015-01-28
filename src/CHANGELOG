@@ -10,6 +10,7 @@
 [+] added Nobuo Ito's LZSS 1.0
 [+] added Dmitry Shkarin's LZP v0
 [+] added lrrle v0
+[+] added zstd 0.0.1
 [~] updated lz4 to r114
 [~] updated LZJB to the latest FreeBSD version
 [~] updated tornado to 0.6a

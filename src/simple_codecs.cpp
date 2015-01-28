@@ -1137,6 +1137,21 @@ size_t zopfli_c(char * in, size_t isize, char * out, size_t osize, void * mode)
     return out_size;
 }
 #endif //FSBENCH_USE_ZOPFLI
+#ifdef FSBENCH_USE_ZSTD
+extern "C"
+{
+#include "zstd.h"
+}
+size_t ZSTD_c(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return ZSTD_compress(out, osize, in, isize);
+}
+size_t ZSTD_d (char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return ZSTD_isError( ZSTD_decompress(out, osize, in, isize) ) ? CODING_ERROR : osize ;
+}
+
+#endif//FSBENCH_USE_ZSTD
 // a pseudocodec that does nothing.
 size_t nop_c(char *, size_t, char *, size_t, void *)
 {

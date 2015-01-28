@@ -67,6 +67,7 @@ set(USE_ZLIB              1)
 set(USE_ZLIB_INTEL        0)
 set(USE_ZLING             1)
 set(USE_ZOPFLI            1)
+set(USE_ZSTD              1)
 
 # This script can feed certain compilers with additional optimisation flags aside from the usual -O2 or so. Other compilers use the defaults.
 # If you don't want the extra flags, set the variable below to 0
@@ -663,6 +664,11 @@ IF(USE_Z3LIB)
     set(OTHER_SRC ${OTHER_SRC} codecs/z3lib/fsbench_z3lib.cpp codecs/z3lib/z3blib.c codecs/z3lib/z3dlib.c)
     add_definitions(-DFSBENCH_USE_Z3LIB)
 ENDIF(USE_Z3LIB)
+IF(USE_ZSTD)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/zstd)
+    set(OTHER_SRC ${OTHER_SRC} codecs/zstd/zstd.c)
+    add_definitions(-DFSBENCH_USE_ZSTD)
+ENDIF(USE_ZSTD)
 
 
 set(SRC ${MAIN_SRC}

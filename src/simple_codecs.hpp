@@ -253,6 +253,10 @@ size_t zlib_d(char * in, size_t isize, char * out, size_t osize, void * _);
 #ifdef FSBENCH_USE_ZOPFLI
 size_t zopfli_c(char * in, size_t isize, char * out, size_t osize, void * mode);
 #endif //FSBENCH_USE_ZOPFLI
+#ifdef FSBENCH_USE_ZSTD
+size_t ZSTD_c(char * in, size_t isize, char * out, size_t osize, void *);
+size_t ZSTD_d(char * in, size_t isize, char * out, size_t osize, void *);
+#endif //FSBENCH_USE_ZSTD
 
 // a pseudocodec that does nothing.
 size_t nop_c(char * in, size_t isize, char * out, size_t osize, void * _);

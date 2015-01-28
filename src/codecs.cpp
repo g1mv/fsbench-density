@@ -368,6 +368,9 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_YAPPY
               new Yappy,
 #endif
+#ifdef FSBENCH_USE_ZSTD
+              new Codec("ZSTD", _ZSTD_VERSION, ZSTD_c, ZSTD_d, no_blowup),
+#endif
 #ifdef FSBENCH_USE_BLAKE2
               new Checksum<64>("Blake2b",  _BLAKE2_VERSION, fsbench_blake2b),
               new Checksum<64>("Blake2bp", _BLAKE2_VERSION, fsbench_blake2bp),
@@ -534,7 +537,8 @@ static const pair<Codec*, const string> default_codecs[] =
     { make_pair(raw_find_codec("LZ4"), ""),
       make_pair(raw_find_codec("LZO"), ""),
       make_pair(raw_find_codec("QuickLZ"), ""),
-      make_pair(raw_find_codec("Snappy"), "") };
+      make_pair(raw_find_codec("Snappy"), ""),
+      make_pair(raw_find_codec("ZSTD"), "") };
 MKLIST(DEFAULT_CODECS, default_codecs);
 
 static const pair<Codec*, const string> fast_compressors[] =
@@ -549,7 +553,8 @@ static const pair<Codec*, const string> fast_compressors[] =
       make_pair(raw_find_codec("QuickLZ"), ""),
       make_pair(raw_find_codec("RLE64"), ""),
       make_pair(raw_find_codec("Shrinker"), ""),
-      make_pair(raw_find_codec("Snappy"), "") };
+      make_pair(raw_find_codec("Snappy"), ""),
+      make_pair(raw_find_codec("ZSTD"), "") };
 MKLIST(FAST_COMPRESSORS, fast_compressors);
 
 static const pair<Codec*, const string> all_compressors[] =
@@ -634,7 +639,8 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("z3lib"), ""),
       make_pair(raw_find_codec("zlib"), ""),
       make_pair(raw_find_codec("zling"), ""),
-      make_pair(find_codec("zopfli/zlib"), "")
+      make_pair(find_codec("zopfli/zlib"), ""),
+      make_pair(raw_find_codec("ZSTD"), "")
         };
 MKLIST(ALL_COMPRESSORS, all_compressors);
 
