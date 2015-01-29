@@ -310,6 +310,10 @@ static THREAD_RETURN_TYPE encode(EncodeParams * params)
                                       block_size,
                                       params->other);
             }
+            // error codes are often negative numbers small in magnitude,
+            // wrapped around to size_t they get very large
+            if (SIZE_MAX - 20 < ret)
+                throw runtime_error("Broken encoder? Result looks like an error");
             bool failed_to_encode = ret == CODING_ERROR;
 
             size_t real_size = round_up(ret, params->ssize);

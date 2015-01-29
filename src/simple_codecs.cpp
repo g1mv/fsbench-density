@@ -1144,7 +1144,8 @@ extern "C"
 }
 size_t ZSTD_c(char * in, size_t isize, char * out, size_t osize, void *)
 {
-    return ZSTD_compress(out, osize, in, isize);
+    size_t ret = ZSTD_compress(out, osize, in, isize);
+    return ZSTD_isError(ret) ? CODING_ERROR : ret;
 }
 size_t ZSTD_d (char * in, size_t isize, char * out, size_t osize, void *)
 {
