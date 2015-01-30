@@ -53,7 +53,7 @@ set(USE_SHA3_RND1         0) # didn't make it to the final...
 set(USE_SHA3_RND2         0) # didn't make it to the final...
 set(USE_SHA3_RND3         1)
 set(USE_SHA3_RND3_GROESTL 0) # doesn't compile with MSVC10
-set(USE_SHRINKER          1) # doesn't work on some platforms
+set(USE_SHRINKER          0) # doesn't work on some platforms
 set(USE_SIPHASH           1)
 set(USE_SNAPPY            1)
 set(USE_SPOOKY            1)
