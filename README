@@ -159,6 +159,7 @@ Basic Compression Library - lzfast  | Marcus Geelnard                           
 Basic Compression Library - rle     | Marcus Geelnard                                  | 1.2.0               | no       | http://bcl.comli.eu
 blosc                               | Francesc Alted                                   | 1.2.3               | no       | http://blosc.pytables.org/trac
 BriefLZ                             | Joergen Ibsen                                    | 1.0.5               | no       | http://ibsensoftware.com/download.html
+Brotli                              | Jyrki Alakuijala, Zoltan Szabadka                | 2015-02-01          | no       | https://github.com/google/brotli
 bzip2                               | Julian Seward                                    | 1.0.6               | yes      | http://bzip.org
 crush                               | Ilia Muraviev                                    | 0.0.1               | yes      | http://encode.ru/threads/1289-CRUSH-0-01-is-here!
 crypto++ - deflate                  | Wei Dai                                          | 5.6.1               | yes      | www.cryptopp.com

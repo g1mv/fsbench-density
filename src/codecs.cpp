@@ -253,6 +253,9 @@ Codec * codecs[] =
               new Codec("bcl-rle", _BCL_VERSION, FsBenchBCL::rle, FsBenchBCL::unrle, FsBenchBCL::rle_maxsize),
               new FsBenchBCL::LZFast(),
 #endif
+#ifdef FSBENCH_USE_BROTLI
+              new Codec("Brotli", _BROTLI_VERSION, brotli_c, brotli_d, no_blowup),
+#endif
 #ifdef FSBENCH_USE_DOBOZ
               new Codec("Doboz", _DOBOZ_VERSION, Doboz_c, Doboz_d, no_blowup),
 #endif
@@ -566,6 +569,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("bcl-rle"), ""),
       make_pair(raw_find_codec("blosc"), ""),
       make_pair(raw_find_codec("BriefLZ"), ""),
+      make_pair(raw_find_codec("Brotli"), ""),
       make_pair(raw_find_codec("bzip2"), ""),
       make_pair(raw_find_codec("crush"), ""),
       make_pair(raw_find_codec("cryptopp-deflate"), ""),

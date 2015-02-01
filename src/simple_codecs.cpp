@@ -125,6 +125,23 @@ size_t blosc_d(char * in, size_t isize, char * out, size_t osize, void *)
     return blosclz_decompress(in, isize, out, osize);
 }
 #endif//FSBENCH_USE_BLOSC
+#ifdef FSBENCH_USE_BROTLI
+
+#include "brotli/enc/encode.h"
+#include "brotli/dec/decode.h"
+
+size_t brotli_c(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    brotli::BrotliParams p;
+    size_t actual_osize = osize;
+    return brotli::BrotliCompressBuffer(p, isize, (const uint8_t*)in, &actual_osize, (uint8_t*)out) == 0 ? CODING_ERROR : actual_osize;
+}
+size_t brotli_d(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    size_t actual_osize = osize;
+    return BrotliDecompressBuffer(isize, (const uint8_t*)in, &actual_osize, (uint8_t*)out) == 0 ? CODING_ERROR : actual_osize;
+}
+#endif//FSBENCH_USE_BROTLI
 #ifdef FSBENCH_USE_BZ2
 extern "C"
 {

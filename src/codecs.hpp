@@ -174,6 +174,7 @@ Codec * find_codec(const std::string & name);
 #define _BLAKE2_VERSION         "20121223"
 #define _BLOSC_VERSION          "1.2.3"
 #define _BLZ_VERSION            "1.0.5"
+#define _BROTLI_VERSION         "2015-02-01"
 #define _BZ2_VERSION            "1.0.6"
 #define _CITYHASH_VERSION       "1.1.0"
 #define _CRAPWOW_VERSION        "2012-06-07"

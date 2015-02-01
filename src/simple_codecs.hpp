@@ -36,6 +36,10 @@ BLAKE2_FUNC(blake2bp);
 size_t blosc_c(char * in, size_t isize, char * out, size_t osize,void * mode);
 size_t blosc_d(char * in, size_t isize, char * out, size_t osize,void * _);
 #endif//FSBENCH_USE_BLOSC
+#ifdef FSBENCH_USE_BROTLI
+size_t brotli_c(char * in, size_t isize, char * out, size_t osize, void *);
+size_t brotli_d(char * in, size_t isize, char * out, size_t osize, void *);
+#endif//FSBENCH_USE_BROTLI
 #ifdef FSBENCH_USE_BZ2
 size_t bz2_c(char * in, size_t isize, char * out, size_t osize, void * mode);
 size_t bz2_d(char * in, size_t isize, char * out, size_t osize, void * _);

@@ -10,6 +10,7 @@ set(USE_BCL               0) # inefficient
 set(USE_BLAKE2            0) # doesn't compile with MSVC10. Requires SSE2, so you need to enable it below too.
 set(USE_BLOSC             0) # inefficient
 set(USE_BLZ               0) # inefficient
+set(USE_BROTLI            0) # very slow compressor
 set(USE_BZ2               0) # there are barely any competitors for it
 set(USE_CITYHASH          0) # superseeded by farmhash
 set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
@@ -211,6 +212,25 @@ IF(USE_BCL)
 
     add_definitions(-DFSBENCH_USE_BCL)
 ENDIF(USE_BCL)
+
+IF(USE_BROTLI)
+    set(BROTLI_SRC
+        codecs/brotli/enc/entropy_encode.cc
+        codecs/brotli/enc/block_splitter.cc
+        codecs/brotli/enc/prefix.cc
+        codecs/brotli/enc/histogram.cc
+        codecs/brotli/enc/encode.cc
+        codecs/brotli/enc/literal_cost.cc
+        codecs/brotli/enc/backward_references.cc
+        codecs/brotli/dec/bit_reader.c
+        codecs/brotli/dec/huffman.c
+        codecs/brotli/dec/streams.c
+        codecs/brotli/dec/safe_malloc.c
+        codecs/brotli/dec/decode.c
+        )
+
+    add_definitions(-DFSBENCH_USE_BROTLI)
+ENDIF(USE_BROTLI)
 
 IF(USE_BZ2)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/bzip2-1.0.6)
@@ -674,6 +694,7 @@ ENDIF(USE_ZSTD)
 set(SRC ${MAIN_SRC}
         ${7z_SRC}
         ${BCL_SRC}
+        ${BROTLI_SRC}
         ${BZ2_SRC}
         ${CRYPTOPP_SRC}
         ${ECRYPT_SRC}
