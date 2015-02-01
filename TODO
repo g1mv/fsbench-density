@@ -39,7 +39,7 @@ add:
 * https://github.com/floodyberry/poly1305-donna
 * https://code.google.com/p/crcutil/
 * http://cessu.blogspot.com/2008/11/hashing-with-sse2-revisited-or-my-hash.html
-* http://libssc.net/ (crashes ??)
+* http://libssc.net/ (in progress)
 * http://encode.ru/threads/1874-Alba (seems poor)
 * entropy coders, http://encode.ru/threads/1890-Benchmarking-Entropy-Coders lists some
 * https://github.com/Bulat-Ziganshin/DataSmoke
@@ -59,6 +59,12 @@ add:
 * https://github.com/coderforlife/ms-compress
 * http://encode.ru/threads/2059-phafre
 * http://encode.ru/threads/1909-Tree-alpha-v0-1-download/
+* https://www.schneier.com/blog/archives/2014/10/spritz_a_new_rc.html
+* http://eprint.iacr.org/2013/404.pdf
+* update lzham
+* siphash implementations
+* http://encode.ru/threads/2102-Adler32-on-Large-Blocks
+* http://balz.sourceforge.net/
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4
 Don't use a fixed number of iters; watch variance and keep repeating until confidence is good enough.
