@@ -240,6 +240,13 @@ size_t snappy_m(size_t input_size);
 #ifdef FSBENCH_USE_SPOOKY
 void spooky(char * in, size_t isize, char * out);
 #endif//FSBENCH_USE_SPOOKY
+#ifdef FSBENCH_USE_WFLZ
+size_t wfLZ_c(char * in, size_t isize, char * out, size_t osize, void *buf);
+size_t wfLZ_fast_c(char * in, size_t isize, char * out, size_t osize, void *buf);
+size_t wfLZ_d (char * in, size_t isize, char * out, size_t osize, void *);
+size_t wfLZ_m(size_t input_size);
+size_t wfLZ_mem();
+#endif//FSBENCH_USE_WFLZ
 #ifdef FSBENCH_USE_XXHASH
 void xxhash(char * in, size_t isize, char * out);
 void xxhash64(char * in, size_t isize, char * out);

@@ -226,6 +226,7 @@ Codec * find_codec(const std::string & name);
 #define _SPOOKY_VERSION         "V2 2012-08-05"
 #define _TINF_VERSION           "1.00"
 #define _TOR_VERSION            "0.6a"
+#define _WFLZ_VERSION           "r10"
 #define _XXHASH_VERSION         "r39"
 #define _XXHASH256_VERSION      "1"
 #define _YAPPY_VERSION          "v2"

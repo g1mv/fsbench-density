@@ -1027,6 +1027,37 @@ void spooky(char * in, size_t isize, char * out)
     memcpy(out + sizeof(d1), &d2, sizeof(d2));
 }
 #endif//FSBENCH_USE_SPOOKY
+#ifdef FSBENCH_USE_WFLZ
+extern "C"
+{
+#include "wfLZ.h"
+}
+size_t wfLZ_c(char * in, size_t isize, char * out, size_t osize, void *buf)
+{
+    UNUSED(osize);
+    return wfLZ_Compress((const uint8_t*)in, isize, (uint8_t*)out, (uint8_t*)buf, 0);
+}
+size_t wfLZ_fast_c(char * in, size_t isize, char * out, size_t osize, void *buf)
+{
+    UNUSED(osize);
+    return wfLZ_CompressFast((const uint8_t*)in, isize, (uint8_t*)out, (uint8_t*)buf, 0);
+}
+size_t wfLZ_d (char * in, size_t isize, char * out, size_t osize, void *)
+{
+    UNUSED(isize);
+    wfLZ_Decompress((const uint8_t*)in, (uint8_t*)out);
+    return osize;
+}
+size_t wfLZ_m(size_t input_size)
+{
+    return wfLZ_GetMaxCompressedSize(input_size);
+}
+size_t wfLZ_mem()
+{
+    return wfLZ_GetWorkMemSize();
+}
+
+#endif//FSBENCH_USE_WFLZ
 #ifdef FSBENCH_USE_XXHASH
 extern "C"
 {

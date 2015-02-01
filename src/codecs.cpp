@@ -339,6 +339,10 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_TINF
               new Codec("tinf", _TINF_VERSION, 0, FsBenchTinf::inflate, no_blowup),
 #endif
+#ifdef FSBENCH_USE_WFLZ
+              new BufferedCodec("wfLZ",      _WFLZ_VERSION, wfLZ_fast_c, wfLZ_d, wfLZ_m, wfLZ_mem(), 8),
+              new BufferedCodec("wfLZ_fast", _WFLZ_VERSION, wfLZ_c,      wfLZ_d, wfLZ_m, wfLZ_mem(), 8),
+#endif
 #ifdef FSBENCH_USE_Z3LIB
               new BufferedCodec("z3lib", _Z3LIB_VERSION, FsBenchZ3Lib::z3lib_c, FsBenchZ3Lib::z3lib_d, no_blowup, FsBenchZ3Lib::mem_size),
 #endif
@@ -557,6 +561,7 @@ static const pair<Codec*, const string> fast_compressors[] =
       make_pair(raw_find_codec("RLE64"), ""),
       make_pair(raw_find_codec("Shrinker"), ""),
       make_pair(raw_find_codec("Snappy"), ""),
+      make_pair(raw_find_codec("wfLZ"), ""),
       make_pair(raw_find_codec("ZSTD"), "") };
 MKLIST(FAST_COMPRESSORS, fast_compressors);
 
@@ -637,6 +642,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("scz"), ""),
       make_pair(raw_find_codec("Shrinker"), ""),
       make_pair(raw_find_codec("Snappy"), ""),
+      make_pair(raw_find_codec("wfLZ"), ""),
       make_pair(find_codec("zlib/tinf"), ""),
       make_pair(raw_find_codec("Tornado"), ""),
       make_pair(raw_find_codec("Yappy"), ""),

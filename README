@@ -227,6 +227,7 @@ Shrinker                            | Fu Siyuan                                 
 Snappy                              | ???                                              | 1.1.0               | yes      | https://code.google.com/p/snappy
 tinf                                | Joergen Ibsen                                    | 1.00                | no       | http://ibsensoftware.com/download.html
 Tornado                             | Joachim Henke, Bulat Ziganshin                   | 0.6a                | yes      | http://freearc.org:8002
+wfLZ                                | Shane Calimlim                                   | r10                 | yes      | https://code.google.com/p/wflz/
 Yappy                               | Peter Popov                                      | v2                  | yes      | http://blog.gamedeff.com/?p=371
 z3lib - deflate                     | Oskar Schirmer                                   | 1.3                 | no       | http://scara.com/~schirmer/o/z3lib
 zlib - deflate                      | Mark Adler, Jean-loup Gailly                     | 1.2.8               | yes      | http://zlib.net
