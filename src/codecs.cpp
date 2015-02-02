@@ -542,7 +542,9 @@ static list<CodecWithParams> createParamsList(list<pair<Codec*, const string> > 
 #define MKLIST(name, array) list<CodecWithParams> (name) = createParamsList(list< pair<Codec*,const string> >((array), (array) + sizeof((array)) / sizeof(pair<Codec*,const string>)))
 
 static const pair<Codec*, const string> default_codecs[] =
-    { make_pair(raw_find_codec("LZ4"), ""),
+    { make_pair(raw_find_codec("density::chameleon"), ""),
+      make_pair(raw_find_codec("density::mandala"), ""),
+      make_pair(raw_find_codec("LZ4"), ""),
       make_pair(raw_find_codec("LZO"), ""),
       make_pair(raw_find_codec("QuickLZ"), ""),
       make_pair(raw_find_codec("Snappy"), ""),
@@ -552,6 +554,8 @@ MKLIST(DEFAULT_CODECS, default_codecs);
 static const pair<Codec*, const string> fast_compressors[] =
     { make_pair(raw_find_codec("bcl-rle"), ""),
       make_pair(raw_find_codec("blosc"), ""),
+      make_pair(raw_find_codec("density::chameleon"), ""),
+      make_pair(raw_find_codec("density::mandala"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
       make_pair(raw_find_codec("lrrle"), ""),
       make_pair(raw_find_codec("LZ4"), ""),
@@ -579,6 +583,8 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("bzip2"), ""),
       make_pair(raw_find_codec("crush"), ""),
       make_pair(raw_find_codec("cryptopp-deflate"), ""),
+      make_pair(raw_find_codec("density::chameleon"), ""),
+      make_pair(raw_find_codec("density::mandala"), ""),
       make_pair(raw_find_codec("Doboz"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
       make_pair(raw_find_codec("fse"), ""),

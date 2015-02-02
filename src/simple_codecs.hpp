@@ -56,6 +56,11 @@ void CrapWow(char * in, size_t isize, char * out);
 size_t crush_c(char * in, size_t isize, char * out, size_t, void * level);
 size_t crush_d(char * in, size_t isize, char * out, size_t osize, void *);
 #endif//FSBENCH_USE_CRUSH
+#ifdef FSBENCH_USE_DENSITY
+size_t density_chameleon_compress(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t density_mandala_compress(char * in, size_t isize, char * out, size_t osize, void * _);
+size_t density_decompress(char * in, size_t isize, char * out, size_t osize, void * _);
+#endif//FSBENCH_USE_DENSITY
 #ifdef FSBENCH_USE_DOBOZ
 size_t Doboz_c(char * in, size_t isize, char * out, size_t osize, void * _);
 size_t Doboz_d(char * in, size_t isize, char * out, size_t osize, void * _);

@@ -13,6 +13,7 @@
 [+] added zstd 2015-01-31
 [+] added Brotli 2015-02-01
 [+] added wfLZ r10
+[+] added density 2015-02-02
 [~] updated blosc to 1.5.2
 [~] updated lz4 to r127
 [~] updated LZJB to the latest FreeBSD version

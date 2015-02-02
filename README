@@ -163,6 +163,7 @@ Brotli                              | Jyrki Alakuijala, Zoltan Szabadka         
 bzip2                               | Julian Seward                                    | 1.0.6               | yes      | http://bzip.org
 crush                               | Ilia Muraviev                                    | 0.0.1               | yes      | http://encode.ru/threads/1289-CRUSH-0-01-is-here!
 crypto++ - deflate                  | Wei Dai                                          | 5.6.1               | yes      | www.cryptopp.com
+Density                             | Guillaume Voirin                                 | 2015-02-02          | yes      | https://github.com/centaurean/density
 Doboz                               | Attila T. Áfra                                   | 2011-03-19          | no       | https://bitbucket.org/attila_afra/doboz/downloads
 FastLZ                              | Ariya Hidayat                                    | 0.1.0               | no       | http://fastlz.org
 FSE                                 | Yann Collet                                      | 2014-04-07          | no       | https://github.com/Cyan4973/FiniteStateEntropy

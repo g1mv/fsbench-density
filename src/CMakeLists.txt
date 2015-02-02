@@ -16,6 +16,7 @@ set(USE_CITYHASH          0) # superseeded by farmhash
 set(USE_CRAPWOW           0) # weak and while fast, there are much faster ones
 set(USE_CRUSH             0) # Nothing great
 set(USE_CRYPTOPP          0) # doesn't link on my FreeBSD
+set(USE_DENSITY           1)
 set(USE_DOBOZ             0) # inefficient
 set(USE_ECRYPT            1)
 set(USE_FARMHASH          1)
@@ -279,6 +280,31 @@ IF(USE_CRYPTOPP)
 
     add_definitions(-DFSBENCH_USE_CRYPTOPP)
 ENDIF(USE_CRYPTOPP)
+
+IF(USE_DENSITY)
+    include_directories (${FSBENCH_SOURCE_DIR}/codecs/density/src)
+    set(DENSITY_SRC
+        codecs/density/src/block_decode.c
+        codecs/density/src/block_encode.c
+        codecs/density/src/block_footer.c
+        codecs/density/src/block_header.c
+        codecs/density/src/block_mode_marker.c
+        codecs/density/src/globals.c
+        codecs/density/src/kernel_chameleon_decode.c
+        codecs/density/src/kernel_chameleon_dictionary.c
+        codecs/density/src/kernel_chameleon_encode.c
+        codecs/density/src/kernel_mandala_decode.c
+        codecs/density/src/kernel_mandala_dictionary.c
+        codecs/density/src/kernel_mandala_encode.c
+        codecs/density/src/main_decode.c
+        codecs/density/src/main_encode.c
+        codecs/density/src/main_footer.c
+        codecs/density/src/main_header.c
+        codecs/density/src/memory_location.c
+        codecs/density/src/memory_teleport.c
+        codecs/density/src/stream.c)
+    add_definitions(-DFSBENCH_USE_DENSITY)
+ENDIF(USE_DENSITY)
 
 IF(USE_ECRYPT)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/ecrypt/)
@@ -719,11 +745,11 @@ set(SRC ${MAIN_SRC}
         ${OTHER_SRC})
 
 
-
 #----------------#
 # compiler flags #
 #----------------#
 
+set(C99_FLAGS)
 
 IF(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
     set_source_files_properties(${MAIN_SRC} PROPERTIES COMPILE_FLAGS "-Wall -Wextra")
@@ -733,6 +759,7 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
 
 IF(CMAKE_COMPILER_IS_GNUCC OR ${CMAKE_C_COMPILER_ID} STREQUAL Clang)
     set(C_FLAGS   ${GCC_FLAGS})
+    set(C99_FLAGS ${GCC_FLAGS_C99})
     set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${GCC_LINKFLAGS})
 ENDIF(CMAKE_COMPILER_IS_GNUCC OR ${CMAKE_C_COMPILER_ID} STREQUAL Clang)
 

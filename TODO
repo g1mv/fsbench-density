@@ -39,7 +39,6 @@ add:
 * https://github.com/floodyberry/poly1305-donna
 * https://code.google.com/p/crcutil/
 * http://cessu.blogspot.com/2008/11/hashing-with-sse2-revisited-or-my-hash.html
-* http://libssc.net/ (in progress)
 * http://encode.ru/threads/1874-Alba (seems poor)
 * entropy coders, http://encode.ru/threads/1890-Benchmarking-Entropy-Coders lists some
 * https://github.com/Bulat-Ziganshin/DataSmoke
