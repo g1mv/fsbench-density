@@ -59,7 +59,7 @@ set(USE_SIPHASH           1)
 set(USE_SNAPPY            1)
 set(USE_SPOOKY            1)
 set(USE_TINF              0) # inefficient
-set(USE_TOR               1)
+set(USE_TOR               0) # doesn't compile on OSX
 set(USE_WFLZ              1)
 set(USE_XXHASH            1)
 set(USE_YAPPY             0) # Nothing great
@@ -142,8 +142,13 @@ IF(MSVC) # Cmake doesn't use the strongest optimisation flags here, so I fix it 
     string(REPLACE "/O2" "/Ox" CMAKE_CXX_FLAGS_RELEASE
     "${CMAKE_CXX_FLAGS_RELEASE}")
 ENDIF(MSVC)
-set(GCC_FLAGS "-fno-tree-vectorize -static") # the code crashes when I compile it with mingw 4.5.2 and w/out -fno-tree-vectorize
-                                             # with mingw64 4.6.2 it's fine. Don't know what's up. FIXME.
+IF (CMAKE_HOST_APPLE)
+    set(GCC_FLAGS "-fno-tree-vectorize") # the code crashes when I compile it with mingw 4.5.2 and w/out -fno-tree-vectorize
+                                         # with mingw64 4.6.2 it's fine. Don't know what's up. FIXME.
+ELSE (CMAKE_HOST_APPLE)
+    set(GCC_FLAGS "-fno-tree-vectorize -static") # the code crashes when I compile it with mingw 4.5.2 and w/out -fno-tree-vectorize
+                                                 # with mingw64 4.6.2 it's fine. Don't know what's up. FIXME.
+ENDIF(CMAKE_HOST_APPLE)
 set(GXX_FLAGS ${GCC_FLAGS})
 set(MSVC_FLAGS "/W4")
 
@@ -745,9 +750,11 @@ set(CMAKE_C_FLAGS          "${CMAKE_C_FLAGS}          ${C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXE_LINKER_FLAGS}")
 
 add_executable (fsbench ${SRC})
-IF (UNIX)
+IF (CMAKE_HOST_APPLE)
+    target_link_libraries (fsbench -lpthread)
+ELSEIF (UNIX)
     target_link_libraries (fsbench -lrt -lpthread)
-ENDIF(UNIX)
+ENDIF(CMAKE_HOST_APPLE)
 
 
 #---------------#

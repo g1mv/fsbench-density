@@ -39,6 +39,21 @@ extern "C"
 #include <windows.h>
 #define INIT_TIMER(x) if(!QueryPerformanceFrequency(&x)) { cerr<<"QueryPerformance not present"; }
 #define GET_TIME(x) QueryPerformanceCounter(&x);
+#elif defined(__MACH__)
+#include <mach/clock.h>
+#include <mach/mach.h>
+typedef struct timespec LARGE_INTEGER;
+static void osx_clock_gettime(struct timespec &x) {
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    x.tv_sec = mts.tv_sec;
+    x.tv_nsec = mts.tv_nsec;
+}
+#define INIT_TIMER(x)
+#define GET_TIME(x) osx_clock_gettime(x);
 #else
 #include <time.h>
 typedef struct timespec LARGE_INTEGER;
