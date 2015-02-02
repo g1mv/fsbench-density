@@ -12,6 +12,7 @@
  * 4. Add codec to all_compressors / all_checksums / all_ciphers in codecs.cpp
  * 5. Update readme
  * 6. Update changelog
+ * 7. Add sources to SCM
  */
 #ifndef CODECS_HPP_BhjgkfG8
 #define CODECS_HPP_BhjgkfG8
