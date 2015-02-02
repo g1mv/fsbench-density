@@ -319,6 +319,7 @@ Codec * codecs[] =
               NAKAMICHI_CODEC(Sanrenpatsu)
               NAKAMICHI_CODEC(Sanshi)
               NAKAMICHI_CODEC(Suiken)
+              NAKAMICHI_CODEC(Tengu)
               NAKAMICHI_CODEC(Washi)
               NAKAMICHI_CODEC(Yoko)
               NAKAMICHI_CODEC(Zangetsu)
@@ -627,6 +628,7 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("Nakamichi-Sanrenpatsu"), ""),
       make_pair(raw_find_codec("Nakamichi-Sanshi"), ""),
       make_pair(raw_find_codec("Nakamichi-Suiken"), ""),
+      make_pair(raw_find_codec("Nakamichi-Tengu"), ""),
       make_pair(raw_find_codec("Nakamichi-Washi"), ""),
       make_pair(raw_find_codec("Nakamichi-Yoko"), ""),
       make_pair(raw_find_codec("Nakamichi-Zangetsu"), ""),

@@ -41,7 +41,7 @@ static inline size_t process(char * in, size_t isize, char * out, size_t,
     size_t ivsize,
     size_t keysize
     )
-{                                                                                    \
+{
     ECRYPT_ctx ctx;
     u8 * key = new u8[keysize / CHAR_BIT];
     memset(key, 0, keysize / CHAR_BIT);
@@ -52,7 +52,7 @@ static inline size_t process(char * in, size_t isize, char * out, size_t,
     ECRYPT_process_bytes(&ctx, (const u8*) in, (u8*)out, isize);
     delete[] key;
     delete[] iv;
-	return isize;
+    return isize;
 }
 template<typename ECRYPT_ctx>
 static inline size_t process2(char * in, size_t isize, char * out, size_t,
@@ -74,7 +74,7 @@ static inline size_t process2(char * in, size_t isize, char * out, size_t,
     size_t ivsize,
     size_t keysize
     )
-{                                                                               \
+{
     ECRYPT_ctx ctx;
     u8 * key = new u8[keysize / CHAR_BIT];
     memset(key, 0, keysize / CHAR_BIT);
@@ -85,7 +85,7 @@ static inline size_t process2(char * in, size_t isize, char * out, size_t,
     ECRYPT_process_bytes(action, &ctx, (const u8*) in, (u8*)out, isize);
     delete[] key;
     delete[] iv;
-	return isize;
+    return isize;
 }
 
 static const string invalid_keysize("Invalid keysize");
@@ -101,13 +101,13 @@ static const string invalid_keysize("Invalid keysize");
     throw InvalidParams(invalid_keysize);
 
 #define ENCODER_DECODER_DEFINITION(CLASS_NAME)                                                           \
-size_t CLASS_NAME::encode(char * in, size_t isize, char * out, size_t osize, void * keysize)                \
+size_t CLASS_NAME::encode(char * in, size_t isize, char * out, size_t osize, void * keysize)             \
 {                                                                                                        \
     return process<CLASS_NAME##_ctx>(in, isize, out, osize,                                              \
         CLASS_NAME##_keysetup, CLASS_NAME##_ivsetup, CLASS_NAME##_encrypt_bytes, CLASS_NAME##_MAXIVSIZE, \
         *(intptr_t*)keysize);                                                                            \
 }                                                                                                        \
-size_t CLASS_NAME::decode(char * in, size_t isize, char * out, size_t osize, void * keysize)                \
+size_t CLASS_NAME::decode(char * in, size_t isize, char * out, size_t osize, void * keysize)             \
 {                                                                                                        \
     return process<CLASS_NAME##_ctx>(in, isize, out, osize,                                              \
         CLASS_NAME##_keysetup, CLASS_NAME##_ivsetup, CLASS_NAME##_decrypt_bytes, CLASS_NAME##_MAXIVSIZE, \
@@ -115,14 +115,14 @@ size_t CLASS_NAME::decode(char * in, size_t isize, char * out, size_t osize, voi
 }
 
 #define ENCODER_DECODER_DEFINITION2(CLASS_NAME)                                                          \
-size_t CLASS_NAME::encode(char * in, size_t isize, char * out, size_t osize, void * keysize)                \
+size_t CLASS_NAME::encode(char * in, size_t isize, char * out, size_t osize, void * keysize)             \
 {                                                                                                        \
     return process2<CLASS_NAME##_ctx>(in, isize, out, osize,                                             \
         CLASS_NAME##_keysetup, CLASS_NAME##_ivsetup, CLASS_NAME##_process_bytes,                         \
         0,                                                                                               \
         CLASS_NAME##_MAXIVSIZE, *(intptr_t*)keysize);                                                    \
 }                                                                                                        \
-size_t CLASS_NAME::decode(char * in, size_t isize, char * out, size_t osize, void * keysize)                \
+size_t CLASS_NAME::decode(char * in, size_t isize, char * out, size_t osize, void * keysize)             \
 {                                                                                                        \
     return process2<CLASS_NAME##_ctx>(in, isize, out, osize,                                             \
         CLASS_NAME##_keysetup, CLASS_NAME##_ivsetup, CLASS_NAME##_process_bytes,                         \
@@ -134,7 +134,7 @@ size_t CLASS_NAME::decode(char * in, size_t isize, char * out, size_t osize, voi
     CLASS_NAME::CLASS_NAME():                                                                                              \
         ECryptCodec(#CLASS_NAME, VERSION, encode, decode, CLASS_NAME##_KEYSIZE(0), CLASS_NAME##_MAXKEYSIZE, DAFULT_KEYSIZE)\
     {}                                                                                                                     \
-void CLASS_NAME::init(const std::string & args_, unsigned threads_no, size_t isize, bool init_encoder, bool init_decoder)   \
+void CLASS_NAME::init(const std::string & args_, unsigned threads_no, size_t isize, bool init_encoder, bool init_decoder)  \
 {                                                                                                                          \
     INIT(CLASS_NAME##_KEYSIZE, CLASS_NAME##_MAXKEYSIZE, CLASS_NAME##_init)                                                 \
 }
@@ -142,11 +142,11 @@ void CLASS_NAME::init(const std::string & args_, unsigned threads_no, size_t isi
 #define ECRYPT_CLASS_DEFINITION(CLASS_NAME, DAFULT_KEYSIZE, VERSION)\
     CLASS_INITS(CLASS_NAME, DAFULT_KEYSIZE, VERSION)                \
     ENCODER_DECODER_DEFINITION(CLASS_NAME)
-    
+
 #define ECRYPT_CLASS_DEFINITION2(CLASS_NAME, DAFULT_KEYSIZE, VERSION)\
     CLASS_INITS(CLASS_NAME, DAFULT_KEYSIZE, VERSION)                 \
     ENCODER_DECODER_DEFINITION2(CLASS_NAME)
-        
+
 namespace FsBenchECrypt
 {
 ECryptCodec::ECryptCodec(const std::string & name_,
@@ -168,7 +168,7 @@ ECryptCodec::ECryptCodec(const std::string & name_,
                       moving,
                       false)
     {}
-    
+
 string ECryptCodec::help() const                                             \
 {                                                                            \
     return this->name + " " + this->version +                                \

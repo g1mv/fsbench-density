@@ -576,6 +576,7 @@ IF(USE_NAKAMICHI)
                                codecs/nakamichi/Nakamichi_Sanrenpatsu.c
                                codecs/nakamichi/Nakamichi_Sanshi.c
                                codecs/nakamichi/Nakamichi_Suiken.c
+                               codecs/nakamichi/Nakamichi_Tengu.c
                                codecs/nakamichi/Nakamichi_Washi.c
                                codecs/nakamichi/Nakamichi_Yoko.c
                                codecs/nakamichi/Nakamichi_Zangetsu.c
