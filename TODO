@@ -44,7 +44,6 @@ add:
 * entropy coders, http://encode.ru/threads/1890-Benchmarking-Entropy-Coders lists some
 * https://github.com/Bulat-Ziganshin/DataSmoke
 * BWT(s) variants
-* http://www.nongnu.org/lzip/pdlzip.html
 * http://www.cs.amherst.edu/~sfkaplan/research/compressed-caching/WK4x4.tgz
 * http://www.cs.amherst.edu/~sfkaplan/research/compressed-caching/WKdm.tgz
 * WSL: http://ssergeo.narod.ru/
@@ -64,6 +63,9 @@ add:
 * siphash implementations
 * http://encode.ru/threads/2102-Adler32-on-Large-Blocks
 * http://balz.sourceforge.net/
+* https://github.com/lemire/FastPFOR
+* https://github.com/powturbo/TurboPFor
+* http://sourceforge.net/projects/wimlib/
 
 Allow more than 1 option passed to a codec, i.e. tor:10:ht4
 Don't use a fixed number of iters; watch variance and keep repeating until confidence is good enough.

@@ -236,5 +236,5 @@ Codec * find_codec(const std::string & name);
 #define _ZLIB_INTEL_VERSION     "2014-06-16 Intel"
 #define _ZLING_VERSION          "20140324"
 #define _ZOPFLI_VERSION         "1.0.0"
-#define _ZSTD_VERSION           "0.0.1"
+#define _ZSTD_VERSION           "2015-01-31"
 #endif // CODECS_HPP_BhjgkfG8
