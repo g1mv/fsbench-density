@@ -19,6 +19,7 @@
 [~] updated LZJB to the latest FreeBSD version
 [~] updated tornado to 0.6a
 [~] updated xxhash to r39
+[~] updated LZO to 2.08
 [~] made CityHash optional as it's superseeded by FarmHash
 [-] removed xxhash256, it's dangerously weak
 [!] fixed integer underflow

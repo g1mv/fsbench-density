@@ -180,7 +180,7 @@ LZHAM                               | Richard Geldreich, Jr.                    
 LZJB                                | Jeff Bonwick                                     | FreeBSD r263244     | no       |
 mmini - lzl                         | Adam Ierymenko                                   | 2010                | no       | https://code.google.com/p/mmini
 LZMAT                               | Vitaly Evseenko                                  | 1.1                 | yes      | www.matcode.com/lzmat.htm
-LZO                                 | Markus Franz Xaver Johannes Oberhumer            | 2.06                | yes      | www.oberhumer.com/opensource/lzo
+LZO                                 | Markus Franz Xaver Johannes Oberhumer            | 2.08                | yes      | www.oberhumer.com/opensource/lzo
 LZP_ds                              | Dmitry Shkarin                                   | v0                  | no       | http://www.ctxmodel.net/files/LZP-DS_v0.rar
 LZSS                                | Ilia Muraviev                                    | 2008-07-31          | no       | http://encode.ru/threads/143-LZSS-v0-01-is-here!
 LZSS                                | Nobuo Ito                                        | 1.0                 | no       |
