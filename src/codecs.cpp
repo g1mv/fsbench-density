@@ -259,6 +259,10 @@ Codec * codecs[] =
 #ifdef FSBENCH_USE_DOBOZ
               new Codec("Doboz", _DOBOZ_VERSION, Doboz_c, Doboz_d, no_blowup),
 #endif
+#ifdef FSBENCH_USE_DENSITY
+              new Codec("density::chameleon", _DENSITY_VERSION, density_chameleon_compress, density_decompress, no_blowup),
+              new Codec("density::mandala", _DENSITY_VERSION, density_mandala_compress, density_decompress, no_blowup),
+#endif
 #ifdef FSBENCH_USE_FSE
               new Codec("fse",   _FSE_VERSION,   fse_c,   fse_d,   fse_m),
 #endif

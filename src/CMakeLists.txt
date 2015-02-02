@@ -151,6 +151,7 @@ ELSE (CMAKE_HOST_APPLE)
                                                  # with mingw64 4.6.2 it's fine. Don't know what's up. FIXME.
 ENDIF(CMAKE_HOST_APPLE)
 set(GXX_FLAGS ${GCC_FLAGS})
+set(GCC_FLAGS_C99 "-std=c99")
 set(MSVC_FLAGS "/W4")
 
 #--------------#
@@ -728,8 +729,9 @@ IF(USE_ZSTD)
     add_definitions(-DFSBENCH_USE_ZSTD)
 ENDIF(USE_ZSTD)
 
-
+set (SRC_C99 ${DENSITY_SRC})
 set(SRC ${MAIN_SRC}
+        ${SRC_C99}
         ${7z_SRC}
         ${BCL_SRC}
         ${BROTLI_SRC}
@@ -776,6 +778,8 @@ ENDIF(MSVC)
 set(CMAKE_CXX_FLAGS        "${CMAKE_CXX_FLAGS}        ${CXX_FLAGS}")
 set(CMAKE_C_FLAGS          "${CMAKE_C_FLAGS}          ${C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXE_LINKER_FLAGS}")
+
+set_property(SOURCE ${SRC_C99} PROPERTY COMPILE_FLAGS ${C99_FLAGS})
 
 add_executable (fsbench ${SRC})
 IF (CMAKE_HOST_APPLE)
