@@ -3,10 +3,13 @@
 #include "lzham_core.h"
 #include "lzham_symbol_codec.h"
 #include "lzham_huffman_codes.h"
-#include "lzham_polar_codes.h"
 
-// Set to 1 to enable ~2x more frequent Huffman table updating (at slower decompression).
-#define LZHAM_MORE_FREQUENT_TABLE_UPDATING 1
+// Was 16 in previous versions.
+#define LZHAM_DEFAULT_MAX_UPDATE_INTERVAL 64
+
+// Was 40 in previous versions
+// Keep in sync with default setting in g_table_update_settings[]
+#define LZHAM_DEFAULT_ADAPT_RATE 64U
 
 namespace lzham
 {
@@ -225,7 +228,7 @@ namespace lzham
    static arith_prob_cost_initializer g_prob_cost_initializer;
 #endif
 
-   raw_quasi_adaptive_huffman_data_model::raw_quasi_adaptive_huffman_data_model(bool encoding, uint total_syms, bool fast_updating, bool use_polar_codes) :
+   raw_quasi_adaptive_huffman_data_model::raw_quasi_adaptive_huffman_data_model(bool encoding, uint total_syms, uint max_update_interval, uint adapt_rate) :
       m_pDecode_tables(NULL),
       m_total_syms(0),
       m_max_cycle(0),
@@ -233,13 +236,13 @@ namespace lzham
       m_symbols_until_update(0),
       m_total_count(0),
       m_decoder_table_bits(0),
-      m_encoding(encoding),
-      m_fast_updating(false),
-      m_use_polar_codes(false)
+      m_max_update_interval(static_cast<uint16>(max_update_interval)),
+      m_adapt_rate(static_cast<uint16>(adapt_rate)),
+      m_encoding(encoding)
    {
       if (total_syms)
       {
-         init(encoding, total_syms, fast_updating, use_polar_codes);
+         init2(encoding, total_syms, max_update_interval, adapt_rate, NULL);
       }
    }
 
@@ -251,9 +254,9 @@ namespace lzham
       m_symbols_until_update(0),
       m_total_count(0),
       m_decoder_table_bits(0),
-      m_encoding(false),
-      m_fast_updating(false),
-      m_use_polar_codes(false)
+      m_max_update_interval(0),
+      m_adapt_rate(0),
+      m_encoding(false)
    {
       *this = other;
    }
@@ -311,8 +314,8 @@ namespace lzham
 
       m_decoder_table_bits = rhs.m_decoder_table_bits;
       m_encoding = rhs.m_encoding;
-      m_fast_updating = rhs.m_fast_updating;
-      m_use_polar_codes = rhs.m_use_polar_codes;
+      m_max_update_interval = rhs.m_max_update_interval;
+      m_adapt_rate = rhs.m_adapt_rate;
 
       return true;
    }
@@ -343,15 +346,18 @@ namespace lzham
          m_pDecode_tables = NULL;
       }
 
-      m_fast_updating = false;
-      m_use_polar_codes = false;
+      m_max_update_interval = 0;
+      m_adapt_rate = 0;
    }
 
-   bool raw_quasi_adaptive_huffman_data_model::init(bool encoding, uint total_syms, bool fast_updating, bool use_polar_codes, const uint16 *pInitial_sym_freq)
+   bool raw_quasi_adaptive_huffman_data_model::init2(bool encoding, uint total_syms, uint max_update_interval, uint adapt_rate, const uint16 *pInitial_sym_freq)
    {
+      LZHAM_ASSERT(max_update_interval <= 0xFFFF);
+      LZHAM_ASSERT(adapt_rate <= 0xFFFF);
+
       m_encoding = encoding;
-      m_fast_updating = fast_updating;
-      m_use_polar_codes = use_polar_codes;
+      m_max_update_interval = static_cast<uint16>(max_update_interval);
+      m_adapt_rate = static_cast<uint16>(adapt_rate);
       m_symbols_until_update = 0;
 
       if (!m_sym_freq.try_resize(total_syms))
@@ -404,17 +410,7 @@ namespace lzham
          }
       }
 
-      // TODO: Make this setting a user controllable parameter?
-      if (m_fast_updating)
-         m_max_cycle = (LZHAM_MAX(64, m_total_syms) + 6) << 5;
-      else
-      {
-#if LZHAM_MORE_FREQUENT_TABLE_UPDATING
-         m_max_cycle = (LZHAM_MAX(24, m_total_syms) + 6) * 12;
-#else
-         m_max_cycle = (LZHAM_MAX(32, m_total_syms) + 6) * 16;
-#endif
-      }
+      m_max_cycle = (LZHAM_MAX(24, m_total_syms) + 6) * (m_max_update_interval ? m_max_update_interval : LZHAM_DEFAULT_MAX_UPDATE_INTERVAL);
 
       m_max_cycle = LZHAM_MIN(m_max_cycle, 32767);
 
@@ -451,7 +447,7 @@ namespace lzham
       if (!update())
          return false;
 
-      m_symbols_until_update = m_update_cycle = 8;
+      m_symbols_until_update = m_update_cycle = LZHAM_MIN(m_max_cycle, 16); // this was 8 in the alphas
       return true;
    }
 
@@ -495,15 +491,11 @@ namespace lzham
       while (m_total_count >= 32768)
          rescale();
 
-      uint table_size = m_use_polar_codes ? get_generate_polar_codes_table_size() : get_generate_huffman_codes_table_size();
+      uint table_size = get_generate_huffman_codes_table_size();
       void *pTables = alloca(table_size);
 
       uint max_code_size, total_freq;
-      bool status;
-      if (m_use_polar_codes)
-         status = generate_polar_codes(pTables, m_total_syms, &m_sym_freq[0], &m_code_sizes[0], max_code_size, total_freq);
-      else
-         status = generate_huffman_codes(pTables, m_total_syms, &m_sym_freq[0], &m_code_sizes[0], max_code_size, total_freq);
+      bool status = generate_huffman_codes(pTables, m_total_syms, &m_sym_freq[0], &m_code_sizes[0], max_code_size, total_freq);
       LZHAM_ASSERT(status);
       LZHAM_ASSERT(total_freq == m_total_count);
       if ((!status) || (total_freq != m_total_count))
@@ -526,10 +518,7 @@ namespace lzham
       if (!status)
          return false;
 
-      if (m_fast_updating)
-         m_update_cycle = 2 * m_update_cycle;
-      else
-         m_update_cycle = (5 * m_update_cycle) >> 2;
+      m_update_cycle = (31U + m_update_cycle * LZHAM_MAX(32U, (m_adapt_rate ? m_adapt_rate : LZHAM_DEFAULT_ADAPT_RATE))) >> 5U;
 
       if (m_update_cycle > m_max_cycle)
          m_update_cycle = m_max_cycle;
@@ -555,12 +544,7 @@ namespace lzham
 
       return true;
    }
-
-   adaptive_bit_model::adaptive_bit_model()
-   {
-      clear();
-   }
-
+	   
    adaptive_bit_model::adaptive_bit_model(float prob0)
    {
       set_probability_0(prob0);
@@ -606,7 +590,7 @@ namespace lzham
 
    bool adaptive_arith_data_model::init(bool encoding, uint total_syms)
    {
-      encoding;
+      LZHAM_NOTE_UNUSED(encoding);
       if (!total_syms)
       {
          clear();

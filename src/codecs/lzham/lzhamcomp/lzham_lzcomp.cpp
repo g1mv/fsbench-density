@@ -35,13 +35,7 @@ namespace lzham
    {
       if ((pParams->m_dict_size_log2 < CLZBase::cMinDictSizeLog2) || (pParams->m_dict_size_log2 > CLZBase::cMaxDictSizeLog2))
          return LZHAM_COMP_STATUS_INVALID_PARAMETER;
-
-      if (pParams->m_cpucache_total_lines)
-      {
-         if (!math::is_power_of_2(pParams->m_cpucache_line_size))
-            return LZHAM_COMP_STATUS_INVALID_PARAMETER;
-      }
-
+			     
       internal_params.m_dict_size_log2 = pParams->m_dict_size_log2;
 
       if (pParams->m_max_helper_threads < 0)
@@ -50,8 +44,6 @@ namespace lzham
          internal_params.m_max_helper_threads = pParams->m_max_helper_threads;
       internal_params.m_max_helper_threads = LZHAM_MIN(LZHAM_MAX_HELPER_THREADS, internal_params.m_max_helper_threads);
 
-      internal_params.m_num_cachelines = pParams->m_cpucache_total_lines;
-      internal_params.m_cacheline_size = pParams->m_cpucache_line_size;
       internal_params.m_lzham_compress_flags = pParams->m_compress_flags;
 
       if (pParams->m_num_seed_bytes)
@@ -73,6 +65,21 @@ namespace lzham
          default:
             return LZHAM_COMP_STATUS_INVALID_PARAMETER;
       };
+
+		if (pParams->m_table_max_update_interval || pParams->m_table_update_interval_slow_rate)
+		{
+			internal_params.m_table_max_update_interval = pParams->m_table_max_update_interval;
+			internal_params.m_table_update_interval_slow_rate = pParams->m_table_update_interval_slow_rate;
+		}
+		else 
+		{
+			uint rate = pParams->m_table_update_rate;
+			if (!rate)
+				rate = LZHAM_DEFAULT_TABLE_UPDATE_RATE;
+			rate = math::clamp<uint>(rate, 1, LZHAM_FASTEST_TABLE_UPDATE_RATE) - 1;
+			internal_params.m_table_max_update_interval = g_table_update_settings[rate].m_max_update_interval;
+			internal_params.m_table_update_interval_slow_rate = g_table_update_settings[rate].m_slow_rate;
+		}
 
       return LZHAM_COMP_STATUS_SUCCESS;
    }
@@ -391,7 +398,7 @@ namespace lzham
 
    int lzham_lib_z_deflateInit2(lzham_z_streamp pStream, int level, int method, int window_bits, int mem_level, int strategy)
    {
-      strategy;
+      LZHAM_NOTE_UNUSED(strategy);
 
       if (!pStream)
          return LZHAM_Z_STREAM_ERROR;
@@ -439,7 +446,7 @@ namespace lzham
       // Use all CPU's. TODO: This is not always the best idea depending on the dictionary size and the # of bytes to compress.
       comp_params.m_max_helper_threads = -1;
 
-      comp_params.m_dict_size_log2 = labs(window_bits);
+      comp_params.m_dict_size_log2 = static_cast<lzham_uint32>(labs(window_bits));
 
       if (window_bits > 0)
          comp_params.m_compress_flags |= LZHAM_COMP_FLAG_WRITE_ZLIB_STREAM;
@@ -554,7 +561,7 @@ namespace lzham
 
    lzham_z_ulong lzham_lib_z_deflateBound(lzham_z_streamp pStream, lzham_z_ulong source_len)
    {
-      pStream;
+      LZHAM_NOTE_UNUSED(pStream);
       return 64 + source_len + ((source_len + 4095) / 4096) * 4;
    }
 

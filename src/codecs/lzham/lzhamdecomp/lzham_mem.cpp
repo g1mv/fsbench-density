@@ -1,8 +1,13 @@
 // File: lzham_mem.cpp
 // See Copyright Notice and license at the end of include/lzham.h
 #include "lzham_core.h"
-#ifdef __FreeBSD__
+
+#ifdef __APPLE__
+   #include <malloc/malloc.h>
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
    #include <malloc_np.h>
+#else
+   #include <malloc.h>
 #endif
 
 using namespace lzham;
@@ -10,7 +15,11 @@ using namespace lzham;
 #define LZHAM_MEM_STATS 0
 
 #ifndef LZHAM_USE_WIN32_API
-   #define _msize malloc_usable_size
+   #ifndef __APPLE__
+      #define _msize malloc_usable_size
+   #else
+      #define _msize malloc_size
+   #endif
 #endif
 
 namespace lzham
@@ -68,7 +77,7 @@ namespace lzham
 
    static void* lzham_default_realloc(void* p, size_t size, size_t* pActual_size, lzham_bool movable, void* pUser_data)
    {
-      pUser_data;
+      LZHAM_NOTE_UNUSED(pUser_data);
 
       void* p_new;
 
@@ -123,7 +132,7 @@ namespace lzham
 
    static size_t lzham_default_msize(void* p, void* pUser_data)
    {
-      pUser_data;
+      LZHAM_NOTE_UNUSED(pUser_data);
       return p ? _msize(p) : 0;
    }
 

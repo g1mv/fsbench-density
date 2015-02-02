@@ -20,9 +20,10 @@ namespace lzham
       if (m_capacity >= min_new_capacity)
          return true;
 
-      size_t new_capacity = min_new_capacity;
-      if ((grow_hint) && (!math::is_power_of_2((uint64)new_capacity)))
-         new_capacity = math::next_pow2((uint64)new_capacity);
+      // new_capacity must be 64-bit when compiling on x64.
+		size_t new_capacity = (size_t)min_new_capacity;
+      if ((grow_hint) && (!math::is_power_of_2(static_cast<uint64>(new_capacity))))
+         new_capacity = static_cast<uint>(math::next_pow2(static_cast<uint64>(new_capacity)));
 
       LZHAM_ASSERT(new_capacity && (new_capacity > m_capacity));
 

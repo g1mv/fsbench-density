@@ -56,21 +56,15 @@ namespace lzham
       lzham_decompress_params m_params;
 
       lzham_decompress_status_t m_status;
-      
-#if LZHAM_USE_ALL_ARITHMETIC_CODING
-      typedef adaptive_arith_data_model sym_data_model;
-#else
-      typedef quasi_adaptive_huffman_data_model sym_data_model;
-#endif
-                  
-      sym_data_model m_lit_table[1 << CLZDecompBase::cNumLitPredBits];
-      sym_data_model m_delta_lit_table[1 << CLZDecompBase::cNumDeltaLitPredBits];
-      sym_data_model m_main_table;
-      sym_data_model m_rep_len_table[2];
-      sym_data_model m_large_len_table[2];
-      sym_data_model m_dist_lsb_table;
+                              
+      quasi_adaptive_huffman_data_model m_lit_table;
+      quasi_adaptive_huffman_data_model m_delta_lit_table;
+      quasi_adaptive_huffman_data_model m_main_table;
+      quasi_adaptive_huffman_data_model m_rep_len_table[2];
+      quasi_adaptive_huffman_data_model m_large_len_table[2];
+      quasi_adaptive_huffman_data_model m_dist_lsb_table;
 
-      adaptive_bit_model m_is_match_model[CLZDecompBase::cNumStates * (1 << CLZDecompBase::cNumIsMatchContextBits)];
+      adaptive_bit_model m_is_match_model[CLZDecompBase::cNumStates];
       adaptive_bit_model m_is_rep_model[CLZDecompBase::cNumStates];
       adaptive_bit_model m_is_rep0_model[CLZDecompBase::cNumStates];
       adaptive_bit_model m_is_rep0_single_byte_model[CLZDecompBase::cNumStates];
@@ -78,6 +72,7 @@ namespace lzham
       adaptive_bit_model m_is_rep2_model[CLZDecompBase::cNumStates];
       
       uint m_dst_ofs;
+      uint m_dst_highwater_ofs;
 
       uint m_step;
       uint m_block_step;
@@ -92,9 +87,7 @@ namespace lzham
       uint m_cur_state;
 
       uint m_start_block_dst_ofs;
-      uint m_prev_char;
-      uint m_prev_prev_char;
-
+            
       uint m_block_type;
 
       const uint8 *m_pFlush_src;
@@ -141,11 +134,11 @@ namespace lzham
    // Helpers to save/restore local variables (hopefully CPU registers) to memory.
    #define LZHAM_RESTORE_STATE LZHAM_RESTORE_LOCAL_STATE \
       match_hist0 = m_match_hist0; match_hist1 = m_match_hist1; match_hist2 = m_match_hist2; match_hist3 = m_match_hist3; \
-      cur_state = m_cur_state; prev_char = m_prev_char; prev_prev_char = m_prev_prev_char; dst_ofs = m_dst_ofs;
+      cur_state = m_cur_state; dst_ofs = m_dst_ofs;
       
    #define LZHAM_SAVE_STATE LZHAM_SAVE_LOCAL_STATE \
       m_match_hist0 = match_hist0; m_match_hist1 = match_hist1; m_match_hist2 = match_hist2; m_match_hist3 = match_hist3; \
-      m_cur_state = cur_state; m_prev_char = prev_char; m_prev_prev_char = prev_prev_char; m_dst_ofs = dst_ofs;
+      m_cur_state = cur_state; m_dst_ofs = dst_ofs;
       
    // Helper that coroutine returns to the caller with a request for more input bytes.
    #define LZHAM_DECODE_NEEDS_BYTES \
@@ -167,14 +160,15 @@ namespace lzham
       #define LZHAM_BULK_MEMCPY memcpy
       #define LZHAM_MEMCPY memcpy
    #endif
+
    // Flush the output buffer/dictionary by doing a coroutine return to the caller.
-   // The caller must permit the decompressor to flush total_bytes from the dictionary, or (in the 
-   // case of corrupted data, or a bug) we must report a DEST_BUF_TOO_SMALL error.
-   #define LZHAM_FLUSH_OUTPUT_BUFFER(total_bytes) \
+   // Buffered mode only.
+   #define LZHAM_FLUSH_DICT_TO_OUTPUT_BUFFER(dict_ofs) \
       LZHAM_SAVE_STATE \
-      m_pFlush_src = m_pDecomp_buf + m_seed_bytes_to_ignore_when_flushing; \
-      m_flush_num_bytes_remaining = total_bytes - m_seed_bytes_to_ignore_when_flushing; \
+      m_pFlush_src = m_pDecomp_buf + m_seed_bytes_to_ignore_when_flushing + m_dst_highwater_ofs; \
+      m_flush_num_bytes_remaining = dict_ofs - m_seed_bytes_to_ignore_when_flushing - m_dst_highwater_ofs; \
       m_seed_bytes_to_ignore_when_flushing = 0; \
+      m_dst_highwater_ofs = dict_ofs & dict_size_mask; \
       while (m_flush_num_bytes_remaining) \
       { \
          m_flush_n = LZHAM_MIN(m_flush_num_bytes_remaining, *m_pOut_buf_size); \
@@ -226,6 +220,7 @@ namespace lzham
       m_initial_step = 0;
             
       m_dst_ofs = 0;
+      m_dst_highwater_ofs = 0;
 
       m_pIn_buf = NULL;
       m_pIn_buf_size = NULL;
@@ -250,13 +245,8 @@ namespace lzham
 
    void lzham_decompressor::reset_all_tables()
    {
-      m_lit_table[0].reset();
-      for (uint i = 1; i < LZHAM_ARRAY_SIZE(m_lit_table); i++)
-         m_lit_table[i] = m_lit_table[0];
-
-      m_delta_lit_table[0].reset();
-      for (uint i = 1; i < LZHAM_ARRAY_SIZE(m_delta_lit_table); i++)
-         m_delta_lit_table[i] = m_delta_lit_table[0];
+      m_lit_table.reset();
+     m_delta_lit_table.reset();
       
       m_main_table.reset();
 
@@ -283,11 +273,8 @@ namespace lzham
 
    void lzham_decompressor::reset_huffman_table_update_rates()
    {
-      for (uint i = 0; i < LZHAM_ARRAY_SIZE(m_lit_table); i++)
-         m_lit_table[i].reset_update_rate();
-
-      for (uint i = 0; i < LZHAM_ARRAY_SIZE(m_delta_lit_table); i++)
-         m_delta_lit_table[i].reset_update_rate();
+      m_lit_table.reset_update_rate();
+      m_delta_lit_table.reset_update_rate();
 
       m_main_table.reset_update_rate();
 
@@ -315,7 +302,7 @@ namespace lzham
       const uint dict_size_mask = unbuffered ? UINT_MAX : (dict_size - 1);
 
       int match_hist0 = 0, match_hist1 = 0, match_hist2 = 0, match_hist3 = 0;
-      uint cur_state = 0, prev_char = 0, prev_prev_char = 0, dst_ofs = 0;
+      uint cur_state = 0, dst_ofs = 0;
       
       const size_t out_buf_size = *m_pOut_buf_size;
       
@@ -346,8 +333,6 @@ namespace lzham
       LZHAM_SYMBOL_CODEC_DECODE_BEGIN(codec);
 
       {
-         bool fast_table_updating, use_polar_codes;
-
          if (m_params.m_decompress_flags & LZHAM_DECOMP_FLAG_READ_ZLIB_STREAM)
          {
             uint check;
@@ -372,43 +357,38 @@ namespace lzham
          }
 
          {
-            uint tmp;
-            LZHAM_SYMBOL_CODEC_DECODE_GET_BITS(codec, tmp, 2);
-            fast_table_updating = (tmp & 2) != 0;
-            use_polar_codes = (tmp & 1) != 0;
+            // Was written by lzcompressor::send_configuration().
+            //uint tmp;
+            //LZHAM_SYMBOL_CODEC_DECODE_GET_BITS(codec, tmp, 2);
          }
 
-         bool succeeded = m_lit_table[0].init(false, 256, fast_table_updating, use_polar_codes);
-         for (uint i = 1; i < LZHAM_ARRAY_SIZE(m_lit_table); i++)
-            succeeded = succeeded && m_lit_table[i].assign(m_lit_table[0]);
+         uint max_update_interval = m_params.m_table_max_update_interval, update_interval_slow_rate =  m_params.m_table_update_interval_slow_rate;
+         if (!max_update_interval && !update_interval_slow_rate)
+         {
+            uint rate = m_params.m_table_update_rate;
+            if (!rate)
+               rate = LZHAM_DEFAULT_TABLE_UPDATE_RATE;
+            rate = math::clamp<uint>(rate, 1, LZHAM_FASTEST_TABLE_UPDATE_RATE) - 1;
+            max_update_interval = g_table_update_settings[rate].m_max_update_interval;
+            update_interval_slow_rate = g_table_update_settings[rate].m_slow_rate;
+         }
 
-         succeeded = succeeded && m_delta_lit_table[0].init(false, 256, fast_table_updating, use_polar_codes);
-         for (uint i = 1; i < LZHAM_ARRAY_SIZE(m_delta_lit_table); i++)
-            succeeded = succeeded && m_delta_lit_table[i].assign(m_delta_lit_table[0]);
-
-         succeeded = succeeded && m_main_table.init(false, CLZDecompBase::cLZXNumSpecialLengths + (m_lzBase.m_num_lzx_slots - CLZDecompBase::cLZXLowestUsableMatchSlot) * 8, fast_table_updating, use_polar_codes);
+         bool succeeded = m_lit_table.init2(false, 256, max_update_interval, update_interval_slow_rate, NULL);
+         
+         //succeeded = succeeded && m_delta_lit_table.init2(false, 256, max_update_interval, update_interval_slow_rate, NULL);
+         succeeded = succeeded && m_delta_lit_table.assign(m_lit_table);
+         
+         succeeded = succeeded && m_main_table.init2(false, CLZDecompBase::cLZXNumSpecialLengths + (m_lzBase.m_num_lzx_slots - CLZDecompBase::cLZXLowestUsableMatchSlot) * 8, max_update_interval, update_interval_slow_rate, NULL);
 
          for (uint i = 0; i < 2; i++)
          {
-            succeeded = succeeded && m_rep_len_table[i].init(false, CLZDecompBase::cNumHugeMatchCodes + (CLZDecompBase::cMaxMatchLen - CLZDecompBase::cMinMatchLen + 1), fast_table_updating, use_polar_codes);
-            succeeded = succeeded && m_large_len_table[i].init(false, CLZDecompBase::cNumHugeMatchCodes + CLZDecompBase::cLZXNumSecondaryLengths, fast_table_updating, use_polar_codes);
+            succeeded = succeeded && m_rep_len_table[i].init2(false, CLZDecompBase::cNumHugeMatchCodes + (CLZDecompBase::cMaxMatchLen - CLZDecompBase::cMinMatchLen + 1), max_update_interval, update_interval_slow_rate, NULL);
+            succeeded = succeeded && m_large_len_table[i].init2(false, CLZDecompBase::cNumHugeMatchCodes + CLZDecompBase::cLZXNumSecondaryLengths, max_update_interval, update_interval_slow_rate, NULL);
          }
 
-         succeeded = succeeded && m_dist_lsb_table.init(false, 16, fast_table_updating, use_polar_codes);
+         succeeded = succeeded && m_dist_lsb_table.init2(false, 16, max_update_interval, update_interval_slow_rate, NULL);
          if (!succeeded)
             return LZHAM_DECOMP_STATUS_FAILED_INITIALIZING;
-
-         for (uint i = 0; i < LZHAM_ARRAY_SIZE(m_is_match_model); i++)
-            m_is_match_model[i].clear();
-
-         for (uint i = 0; i < CLZDecompBase::cNumStates; i++)
-         {
-            m_is_rep_model[i].clear();
-            m_is_rep0_model[i].clear();
-            m_is_rep0_single_byte_model[i].clear();
-            m_is_rep1_model[i].clear();
-            m_is_rep2_model[i].clear();
-         }
       }
       
       // Output block loop.
@@ -427,6 +407,8 @@ namespace lzham
             // Sync block
             // Reset either the symbol table update rates, or all statistics, then force a coroutine return to give the caller a chance to handle the output right now.
             LZHAM_SYMBOL_CODEC_DECODE_GET_BITS(codec, m_tmp, CLZDecompBase::cBlockFlushTypeBits);
+
+            // See lzcompressor::send_sync_block() (TODO: make these an enum)
             if (m_tmp == 1)
                reset_huffman_table_update_rates();
             else if (m_tmp == 2)
@@ -452,20 +434,35 @@ namespace lzham
                for ( ; ; ) { LZHAM_CR_RETURN(m_state, LZHAM_DECOMP_STATUS_FAILED_BAD_SYNC_BLOCK); }
             }
             
-            if (m_tmp == 2)
+            // See lzcompressor::send_sync_block() (TODO: make these an enum)            
+            if ((m_tmp == 2) || (m_tmp == 3))
             {
-               // It's a full flush, so immediately give caller whatever output we have. Also gives the caller a chance to reposition the input stream ptr somewhere else before continuing.
-               // It would be nice to do this with partial flushes too, but the current way the output buffer is flushed makes this tricky.
+               // It's a sync or full flush, so immediately give caller whatever output we have. Also gives the caller a chance to reposition the input stream ptr somewhere else before continuing.
                LZHAM_SYMBOL_CODEC_DECODE_END(codec);
 
                if ((!unbuffered) && (dst_ofs))
                {
-                  LZHAM_FLUSH_OUTPUT_BUFFER(dst_ofs);
+                  LZHAM_FLUSH_DICT_TO_OUTPUT_BUFFER(dst_ofs);
                }
                else
                {
+                  if (unbuffered)
+                  {
+                     LZHAM_ASSERT(dst_ofs >= m_dst_highwater_ofs);
+                  }
+                  else
+                  {
+                     LZHAM_ASSERT(!m_dst_highwater_ofs);
+                  }
+                  
+                  // unbuffered, or dst_ofs==0
                   *m_pIn_buf_size = static_cast<size_t>(codec.decode_get_bytes_consumed());
-                  *m_pOut_buf_size = dst_ofs;
+                  *m_pOut_buf_size = dst_ofs - m_dst_highwater_ofs;
+                  
+                  // Partial/sync flushes in unbuffered mode details:
+                  // We assume the caller doesn't move the output buffer between calls AND the pointer to the output buffer input parameter won't change between calls (i.e.
+                  // it *always* points to the beginning of the decompressed stream). The caller will need to track the current output buffer offset.
+                  m_dst_highwater_ofs = dst_ofs;
                   
                   LZHAM_SAVE_STATE
                   LZHAM_CR_RETURN(m_state, LZHAM_DECOMP_STATUS_NOT_FINISHED);
@@ -475,8 +472,6 @@ namespace lzham
                }
                
                LZHAM_SYMBOL_CODEC_DECODE_BEGIN(codec);
-
-               dst_ofs = 0;
             }
          }
          else if (m_block_type == CLZDecompBase::cRawBlock)
@@ -533,7 +528,7 @@ namespace lzham
                if ((!unbuffered) && (dst_ofs > dict_size_mask))
                {
                   LZHAM_SYMBOL_CODEC_DECODE_END(codec);
-                  LZHAM_FLUSH_OUTPUT_BUFFER(dict_size);
+                  LZHAM_FLUSH_DICT_TO_OUTPUT_BUFFER(dict_size);
                   LZHAM_SYMBOL_CODEC_DECODE_BEGIN(codec);
                   dst_ofs = 0;
                }
@@ -599,7 +594,7 @@ namespace lzham
                {
                   LZHAM_ASSERT(dst_ofs == dict_size);
 
-                  LZHAM_FLUSH_OUTPUT_BUFFER(dict_size);
+                  LZHAM_FLUSH_DICT_TO_OUTPUT_BUFFER(dict_size);
 
                   dst_ofs = 0;
                }
@@ -621,9 +616,7 @@ namespace lzham
             match_hist2 = 1;
             match_hist3 = 1;
             cur_state = 0;
-            prev_char = 0;
-            prev_prev_char = 0;
-
+                        
             m_start_block_dst_ofs = dst_ofs;
 
             {
@@ -653,31 +646,9 @@ namespace lzham
                LZHAM_VERIFY(cur_state == debug_cur_state);
 #endif
 
-#ifdef _DEBUG
-{
-               uint total_block_bytes = ((dst_ofs - m_start_block_dst_ofs) & dict_size_mask);
-               if (total_block_bytes > 0)
-               {
-                  LZHAM_ASSERT(prev_char == pDst[(dst_ofs - 1) & dict_size_mask]);
-               }
-               else
-               {
-                  LZHAM_ASSERT(prev_char == 0);
-               }
-
-               if (total_block_bytes > 1)
-               {
-                  LZHAM_ASSERT(prev_prev_char == pDst[(dst_ofs - 2) & dict_size_mask]);
-               }
-               else
-               {
-                  LZHAM_ASSERT(prev_prev_char == 0);
-               }
-}
-#endif
                // Read "is match" bit.
                uint match_model_index;
-               match_model_index = LZHAM_IS_MATCH_MODEL_INDEX(prev_char, cur_state);
+               match_model_index = LZHAM_IS_MATCH_MODEL_INDEX(cur_state);
                LZHAM_ASSERT(match_model_index < LZHAM_ARRAY_SIZE(m_is_match_model));
 
                uint is_match_bit; LZHAM_SYMBOL_CODEC_DECODE_ARITH_BIT(codec, is_match_bit, m_is_match_model[match_model_index]);
@@ -709,13 +680,8 @@ namespace lzham
                   if (LZHAM_BUILTIN_EXPECT(cur_state < CLZDecompBase::cNumLitStates, 1))
                   {
                      // Regular literal
-                     uint lit_pred;
-                     lit_pred = (prev_char >> (8 - CLZDecompBase::cNumLitPredBits / 2)) | (prev_prev_char >> (8 - CLZDecompBase::cNumLitPredBits / 2)) << (CLZDecompBase::cNumLitPredBits / 2);
-                     
-                     uint r; LZHAM_DECOMPRESS_DECODE_ADAPTIVE_SYMBOL(codec, r, m_lit_table[lit_pred]);
+                     uint r; LZHAM_DECOMPRESS_DECODE_ADAPTIVE_SYMBOL(codec, r, m_lit_table);
                      pDst[dst_ofs] = static_cast<uint8>(r);
-                     prev_prev_char = prev_char;
-                     prev_char = r;
 
 #ifdef LZHAM_LZDEBUG
                      LZHAM_VERIFY(pDst[dst_ofs] == m_debug_lit);
@@ -724,17 +690,12 @@ namespace lzham
                   else
                   {
                      // Delta literal
-                     uint match_hist0_ofs, rep_lit0, rep_lit1;
+                     uint match_hist0_ofs, rep_lit0;
 
                      // Determine delta literal's partial context.
                      match_hist0_ofs = dst_ofs - match_hist0;
                      rep_lit0 = pDst[match_hist0_ofs & dict_size_mask];
-                     rep_lit1 = pDst[(match_hist0_ofs - 1) & dict_size_mask];
-                     
-                     uint lit_pred;
-                     lit_pred = (rep_lit0 >> (8 - CLZDecompBase::cNumDeltaLitPredBits / 2)) |
-                        ((rep_lit1 >> (8 - CLZDecompBase::cNumDeltaLitPredBits / 2)) << CLZDecompBase::cNumDeltaLitPredBits / 2);
-
+                                          
 #undef LZHAM_SAVE_LOCAL_STATE
 #undef LZHAM_RESTORE_LOCAL_STATE
 #define LZHAM_SAVE_LOCAL_STATE m_rep_lit0 = rep_lit0;
@@ -745,11 +706,9 @@ namespace lzham
                      LZHAM_VERIFY(debug_rep_lit0 == rep_lit0);
 #endif
 
-                     uint r; LZHAM_DECOMPRESS_DECODE_ADAPTIVE_SYMBOL(codec, r, m_delta_lit_table[lit_pred]);
+                     uint r; LZHAM_DECOMPRESS_DECODE_ADAPTIVE_SYMBOL(codec, r, m_delta_lit_table);
                      r ^= rep_lit0;
                      pDst[dst_ofs] = static_cast<uint8>(r);
-                     prev_prev_char = prev_char;
-                     prev_char = r;
 
 #ifdef LZHAM_LZDEBUG
                      LZHAM_VERIFY(pDst[dst_ofs] == m_debug_lit);
@@ -767,7 +726,7 @@ namespace lzham
                   if ((!unbuffered) && (LZHAM_BUILTIN_EXPECT(dst_ofs > dict_size_mask, 0)))
                   {
                      LZHAM_SYMBOL_CODEC_DECODE_END(codec);
-                     LZHAM_FLUSH_OUTPUT_BUFFER(dict_size);
+                     LZHAM_FLUSH_DICT_TO_OUTPUT_BUFFER(dict_size);
                      LZHAM_SYMBOL_CODEC_DECODE_BEGIN(codec);
                      dst_ofs = 0;
                   }
@@ -1004,11 +963,7 @@ namespace lzham
                      // Match source or destination wraps around the end of the dictionary to the beginning, so handle the copy one byte at a time.
                      do
                      {
-                        uint8 c;
-                        c = *pCopy_src++;
-                        prev_prev_char = prev_char;
-                        prev_char = c;
-                        pDst[dst_ofs++] = c;
+                        pDst[dst_ofs++] = *pCopy_src++;
 
                         if (LZHAM_BUILTIN_EXPECT(pCopy_src == pDst_end, 0))
                            pCopy_src = pDst;
@@ -1016,7 +971,7 @@ namespace lzham
                         if (LZHAM_BUILTIN_EXPECT(dst_ofs > dict_size_mask, 0))
                         {
                            LZHAM_SYMBOL_CODEC_DECODE_END(codec);
-                           LZHAM_FLUSH_OUTPUT_BUFFER(dict_size);
+                           LZHAM_FLUSH_DICT_TO_OUTPUT_BUFFER(dict_size);
                            LZHAM_SYMBOL_CODEC_DECODE_BEGIN(codec);
                            dst_ofs = 0;
                         }
@@ -1035,47 +990,24 @@ namespace lzham
                         {
                            for (int i = match_len; i > 0; i--)
                               *pCopy_dst++ = c;
-                           if (LZHAM_BUILTIN_EXPECT(match_len == 1, 1))
-                              prev_prev_char = prev_char;
-                           else
-                              prev_prev_char = c;
                         }
                         else
                         {
                            memset(pCopy_dst, c, match_len);
-                           prev_prev_char = c;
                         }
-                        prev_char = c;
-                     }
-                     else if (LZHAM_BUILTIN_EXPECT(match_len == 1, 1))
-                     {
-                        // Handle single byte matches.
-                        prev_prev_char = prev_char;
-                        prev_char = *pCopy_src;
-                        *pCopy_dst = static_cast<uint8>(prev_char);
                      }
                      else
                      {
                         // Handle matches of length 2 or higher.
-                        uint bytes_to_copy = match_len - 2;
-                        if (LZHAM_BUILTIN_EXPECT(((bytes_to_copy < 8) || ((int)bytes_to_copy > match_hist0)), 1))
+                        if (LZHAM_BUILTIN_EXPECT(((match_len < 8) || ((int)match_len > match_hist0)), 1))
                         {
-                           for (int i = bytes_to_copy; i > 0; i--)
+                           for (int i = match_len; i > 0; i--)
                               *pCopy_dst++ = *pCopy_src++;
                         }
                         else
                         {
-                           LZHAM_MEMCPY(pCopy_dst, pCopy_src, bytes_to_copy);
-                           pCopy_dst += bytes_to_copy;
-                           pCopy_src += bytes_to_copy;
+                           LZHAM_MEMCPY(pCopy_dst, pCopy_src, match_len);
                         }
-                        // Handle final 2 bytes of match specially, because we always track the last 2 bytes output in 
-                        // local variables (needed for computing context) to avoid load hit stores on some CPU's.
-                        prev_prev_char = *pCopy_src++;
-                        *pCopy_dst++ = static_cast<uint8>(prev_prev_char);
-
-                        prev_char = *pCopy_src++;
-                        *pCopy_dst++ = static_cast<uint8>(prev_char);
                      }
                      dst_ofs += match_len;
                   }
@@ -1104,14 +1036,14 @@ namespace lzham
             m_status = LZHAM_DECOMP_STATUS_FAILED_BAD_CODE;
          }
 
-		   m_block_index++;
+         m_block_index++;
 
       } while (m_status == LZHAM_DECOMP_STATUS_NOT_FINISHED);
 
       if ((!unbuffered) && (dst_ofs))
       {
          LZHAM_SYMBOL_CODEC_DECODE_END(codec);
-         LZHAM_FLUSH_OUTPUT_BUFFER(dst_ofs);
+         LZHAM_FLUSH_DICT_TO_OUTPUT_BUFFER(dst_ofs);
          LZHAM_SYMBOL_CODEC_DECODE_BEGIN(codec);
       }
 
@@ -1144,7 +1076,9 @@ namespace lzham
       LZHAM_SYMBOL_CODEC_DECODE_END(codec);
 
       *m_pIn_buf_size = static_cast<size_t>(codec.stop_decoding());
-      *m_pOut_buf_size = unbuffered ? dst_ofs : 0;
+      *m_pOut_buf_size = unbuffered ? (dst_ofs - m_dst_highwater_ofs) : 0;
+      m_dst_highwater_ofs = dst_ofs;
+
       LZHAM_CR_RETURN(m_state, m_status);
 
       for ( ; ; )
@@ -1305,6 +1239,9 @@ namespace lzham
          }
          else
          {
+            // In unbuffered mode, the caller is not allowed to move the output buffer and the output pointer MUST always point to the beginning of the output buffer.
+            // Also, the output buffer size must indicate the full size of the output buffer. The decompressor will track the current output offset, and during partial/sync
+            // flushes it'll report how many bytes it has written since the call. 
             if ((pState->m_pOrig_out_buf != pOut_buf) || (pState->m_orig_out_buf_size != *pOut_buf_size))
             {
                return LZHAM_DECOMP_STATUS_INVALID_PARAMETER;
@@ -1313,6 +1250,7 @@ namespace lzham
       }
 
       lzham_decompress_status_t status;
+
       if (pState->m_params.m_decompress_flags & LZHAM_DECOMP_FLAG_OUTPUT_UNBUFFERED)
          status = pState->decompress<true>();
       else
@@ -1368,7 +1306,7 @@ namespace lzham
       lzham_decompress_params params;
       utils::zero_object(params);
       params.m_struct_size = sizeof(lzham_decompress_params);
-      params.m_dict_size_log2 = labs(window_bits);
+      params.m_dict_size_log2 = static_cast<lzham_uint32>(labs(window_bits));
       
       params.m_decompress_flags = LZHAM_DECOMP_FLAG_COMPUTE_ADLER32;
       if (window_bits > 0)
@@ -1549,12 +1487,12 @@ namespace lzham
 
    lzham_z_ulong lzham_lib_z_adler32(lzham_z_ulong adler, const unsigned char *ptr, size_t buf_len)
    {
-      return adler32(ptr, buf_len, adler);
+      return adler32(ptr, buf_len, static_cast<uint>(adler));
    }
 
    lzham_z_ulong LZHAM_CDECL lzham_lib_z_crc32(lzham_z_ulong crc, const lzham_uint8 *ptr, size_t buf_len)
    {
-      return crc32(crc, ptr, buf_len);
+      return crc32(static_cast<uint>(crc), ptr, buf_len);
    }
 
 } // namespace lzham

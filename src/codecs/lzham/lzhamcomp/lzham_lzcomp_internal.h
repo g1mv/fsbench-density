@@ -27,7 +27,6 @@ namespace lzham
    {
       uint m_fast_bytes;
       bool m_fast_adaptive_huffman_updating;
-      bool m_use_polar_codes;
       uint m_match_accel_max_matches_per_probe;
       uint m_match_accel_max_probes;
    };
@@ -52,11 +51,11 @@ namespace lzham
             m_compression_level(cCompressionLevelDefault),
             m_dict_size_log2(22),
             m_block_size(cDefaultBlockSize),
-            m_num_cachelines(0),
-            m_cacheline_size(0),
             m_lzham_compress_flags(0),
             m_pSeed_bytes(0),
-            m_num_seed_bytes(0)
+            m_num_seed_bytes(0),
+            m_table_max_update_interval(0),
+            m_table_update_interval_slow_rate(0)
          {
          }
 
@@ -67,14 +66,14 @@ namespace lzham
          uint m_dict_size_log2;
 
          uint m_block_size;
-
-         uint m_num_cachelines;
-         uint m_cacheline_size;
-         
+			                  
          uint m_lzham_compress_flags;
 
          const void *m_pSeed_bytes;
          uint m_num_seed_bytes;
+			         
+         uint m_table_max_update_interval;
+         uint m_table_update_interval_slow_rate;
       };
 
       bool init(const init_params& params);
@@ -205,12 +204,12 @@ namespace lzham
 
          void clear();
          
-         bool init(CLZBase& lzbase, bool fast_adaptive_huffman_updating, bool use_polar_codes);
+         bool init(CLZBase& lzbase, uint table_max_update_interval, uint table_update_interval_slow_rate);
          void reset();
          
          bit_cost_t get_cost(CLZBase& lzbase, const search_accelerator& dict, const lzdecision& lzdec) const;
          bit_cost_t get_len2_match_cost(CLZBase& lzbase, uint dict_pos, uint len2_match_dist, uint is_match_model_index);
-         bit_cost_t get_lit_cost(const search_accelerator& dict, uint dict_pos, uint lit_pred0, uint is_match_model_index) const;
+         bit_cost_t get_lit_cost(CLZBase& lzbase, const search_accelerator& dict, uint dict_pos, uint lit_pred0, uint is_match_model_index) const;
 
          // Returns actual cost.
          void get_rep_match_costs(uint dict_pos, bit_cost_t *pBitcosts, uint match_hist_index, int min_len, int max_len, uint is_match_model_index) const;
@@ -243,27 +242,21 @@ namespace lzham
          
          uint m_block_start_dict_ofs;
 
-         adaptive_bit_model m_is_match_model[CLZBase::cNumStates * (1 << CLZBase::cNumIsMatchContextBits)];
+         adaptive_bit_model m_is_match_model[CLZBase::cNumStates];
 
          adaptive_bit_model m_is_rep_model[CLZBase::cNumStates];
          adaptive_bit_model m_is_rep0_model[CLZBase::cNumStates];
          adaptive_bit_model m_is_rep0_single_byte_model[CLZBase::cNumStates];
          adaptive_bit_model m_is_rep1_model[CLZBase::cNumStates];
          adaptive_bit_model m_is_rep2_model[CLZBase::cNumStates];
-                
-#if LZHAM_USE_ALL_ARITHMETIC_CODING
-         typedef adaptive_arith_data_model sym_data_model;
-#else
-         typedef quasi_adaptive_huffman_data_model sym_data_model;
-#endif
+         
+         quasi_adaptive_huffman_data_model m_lit_table;
+         quasi_adaptive_huffman_data_model m_delta_lit_table;
 
-         sym_data_model m_lit_table[1 << CLZBase::cNumLitPredBits];
-         sym_data_model m_delta_lit_table[1 << CLZBase::cNumDeltaLitPredBits];
-
-         sym_data_model m_main_table;
-         sym_data_model m_rep_len_table[2];
-         sym_data_model m_large_len_table[2];
-         sym_data_model m_dist_lsb_table;
+         quasi_adaptive_huffman_data_model m_main_table;
+         quasi_adaptive_huffman_data_model m_rep_len_table[2];
+         quasi_adaptive_huffman_data_model m_large_len_table[2];
+         quasi_adaptive_huffman_data_model m_dist_lsb_table;
       };
 
       class tracked_stat

@@ -60,7 +60,7 @@ namespace lzham
       m_fill_dict_size = 0;
       m_num_completed_helper_threads = 0;
 
-      if (!m_dict.try_resize_no_construct(max_dict_size + LZHAM_MIN(m_max_dict_size, CLZBase::cMaxHugeMatchLen)))
+      if (!m_dict.try_resize_no_construct(max_dict_size + LZHAM_MIN(m_max_dict_size, static_cast<uint>(CLZBase::cMaxHugeMatchLen))))
          return false;
 
       if (!m_hash.try_resize_no_construct(cHashSize))
@@ -126,7 +126,7 @@ namespace lzham
    {
       scoped_perf_section find_all_matches_timer("find_all_matches_callback");
 
-      pData_ptr;
+      LZHAM_NOTE_UNUSED(pData_ptr);
       const uint thread_index = (uint)data;
 
       dict_match temp_matches[cMatchAccelMaxSupportedProbes * 2];
@@ -172,7 +172,7 @@ namespace lzham
          uint *pLeft = &m_nodes[insert_pos].m_left;
          uint *pRight = &m_nodes[insert_pos].m_right;
 
-         const uint max_match_len = LZHAM_MIN(CLZBase::cMaxMatchLen, fill_lookahead_size);
+         const uint max_match_len = LZHAM_MIN(static_cast<uint>(CLZBase::cMaxMatchLen), fill_lookahead_size);
          uint best_match_len = 2;
 
          const uint8* pIns = &pDict[insert_pos];
@@ -195,7 +195,7 @@ namespace lzham
             uint match_len = 0;
             const uint8* pComp = &pDict[pos];
 
-#if LZHAM_PLATFORM_X360
+#if LZHAM_PLATFORM_X360 || (LZHAM_USE_UNALIGNED_INT_LOADS == 0)
             for ( ; match_len < max_match_len; match_len++)
                if (pComp[match_len] != pIns[match_len])
                   break;
@@ -309,7 +309,7 @@ namespace lzham
 
             const uint num_matches_to_write = LZHAM_MIN(num_matches, m_max_matches);
 
-            const uint match_ref_ofs = atomic_exchange_add(&m_next_match_ref, num_matches_to_write);
+            const uint match_ref_ofs = static_cast<uint>(atomic_exchange_add(&m_next_match_ref, num_matches_to_write));
 
             memcpy(&m_matches[match_ref_ofs],
                    temp_matches + (num_matches - num_matches_to_write),
@@ -479,7 +479,7 @@ namespace lzham
 
       memcpy(&m_dict[add_pos], pBytes, num_bytes);
 
-      uint dict_bytes_to_mirror = LZHAM_MIN(CLZBase::cMaxHugeMatchLen, m_max_dict_size);
+      uint dict_bytes_to_mirror = LZHAM_MIN(static_cast<uint>(CLZBase::cMaxHugeMatchLen), m_max_dict_size);
       if (add_pos < dict_bytes_to_mirror)
          memcpy(&m_dict[m_max_dict_size], &m_dict[0], dict_bytes_to_mirror);
 
@@ -515,7 +515,7 @@ namespace lzham
       // This may spin until the match finder job(s) catch up to the caller's lookahead position.
       for ( ; ; )
       {
-         match_ref = m_match_refs[match_ref_ofs];
+         match_ref = static_cast<int>(m_match_refs[match_ref_ofs]);
          if (match_ref == -2)
             return NULL;
          else if (match_ref != -1)

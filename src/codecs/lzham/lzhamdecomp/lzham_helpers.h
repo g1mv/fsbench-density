@@ -42,7 +42,7 @@ namespace lzham
       template <typename T>
       inline void destruct(T* p)
       {
-         p;
+         LZHAM_NOTE_UNUSED(p);
          p->~T();
       }
 

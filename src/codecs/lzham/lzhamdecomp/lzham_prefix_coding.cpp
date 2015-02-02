@@ -54,7 +54,8 @@ namespace lzham
          for (uint i = max_code_size + 1; i <= cMaxEverCodeSize; i++)
             num_codes[max_code_size] += num_codes[i];
          
-         // Technique of adjusting tree to enforce maximum code size from LHArc.
+         // Technique of adjusting tree to enforce maximum code size from LHArc. 
+			// (If you remember what LHArc was, you've been doing this for a LONG time.)
          
          uint total = 0;
          for (uint i = max_code_size; i; --i)

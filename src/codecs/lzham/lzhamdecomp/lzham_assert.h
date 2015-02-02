@@ -33,4 +33,8 @@ template<int x> struct assume_try { };
 #define LZHAM_JOINER_FINAL(a, b) a##b
 #define LZHAM_JOINER(a, b) LZHAM_JOINER_FINAL(a, b)
 #define LZHAM_JOIN(a, b) LZHAM_JOINER(a, b)
-#define LZHAM_ASSUME(p) typedef assume_try < sizeof(assume_failure< (bool)(p) > ) > LZHAM_JOIN(assume_typedef, __COUNTER__)
+#if defined(__GNUC__)
+   #define LZHAM_ASSUME(p) typedef assume_try < sizeof(assume_failure< (bool)(p) > ) > LZHAM_JOIN(assume_typedef, __COUNTER__) __attribute__((unused))
+#else
+   #define LZHAM_ASSUME(p) typedef assume_try < sizeof(assume_failure< (bool)(p) > ) > LZHAM_JOIN(assume_typedef, __COUNTER__)
+#endif

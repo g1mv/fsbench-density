@@ -26,7 +26,11 @@
 
 // Upper byte = major version
 // Lower byte = minor version
-#define LZHAM_DLL_VERSION 0x1008
+#define LZHAM_DLL_VERSION 0x1010
+
+#if defined(_WIN64) || defined(__MINGW64__) || defined(_LP64) || defined(__LP64__)
+	#define LZHAM_64BIT 1
+#endif
 
 #if defined(_MSC_VER)
    #define LZHAM_CDECL __cdecl
@@ -73,12 +77,12 @@ extern "C" {
       LZHAM_TABLE_FLUSH = 10
    } lzham_flush_t;
 
-   // Compression
+   // Compression (keep in sync with g_num_lzx_position_slots[])
    #define LZHAM_MIN_DICT_SIZE_LOG2 15
    #define LZHAM_MAX_DICT_SIZE_LOG2_X86 26
    #define LZHAM_MAX_DICT_SIZE_LOG2_X64 29
 
-   #define LZHAM_MAX_HELPER_THREADS 16
+   #define LZHAM_MAX_HELPER_THREADS 64
 
    typedef enum
    {
@@ -118,7 +122,6 @@ extern "C" {
 
    typedef enum
    {
-      LZHAM_COMP_FLAG_FORCE_POLAR_CODING = 1,      // Forces Polar codes vs. Huffman, for a slight increase in decompression speed.
       LZHAM_COMP_FLAG_EXTREME_PARSING = 2,         // Improves ratio by allowing the compressor's parse graph to grow "higher" (up to 4 parent nodes per output node), but is much slower.
       LZHAM_COMP_FLAG_DETERMINISTIC_PARSING = 4,   // Guarantees that the compressed output will always be the same given the same input and parameters (no variation between runs due to kernel threading scheduling).
 
@@ -128,18 +131,40 @@ extern "C" {
       
       LZHAM_COMP_FLAG_WRITE_ZLIB_STREAM = 32,
    } lzham_compress_flags;
+		
+	typedef enum 
+	{
+		LZHAM_INSANELY_SLOW_TABLE_UPDATE_RATE = 1, // 1=insanely slow decompression, here for reference, use 2!
+		LZHAM_SLOWEST_TABLE_UPDATE_RATE = 2,
+		LZHAM_DEFAULT_TABLE_UPDATE_RATE = 8,
+		LZHAM_FASTEST_TABLE_UPDATE_RATE = 20
+	} lzham_table_update_rate;
 
+	// Compression parameters struct.
+	// IMPORTANT: The values of m_dict_size_log2, m_table_update_rate, m_table_max_update_interval, and m_table_update_interval_slow_rate MUST
+	// match during compression and decompression. The codec does not verify these values for you, if you don't use the same settings during
+	// decompression it will fail (usually with a LZHAM_DECOMP_STATUS_FAILED_BAD_CODE error).
+	// The seed buffer's contents and size must match the seed buffer used during decompression.
    typedef struct
    {
       lzham_uint32 m_struct_size;            // set to sizeof(lzham_compress_params)
       lzham_uint32 m_dict_size_log2;         // set to the log2(dictionary_size), must range between [LZHAM_MIN_DICT_SIZE_LOG2, LZHAM_MAX_DICT_SIZE_LOG2_X86] for x86 LZHAM_MAX_DICT_SIZE_LOG2_X64 for x64
       lzham_compress_level m_level;          // set to LZHAM_COMP_LEVEL_FASTEST, etc.
+		lzham_uint32 m_table_update_rate;		// Controls tradeoff between ratio and decompression throughput. 0=default, or [1,LZHAM_MAX_TABLE_UPDATE_RATE], higher=faster but lower ratio.
       lzham_int32 m_max_helper_threads;      // max # of additional "helper" threads to create, must range between [-1,LZHAM_MAX_HELPER_THREADS], where -1=max practical
-      lzham_uint32 m_cpucache_total_lines;   // set to 0 (optimize compressed stream to avoid L1/L2 cache misses - not currently supported)
-      lzham_uint32 m_cpucache_line_size;     // set to 0
       lzham_uint32 m_compress_flags;         // optional compression flags (see lzham_compress_flags enum)
       lzham_uint32 m_num_seed_bytes;         // for delta compression (optional) - number of seed bytes pointed to by m_pSeed_bytes
       const void *m_pSeed_bytes;             // for delta compression (optional) - pointer to seed bytes buffer, must be at least m_num_seed_bytes long
+						      
+      // Advanced settings - set to 0 if you don't care.
+		// m_table_max_update_interval/m_table_update_interval_slow_rate override m_table_update_rate and allow finer control over the table update settings.
+		// If either are non-zero they will override whatever m_table_update_rate is set to. Just leave them 0 unless you are specifically customizing them for your data.
+						
+		// def=0, typical range 12-128 (LZHAM_DEFAULT_TABLE_UPDATE_RATE=64), controls the max interval between table updates, higher=longer max interval (faster decode/lower ratio). Was 16 in prev. releases.
+		lzham_uint32 m_table_max_update_interval;
+		// def=0, 32 or higher (LZHAM_DEFAULT_TABLE_UPDATE_RATE=64), scaled by 32, controls the slowing of the update update freq, higher=more rapid slowing (faster decode/lower ratio). Was 40 in prev. releases.
+		lzham_uint32 m_table_update_interval_slow_rate;
+
    } lzham_compress_params;
    
    // Initializes a compressor. Returns a pointer to the compressor's internal state, or NULL on failure.
@@ -242,13 +267,25 @@ extern "C" {
    // m_dict_size_log2 MUST match the value used during compression!
    // If m_num_seed_bytes != 0, LZHAM_DECOMP_FLAG_OUTPUT_UNBUFFERED must not be set (i.e. static "seed" dictionaries are not compatible with unbuffered decompression).
    // The seed buffer's contents and size must match the seed buffer used during compression.
+   // m_table_update_rate (or m_table_max_update_interval/m_table_update_interval_slow_rate) MUST match the values used for compression!
    typedef struct
    {
       lzham_uint32 m_struct_size;            // set to sizeof(lzham_decompress_params)
       lzham_uint32 m_dict_size_log2;         // set to the log2(dictionary_size), must range between [LZHAM_MIN_DICT_SIZE_LOG2, LZHAM_MAX_DICT_SIZE_LOG2_X86] for x86 LZHAM_MAX_DICT_SIZE_LOG2_X64 for x64
+		lzham_uint32 m_table_update_rate;		// Controls tradeoff between ratio and decompression throughput. 0=default, or [1,LZHAM_MAX_TABLE_UPDATE_RATE], higher=faster but lower ratio.
       lzham_uint32 m_decompress_flags;       // optional decompression flags (see lzham_decompress_flags enum)
       lzham_uint32 m_num_seed_bytes;         // for delta compression (optional) - number of seed bytes pointed to by m_pSeed_bytes
       const void *m_pSeed_bytes;             // for delta compression (optional) - pointer to seed bytes buffer, must be at least m_num_seed_bytes long
+
+      // Advanced settings - set to 0 if you don't care.
+		// m_table_max_update_interval/m_table_update_interval_slow_rate override m_table_update_rate and allow finer control over the table update settings.
+		// If either are non-zero they will override whatever m_table_update_rate is set to. Just leave them 0 unless you are specifically customizing them for your data.
+
+      // def=0, typical range 12-128 (LZHAM_DEFAULT_TABLE_UPDATE_RATE=64), controls the max interval between table updates, higher=longer max interval (faster decode/lower ratio). Was 16 in prev. releases.
+      lzham_uint32 m_table_max_update_interval;
+      // def=0, 32 or higher (LZHAM_DEFAULT_TABLE_UPDATE_RATE=64), scaled by 32, controls the slowing of the update update freq, higher=more rapid slowing (faster decode/lower ratio). Was 40 in prev. releases.
+      lzham_uint32 m_table_update_interval_slow_rate;
+
    } lzham_decompress_params;
    
    // Initializes a decompressor.
@@ -677,6 +714,7 @@ public:
       this->lzham_z_inflateInit2 = NULL;
       this->lzham_z_inflate = NULL;
       this->lzham_z_inflateEnd = NULL;
+      this->lzham_z_inflateReset = NULL;
       this->lzham_z_uncompress = NULL;
       this->lzham_z_error = NULL;
    }

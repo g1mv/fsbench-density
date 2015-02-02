@@ -83,7 +83,6 @@ namespace lzham
       }
 
       // Returns the total number of bits needed to encode v.
-      // This needs to be fast - it's used heavily when determining Polar codelengths.
       inline uint total_bits(uint v)
       {
          unsigned long l = 0;
@@ -97,6 +96,10 @@ namespace lzham
          {
             l++;
          }
+         else
+         {
+            l = 0;
+         }
 #else
          while (v > 0U)
          {
@@ -104,8 +107,34 @@ namespace lzham
             l++;
          }
 #endif
-         return l;
+         return static_cast<uint>(l);
       }
+
+		inline uint compute_mask_size(uint x)
+		{
+			uint l = 0;
+			while (x)
+			{
+				x &= (x - 1);
+				l++;
+			}
+			return l;
+		}
+
+		inline uint compute_mask_shift(uint x)
+		{
+			if (!x)
+				return 0;
+
+			uint l = 0;
+			while ((x & 1) == 0)
+			{
+				x >>= 1;
+				l++;
+			}
+
+			return l;
+		}
 
    }
 

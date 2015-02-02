@@ -28,7 +28,6 @@ namespace lzham
       {
          8,                               // m_fast_bytes
          true,                            // m_fast_adaptive_huffman_updating
-         true,                            // m_use_polar_codes
          1,                               // m_match_accel_max_matches_per_probe
          2,                               // m_match_accel_max_probes
       },
@@ -36,7 +35,6 @@ namespace lzham
       {
          24,                              // m_fast_bytes
          true,                            // m_fast_adaptive_huffman_updating
-         true,                            // m_use_polar_codes
          6,                               // m_match_accel_max_matches_per_probe
          12,                              // m_match_accel_max_probes
       },
@@ -44,7 +42,6 @@ namespace lzham
       {
          32,                              // m_fast_bytes
          false,                           // m_fast_adaptive_huffman_updating
-         true,                            // m_use_polar_codes
          UINT_MAX,                        // m_match_accel_max_matches_per_probe
          16,                              // m_match_accel_max_probes
       },
@@ -52,7 +49,6 @@ namespace lzham
       {
          48,                              // m_fast_bytes
          false,                           // m_fast_adaptive_huffman_updating
-         false,                           // m_use_polar_codes
          UINT_MAX,                        // m_match_accel_max_matches_per_probe
          32,                              // m_match_accel_max_probes
       },
@@ -60,7 +56,6 @@ namespace lzham
       {
          64,                              // m_fast_bytes
          false,                           // m_fast_adaptive_huffman_updating
-         false,                           // m_use_polar_codes
          UINT_MAX,                        // m_match_accel_max_matches_per_probe
          cMatchAccelMaxSupportedProbes,   // m_match_accel_max_probes
       }
@@ -75,6 +70,7 @@ namespace lzham
       m_finished(false),
       m_num_parse_threads(0),
       m_parse_jobs_remaining(0),
+      m_parse_jobs_complete(0, 1),
       m_block_history_size(0),
       m_block_history_next(0)
    {
@@ -113,8 +109,10 @@ namespace lzham
 
       m_params = params;
       m_use_task_pool = (m_params.m_pTask_pool) && (m_params.m_pTask_pool->get_num_threads() != 0) && (m_params.m_max_helper_threads > 0);
-      if ((m_params.m_max_helper_threads) && (!m_use_task_pool))
-         return false;
+      
+      if (!m_use_task_pool)
+         m_params.m_max_helper_threads = 0;
+      
       m_settings = s_level_settings[params.m_compression_level];
 
       const uint dict_size = 1U << m_params.m_dict_size_log2;
@@ -126,10 +124,7 @@ namespace lzham
          if (params.m_num_seed_bytes > dict_size)
             return false;
       }
-
-      if (m_params.m_lzham_compress_flags & LZHAM_COMP_FLAG_FORCE_POLAR_CODING)
-         m_settings.m_use_polar_codes = true;
-
+            
       uint max_block_size = dict_size / 8;
       if (m_params.m_block_size > max_block_size)
       {
@@ -139,25 +134,25 @@ namespace lzham
       m_num_parse_threads = 1;
 
 #if !LZHAM_FORCE_SINGLE_THREADED_PARSING
-      if (params.m_max_helper_threads > 0)
+      if (m_params.m_max_helper_threads > 0)
       {
          LZHAM_ASSUME(cMaxParseThreads >= 4);
 
          if (m_params.m_block_size < 16384)
          {
-            m_num_parse_threads = LZHAM_MIN(cMaxParseThreads, params.m_max_helper_threads + 1);
+            m_num_parse_threads = LZHAM_MIN(cMaxParseThreads, m_params.m_max_helper_threads + 1);
          }
          else
          {
-            if ((params.m_max_helper_threads == 1) || (m_params.m_compression_level == cCompressionLevelFastest))
+            if ((m_params.m_max_helper_threads == 1) || (m_params.m_compression_level == cCompressionLevelFastest))
             {
                m_num_parse_threads = 1;
             }
-            else if (params.m_max_helper_threads <= 3)
+            else if (m_params.m_max_helper_threads <= 3)
             {
                m_num_parse_threads = 2;
             }
-            else if (params.m_max_helper_threads <= 7)
+            else if (m_params.m_max_helper_threads <= 7)
             {
                if ((m_params.m_lzham_compress_flags & LZHAM_COMP_FLAG_EXTREME_PARSING) && (m_params.m_compression_level == cCompressionLevelUber))
                   m_num_parse_threads = 4;
@@ -174,7 +169,7 @@ namespace lzham
 #endif
 
       int num_parse_jobs = m_num_parse_threads - 1;
-      uint match_accel_helper_threads = LZHAM_MAX(0, (int)params.m_max_helper_threads - num_parse_jobs);
+      uint match_accel_helper_threads = LZHAM_MAX(0, (int)m_params.m_max_helper_threads - num_parse_jobs);
 
       LZHAM_ASSERT(m_num_parse_threads >= 1);
       LZHAM_ASSERT(m_num_parse_threads <= cMaxParseThreads);
@@ -185,7 +180,7 @@ namespace lzham
       }
       else
       {
-         LZHAM_ASSERT((match_accel_helper_threads + (m_num_parse_threads - 1)) <= params.m_max_helper_threads);
+         LZHAM_ASSERT((match_accel_helper_threads + (m_num_parse_threads - 1)) <= m_params.m_max_helper_threads);
       }
 
       if (!m_accel.init(this, params.m_pTask_pool, match_accel_helper_threads, dict_size, m_settings.m_match_accel_max_matches_per_probe, false, m_settings.m_match_accel_max_probes))
@@ -194,7 +189,8 @@ namespace lzham
       init_position_slots(params.m_dict_size_log2);
       init_slot_tabs();
 
-      if (!m_state.init(*this, m_settings.m_fast_adaptive_huffman_updating, m_settings.m_use_polar_codes))
+      //m_settings.m_fast_adaptive_huffman_updating
+      if (!m_state.init(*this, m_params.m_table_max_update_interval, m_params.m_table_update_interval_slow_rate))
          return false;
 
       if (!m_block_buf.try_reserve(m_params.m_block_size))
@@ -205,7 +201,8 @@ namespace lzham
 
       for (uint i = 0; i < m_num_parse_threads; i++)
       {
-         if (!m_parse_thread_state[i].m_initial_state.init(*this, m_settings.m_fast_adaptive_huffman_updating, m_settings.m_use_polar_codes))
+         //m_settings.m_fast_adaptive_huffman_updating
+         if (!m_parse_thread_state[i].m_initial_state.init(*this, m_params.m_table_max_update_interval, m_params.m_table_update_interval_slow_rate))
             return false;
       }
 
@@ -417,6 +414,8 @@ namespace lzham
             flush_code = 1;
             break;
          case LZHAM_SYNC_FLUSH:
+            flush_code = 3;
+            break;
          case LZHAM_NO_FLUSH:
          case LZHAM_FINISH:
             flush_code = 0;
@@ -593,10 +592,11 @@ namespace lzham
 
    bool lzcompressor::send_configuration()
    {
-      if (!m_codec.encode_bits(m_settings.m_fast_adaptive_huffman_updating, 1))
-         return false;
-      if (!m_codec.encode_bits(m_settings.m_use_polar_codes, 1))
-         return false;
+      // TODO: Currently unused.
+      //if (!m_codec.encode_bits(m_settings.m_fast_adaptive_huffman_updating, 1))
+      //   return false;
+      //if (!m_codec.encode_bits(0, 1))
+      //   return false;
 
       return true;
    }
@@ -673,7 +673,7 @@ namespace lzham
       pNew_node_state->m_total_complexity = total_complexity;
       pNew_node_state->m_saved_state = trial_state;
 
-      m_num_node_states = LZHAM_MIN(m_num_node_states + 1, cMaxNodeStates);
+      m_num_node_states = LZHAM_MIN(m_num_node_states + 1, static_cast<uint>(cMaxNodeStates));
 
 #ifdef LZHAM_LZVERIFY
       for (uint i = 0; i < (m_num_node_states - 1); ++i)
@@ -734,7 +734,7 @@ namespace lzham
       {
          node* pCur_node = &pNodes[cur_node_index];
 
-         const uint max_admissable_match_len = LZHAM_MIN(CLZBase::cMaxMatchLen, bytes_to_parse - cur_node_index);
+         const uint max_admissable_match_len = LZHAM_MIN(static_cast<uint>(CLZBase::cMaxMatchLen), bytes_to_parse - cur_node_index);
          const uint find_dict_size = m_accel.get_cur_dict_size() + cur_lookahead_ofs;
 
          const uint lit_pred0 = approx_state.get_pred_char(m_accel, cur_dict_ofs, 1);
@@ -786,7 +786,7 @@ namespace lzham
                approx_state.restore_partial_state(cur_node_state.m_saved_state);
             }
 
-            uint is_match_model_index = LZHAM_IS_MATCH_MODEL_INDEX(lit_pred0, approx_state.m_cur_state);
+            uint is_match_model_index = LZHAM_IS_MATCH_MODEL_INDEX(approx_state.m_cur_state);
 
             const bit_cost_t cur_node_total_cost = cur_node_state.m_total_cost;
             const uint cur_node_total_complexity = cur_node_state.m_total_complexity;
@@ -889,7 +889,7 @@ namespace lzham
             }
 
             // literal
-            bit_cost_t lit_cost = approx_state.get_lit_cost(m_accel, cur_dict_ofs, lit_pred0, is_match_model_index);
+            bit_cost_t lit_cost = approx_state.get_lit_cost(*this, m_accel, cur_dict_ofs, lit_pred0, is_match_model_index);
             bit_cost_t lit_total_cost = cur_node_total_cost + lit_cost;
             uint lit_total_complexity = cur_node_total_complexity + cLitComplexity;
 #if LZHAM_VERIFY_MATCH_COSTS
@@ -1002,7 +1002,7 @@ namespace lzham
       {
          node_state* pCur_node = &pNodes[cur_node_index];
 
-         const uint max_admissable_match_len = LZHAM_MIN(CLZBase::cMaxMatchLen, bytes_to_parse - cur_node_index);
+         const uint max_admissable_match_len = LZHAM_MIN(static_cast<uint>(CLZBase::cMaxMatchLen), bytes_to_parse - cur_node_index);
          const uint find_dict_size = m_accel.m_cur_dict_size + cur_lookahead_ofs;
 
          if (cur_node_index)
@@ -1020,7 +1020,7 @@ namespace lzham
          const uint cur_node_total_complexity = pCur_node->m_total_complexity;
 
          const uint lit_pred0 = approx_state.get_pred_char(m_accel, cur_dict_ofs, 1);
-         uint is_match_model_index = LZHAM_IS_MATCH_MODEL_INDEX(lit_pred0, approx_state.m_cur_state);
+         uint is_match_model_index = LZHAM_IS_MATCH_MODEL_INDEX(approx_state.m_cur_state);
 
          const uint8* pLookahead = &m_accel.m_dict[cur_dict_ofs];
 
@@ -1209,7 +1209,7 @@ namespace lzham
          }
 
          // literal
-         bit_cost_t lit_cost = approx_state.get_lit_cost(m_accel, cur_dict_ofs, lit_pred0, is_match_model_index);
+         bit_cost_t lit_cost = approx_state.get_lit_cost(*this, m_accel, cur_dict_ofs, lit_pred0, is_match_model_index);
          bit_cost_t lit_total_cost = cur_node_total_cost + lit_cost;
          uint lit_total_complexity = cur_node_total_complexity + cLitComplexity;
 #if LZHAM_VERIFY_MATCH_COSTS
@@ -1413,7 +1413,7 @@ namespace lzham
 
       while (cur_ofs < bytes_to_parse)
       {
-         const uint max_admissable_match_len = LZHAM_MIN(CLZBase::cMaxHugeMatchLen, bytes_to_parse - cur_ofs);
+         const uint max_admissable_match_len = LZHAM_MIN(static_cast<uint>(CLZBase::cMaxHugeMatchLen), bytes_to_parse - cur_ofs);
 
          int largest_dec_index = enumerate_lz_decisions(cur_dict_ofs, approx_state, decisions, 1, max_admissable_match_len);
          if (largest_dec_index < 0)
@@ -1477,7 +1477,7 @@ namespace lzham
       cur_block_history.m_raw_block = raw_block;
       cur_block_history.m_reset_update_rate = reset_update_rate;
 
-      m_block_history_size = LZHAM_MIN(m_block_history_size + 1, cMaxBlockHistorySize);
+      m_block_history_size = LZHAM_MIN(m_block_history_size + 1, static_cast<uint>(cMaxBlockHistorySize));
    }
 
    uint lzcompressor::get_recent_block_ratio()
@@ -1602,7 +1602,7 @@ namespace lzham
 
       m_codec.encode_bits(emit_reset_update_rate_command ? 1 : 0, cBlockFlushTypeBits);
 
-      coding_stats initial_stats(m_stats);
+      //coding_stats initial_stats(m_stats);
 
       uint initial_step = m_step;
 
@@ -1618,7 +1618,7 @@ namespace lzham
 
             greedy_parse_state.m_issue_reset_state_partial = false;
             greedy_parse_state.m_start_ofs = cur_dict_ofs;
-            greedy_parse_state.m_bytes_to_match = LZHAM_MIN(bytes_to_match, CLZBase::cMaxHugeMatchLen);
+            greedy_parse_state.m_bytes_to_match = LZHAM_MIN(bytes_to_match, static_cast<uint>(CLZBase::cMaxHugeMatchLen));
 
             greedy_parse_state.m_max_greedy_decisions = LZHAM_MAX((bytes_to_match / cAvgAcceptableGreedyMatchLen), 2);
             greedy_parse_state.m_greedy_parse_gave_up = false;
@@ -1671,8 +1671,8 @@ namespace lzham
                for (uint i = 0; i < num_greedy_decisions_to_code; i++)
                {
                   LZHAM_ASSERT(best_decisions[i].m_pos == (int)cur_dict_ofs);
-                  LZHAM_ASSERT(i >= 0);
-                  LZHAM_ASSERT(i < (int)best_decisions.size());
+                  //LZHAM_ASSERT(i >= 0);
+                  LZHAM_ASSERT(i < best_decisions.size());
 
 #if LZHAM_UPDATE_STATS
                   bit_cost_t cost = m_state.get_cost(*this, m_accel, best_decisions[i]);
@@ -1837,7 +1837,7 @@ namespace lzham
                      i += dec_step;
                   }
 
-                  i;
+                  LZHAM_NOTE_UNUSED(i);
                }
 
                LZHAM_ASSERT(cur_dict_ofs == parse_thread.m_start_ofs + parse_thread.m_bytes_to_match);
@@ -1867,7 +1867,7 @@ namespace lzham
       // Coded the entire block - now see if it makes more sense to just send a raw/uncompressed block.
 
       uint compressed_size = m_codec.get_encoding_buf().size();
-      compressed_size;
+      LZHAM_NOTE_UNUSED(compressed_size);
 
       bool used_raw_block = false;
 
@@ -1875,6 +1875,7 @@ namespace lzham
    #if (defined(LZHAM_DISABLE_RAW_BLOCKS) || defined(LZHAM_LZDEBUG))
        if (0)
    #else
+       // TODO: Allow the user to control this threshold, i.e. if less than 1% then just store uncompressed.
        if (compressed_size >= buf_len)
    #endif
 #endif

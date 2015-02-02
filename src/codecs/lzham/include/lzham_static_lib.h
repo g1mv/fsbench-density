@@ -23,6 +23,7 @@ public:
       this->lzham_compress_deinit = ::lzham_compress_deinit;
       this->lzham_compress = ::lzham_compress;
       this->lzham_compress2 = ::lzham_compress2;
+      this->lzham_compress_reinit = ::lzham_compress_reinit;
       this->lzham_compress_memory = ::lzham_compress_memory;
       this->lzham_decompress_init = ::lzham_decompress_init;
       this->lzham_decompress_reinit = ::lzham_decompress_reinit;
@@ -44,6 +45,7 @@ public:
       this->lzham_z_inflateInit2 = ::lzham_z_inflateInit2;
       this->lzham_z_inflate = ::lzham_z_inflate;
       this->lzham_z_inflateEnd = ::lzham_z_inflateEnd;
+      this->lzham_z_inflateReset = ::lzham_z_inflateReset;
       this->lzham_z_uncompress = ::lzham_z_uncompress;
       this->lzham_z_error = ::lzham_z_error;
 

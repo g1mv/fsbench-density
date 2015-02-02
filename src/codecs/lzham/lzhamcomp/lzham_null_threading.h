@@ -11,7 +11,7 @@ namespace lzham
    public:
       inline semaphore(long initialCount = 0, long maximumCount = 1, const char* pName = NULL)
       {
-         initialCount, maximumCount, pName;
+         (void)initialCount, (void)maximumCount, (void)pName;
       }
 
       inline ~semaphore()
@@ -20,12 +20,12 @@ namespace lzham
 
       inline void release(long releaseCount = 1, long *pPreviousCount = NULL)
       {
-         releaseCount, pPreviousCount;
+         (void)releaseCount, (void)pPreviousCount;
       }
 
       inline bool wait(uint32 milliseconds = UINT32_MAX)
       {
-         milliseconds;
+         (void)milliseconds;
          return true;
       }      
    };   
@@ -34,10 +34,10 @@ namespace lzham
    {
    public:
       inline task_pool() { }
-      inline task_pool(uint num_threads) { num_threads; }
+      inline task_pool(uint num_threads) { (void)num_threads; }
       inline ~task_pool() { }
 
-      inline bool init(uint num_threads) { num_threads; return true; }
+      inline bool init(uint num_threads) { (void)num_threads; return true; }
       inline void deinit();
 
       inline uint get_num_threads() const { return 0; }
@@ -86,7 +86,7 @@ namespace lzham
    
    inline void lzham_sleep(unsigned int milliseconds)
    {
-      milliseconds;
+      (void)milliseconds;
    }
 
    inline uint lzham_get_max_helper_threads()

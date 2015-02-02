@@ -152,59 +152,53 @@ namespace lzham
       return sizeof(huffman_work_tables);
    }
 
-#define USE_CALCULATE_MINIMUM_REDUNDANCY 1
-#if USE_CALCULATE_MINIMUM_REDUNDANCY      
-   /* calculate_minimum_redundancy() written by
-      Alistair Moffat, alistair@cs.mu.oz.au,
-      Jyrki Katajainen, jyrki@diku.dk
-      November 1996.
-   */
-   static void calculate_minimum_redundancy(int A[], int n) {
-         int root;                  /* next root node to be used */
-         int leaf;                  /* next leaf to be used */
-         int next;                  /* next value to be assigned */
-         int avbl;                  /* number of available nodes */
-         int used;                  /* number of internal nodes */
-         int dpth;                  /* current depth of leaves */
+   // calculate_minimum_redundancy() written by Alistair Moffat, alistair@cs.mu.oz.au, Jyrki Katajainen, jyrki@diku.dk November 1996.
+   static void calculate_minimum_redundancy(int A[], int n) 
+	{
+		int root;                  /* next root node to be used */
+		int leaf;                  /* next leaf to be used */
+		int next;                  /* next value to be assigned */
+		int avbl;                  /* number of available nodes */
+		int used;                  /* number of internal nodes */
+		int dpth;                  /* current depth of leaves */
 
-         /* check for pathological cases */
-         if (n==0) { return; }
-         if (n==1) { A[0] = 0; return; }
+		/* check for pathological cases */
+		if (n==0) { return; }
+		if (n==1) { A[0] = 0; return; }
 
-         /* first pass, left to right, setting parent pointers */
-         A[0] += A[1]; root = 0; leaf = 2;
-         for (next=1; next < n-1; next++) {
-            /* select first item for a pairing */
-            if (leaf>=n || A[root]<A[leaf]) {
-               A[next] = A[root]; A[root++] = next;
-            } else
-               A[next] = A[leaf++];
+		/* first pass, left to right, setting parent pointers */
+		A[0] += A[1]; root = 0; leaf = 2;
+		for (next=1; next < n-1; next++) {
+			/* select first item for a pairing */
+			if (leaf>=n || A[root]<A[leaf]) {
+				A[next] = A[root]; A[root++] = next;
+			} else
+				A[next] = A[leaf++];
 
-            /* add on the second item */
-            if (leaf>=n || (root<next && A[root]<A[leaf])) {
-               A[next] += A[root]; A[root++] = next;
-            } else
-               A[next] += A[leaf++];
-         }
+			/* add on the second item */
+			if (leaf>=n || (root<next && A[root]<A[leaf])) {
+				A[next] += A[root]; A[root++] = next;
+			} else
+				A[next] += A[leaf++];
+		}
 
-         /* second pass, right to left, setting internal depths */
-         A[n-2] = 0;
-         for (next=n-3; next>=0; next--)
-            A[next] = A[A[next]]+1;
+		/* second pass, right to left, setting internal depths */
+		A[n-2] = 0;
+		for (next=n-3; next>=0; next--)
+			A[next] = A[A[next]]+1;
 
-         /* third pass, right to left, setting leaf depths */
-         avbl = 1; used = dpth = 0; root = n-2; next = n-1;
-         while (avbl>0) {
-            while (root>=0 && A[root]==dpth) {
-               used++; root--;
-            }
-            while (avbl>used) {
-               A[next--] = dpth; avbl--;
-            }
-            avbl = 2*used; dpth++; used = 0;
-         }
+		/* third pass, right to left, setting leaf depths */
+		avbl = 1; used = dpth = 0; root = n-2; next = n-1;
+		while (avbl>0) {
+			while (root>=0 && A[root]==dpth) {
+				used++; root--;
+			}
+			while (avbl>used) {
+				A[next--] = dpth; avbl--;
+			}
+			avbl = 2*used; dpth++; used = 0;
+		}
    }
-#endif
 
    bool generate_huffman_codes(void* pContext, uint num_syms, const uint16* pFreq, uint8* pCodesizes, uint& max_code_size, uint& total_freq_ret)
    {
@@ -246,7 +240,6 @@ namespace lzham
 
       sym_freq* syms = radix_sort_syms(num_used_syms, state.syms0, state.syms1);
       
-#if USE_CALCULATE_MINIMUM_REDUNDANCY
       int x[cHuffmanMaxSupportedSyms];
       for (uint i = 0; i < num_used_syms; i++)
          x[i] = syms[i].m_freq;
@@ -261,127 +254,6 @@ namespace lzham
          pCodesizes[syms[i].m_left] = static_cast<uint8>(len);
       }
       max_code_size = max_len;
-#else    
-      // Computes Huffman codelengths in linear time. More readable than calculate_minimum_redundancy(), and approximately the same speed, but not in-place.
-      
-      // Dummy node
-      sym_freq& sf = state.syms0[num_used_syms];
-      sf.m_left = UINT16_MAX;
-      sf.m_right = UINT16_MAX;
-      sf.m_freq = UINT_MAX;
-      
-      uint next_internal_node = num_used_syms + 1;
-            
-      uint queue_front = 0;
-      uint queue_end = 0;
-            
-      uint next_lowest_sym = 0;
-      
-      uint num_nodes_remaining = num_used_syms;
-      do
-      {
-         uint left_freq = syms[next_lowest_sym].m_freq;
-         uint left_child = next_lowest_sym;
-         
-         if ((queue_end > queue_front) && (syms[state.queue[queue_front]].m_freq < left_freq))
-         {
-            left_child = state.queue[queue_front];
-            left_freq = syms[left_child].m_freq;
-            
-            queue_front++;
-         }
-         else
-            next_lowest_sym++;
-         
-         uint right_freq = syms[next_lowest_sym].m_freq;
-         uint right_child = next_lowest_sym;
-
-         if ((queue_end > queue_front) && (syms[state.queue[queue_front]].m_freq < right_freq))
-         {
-            right_child = state.queue[queue_front];
-            right_freq = syms[right_child].m_freq;
-            
-            queue_front++;
-         }
-         else
-            next_lowest_sym++;
-      
-         LZHAM_ASSERT(next_internal_node < huffman_work_tables::cMaxInternalNodes);
-         
-         const uint internal_node_index = next_internal_node;
-         next_internal_node++;
-         
-         syms[internal_node_index].m_freq = left_freq + right_freq;
-         syms[internal_node_index].m_left = static_cast<uint16>(left_child);
-         syms[internal_node_index].m_right = static_cast<uint16>(right_child);
-         
-         LZHAM_ASSERT(queue_end < huffman_work_tables::cMaxInternalNodes);
-         state.queue[queue_end] = static_cast<uint16>(internal_node_index);
-         queue_end++;
-                  
-         num_nodes_remaining--;
-         
-      } while (num_nodes_remaining > 1);
-      
-      LZHAM_ASSERT(next_lowest_sym == num_used_syms);
-      LZHAM_ASSERT((queue_end - queue_front) == 1);
-      
-      uint cur_node_index = state.queue[queue_front];
-      
-      uint32* pStack = (syms == state.syms0) ? (uint32*)state.syms1 : (uint32*)state.syms0;
-      uint32* pStack_top = pStack;
-
-      uint max_level = 0;
-      
-      for ( ; ; ) 
-      {
-         uint level = cur_node_index >> 16;
-         uint node_index = cur_node_index & 0xFFFF;
-         
-         uint left_child = syms[node_index].m_left;
-         uint right_child = syms[node_index].m_right;
-         
-         uint next_level = (cur_node_index + 0x10000) & 0xFFFF0000;
-                           
-         if (left_child < num_used_syms)
-         {
-            max_level = math::maximum(max_level, level);
-            
-            pCodesizes[syms[left_child].m_left] = static_cast<uint8>(level + 1);
-            
-            if (right_child < num_used_syms)
-            {
-               pCodesizes[syms[right_child].m_left] = static_cast<uint8>(level + 1);
-               
-               if (pStack == pStack_top) break;
-               cur_node_index = *--pStack;
-            }
-            else
-            {
-               cur_node_index = next_level | right_child;
-            }
-         }
-         else
-         {
-            if (right_child < num_used_syms)
-            {
-               max_level = math::maximum(max_level, level);
-               
-               pCodesizes[syms[right_child].m_left] = static_cast<uint8>(level + 1);
-                              
-               cur_node_index = next_level | left_child;
-            }
-            else
-            {
-               *pStack++ = next_level | left_child;
-                              
-               cur_node_index = next_level | right_child;
-            }
-         }
-      }
-      
-      max_code_size = max_level + 1;
-#endif
                   
       return true;
    }

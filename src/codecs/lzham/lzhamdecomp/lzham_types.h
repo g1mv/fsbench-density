@@ -2,6 +2,29 @@
 // See Copyright Notice and license at the end of include/lzham.h
 #pragma once
 
+// TODO
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
+   #undef INT8_MIN
+   #undef INT8_MAX
+   #undef UINT8_MIN
+   #undef UINT8_MAX
+
+   #undef INT16_MIN
+   #undef INT16_MAX
+   #undef UINT16_MIN
+   #undef UINT16_MAX
+
+   #undef INT32_MIN
+   #undef INT32_MAX
+   #undef UINT32_MIN
+   #undef UINT32_MAX
+
+   #undef INT64_MIN
+   #undef INT64_MAX
+   #undef UINT64_MIN
+   #undef UINT64_MAX
+#endif
+
 namespace lzham
 {
    typedef unsigned char      uint8;
@@ -13,12 +36,12 @@ namespace lzham
    typedef uint32             uint;
    typedef signed int         int32;
 
-   #ifdef __GNUC__
-      typedef unsigned long long    uint64;
-      typedef long long             int64;
-   #else
+   #ifdef _MSC_VER
       typedef unsigned __int64      uint64;
       typedef signed __int64        int64;
+   #else
+      typedef unsigned long long    uint64;
+      typedef long long             int64;
    #endif
 
    const uint8  UINT8_MIN  = 0;
@@ -42,13 +65,13 @@ namespace lzham
 #if LZHAM_64BIT_POINTERS
    typedef uint64 uint_ptr;
    typedef uint64 uint32_ptr;
-   typedef int64  signed_size_t;
+   typedef int64 signed_size_t;
    typedef uint64 ptr_bits_t;
    const ptr_bits_t PTR_BITS_XOR = 0xDB0DD4415C87DCF7ULL;
 #else
-   typedef unsigned int     uint_ptr;
-   typedef unsigned int     uint32_ptr;
-   typedef signed int       signed_size_t;
+   typedef unsigned int uint_ptr;
+   typedef unsigned int uint32_ptr;
+   typedef signed int signed_size_t;
    typedef uint32 ptr_bits_t;
    const ptr_bits_t PTR_BITS_XOR = 0x5C87DCF7UL;
 #endif

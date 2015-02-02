@@ -176,7 +176,7 @@ LZ4hc                               | Yann Collet                               
 LZF                                 | Marc Alexander Lehmann                           | 3.6                 | yes      | http://oldhome.schmorp.de/marc/liblzf.html
 LZFX                                | Andrew Collette                                  | r16                 | no       | https://code.google.com/p/lzfx
 LZG                                 | Marcus Geelnard                                  | 1.0.6               | no       | http://liblzg.bitsnbites.eu
-LZHAM                               | Richard Geldreich, Jr.                           | SVN r96             | no       | https://code.google.com/p/lzham
+LZHAM                               | Richard Geldreich, Jr.                           | 2015-01-31          | yes      | https://github.com/richgel999/lzham_codec
 LZJB                                | Jeff Bonwick                                     | FreeBSD r263244     | no       |
 mmini - lzl                         | Adam Ierymenko                                   | 2010                | no       | https://code.google.com/p/mmini
 LZMAT                               | Vitaly Evseenko                                  | 1.1                 | yes      | www.matcode.com/lzmat.htm

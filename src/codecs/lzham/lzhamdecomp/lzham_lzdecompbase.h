@@ -4,14 +4,17 @@
 
 //#define LZHAM_LZDEBUG
 
-#define LZHAM_IS_MATCH_MODEL_INDEX(prev_char, cur_state) ((prev_char) >> (8 - CLZDecompBase::cNumIsMatchContextBits)) + ((cur_state) << CLZDecompBase::cNumIsMatchContextBits)
-
-#define LZHAM_USE_ALL_ARITHMETIC_CODING 0
-
-#define LZHAM_RND_CONG(jcong)  (69069U * jcong + 1234567U)
+#define LZHAM_IS_MATCH_MODEL_INDEX(cur_state) (cur_state)
 
 namespace lzham
 {
+	struct table_update_settings
+	{
+		uint16 m_max_update_interval;
+		uint16 m_slow_rate;
+	};
+	extern table_update_settings g_table_update_settings[];
+
    struct CLZDecompBase
    {
       enum 
@@ -69,21 +72,17 @@ namespace lzham
       {
          cNumStates = 12,
          cNumLitStates = 7,
-
-         cNumLitPredBits = 6,          // must be even
-         cNumDeltaLitPredBits = 6,     // must be even
-
-         cNumIsMatchContextBits = 6
       };
-      
+				      
       uint m_dict_size_log2;
       uint m_dict_size;
       
       uint m_num_lzx_slots;
-      uint m_lzx_position_base[cLZXMaxPositionSlots];
-      uint m_lzx_position_extra_mask[cLZXMaxPositionSlots];
-      uint8 m_lzx_position_extra_bits[cLZXMaxPositionSlots];
-      
+
+      static uint m_lzx_position_base[cLZXMaxPositionSlots];
+      static uint m_lzx_position_extra_mask[cLZXMaxPositionSlots];
+      static uint8 m_lzx_position_extra_bits[cLZXMaxPositionSlots];
+		            
       void init_position_slots(uint dict_size_log2);
    };
    

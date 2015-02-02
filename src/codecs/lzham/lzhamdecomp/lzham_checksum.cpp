@@ -41,7 +41,7 @@ namespace lzham
          buflen -= blocklen;
          blocklen = 5552;
       }
-      return (s2 << 16) + s1;
+      return static_cast<uint>((s2 << 16) + s1);
    }
 
    // Karl Malbrain's compact CRC-32, with pre and post conditioning. 

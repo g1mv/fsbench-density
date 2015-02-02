@@ -2,7 +2,7 @@
 // See Copyright Notice and license at the end of include/lzham.h
 #pragma once
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEBUG)
    #define LZHAM_BUILD_DEBUG
    
    #ifndef DEBUG

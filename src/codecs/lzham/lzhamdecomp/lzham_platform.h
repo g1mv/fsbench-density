@@ -14,7 +14,6 @@ void lzham_fail(const char* pExp, const char* pFile, unsigned line);
    #define LZHAM_BREAKPOINT DebuggerBreak();
    #define LZHAM_BUILTIN_EXPECT(c, v) c
 #elif defined(__GNUC__)
-   #define GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
    #define LZHAM_BREAKPOINT asm("int $3");
    #define LZHAM_BUILTIN_EXPECT(c, v) __builtin_expect(c, v)
 #else
@@ -90,11 +89,8 @@ LZHAM_FORCE_INLINE void lzham_yield_processor()
    #else
       #if defined(LZHAM_USE_MSVC_INTRINSICS)
          #define LZHAM_READ_BIG_ENDIAN_UINT32(p) _byteswap_ulong(*reinterpret_cast<const uint32*>(p))
-      #elif defined(__GNUC__) && (GCC_VERSION >= 430)
+      #elif defined(__GNUC__)
          #define LZHAM_READ_BIG_ENDIAN_UINT32(p) __builtin_bswap32(*reinterpret_cast<const uint32*>(p))
-      #elif defined(__FreeBSD__)
-         #include <sys/endian.h>
-         #define LZHAM_READ_BIG_ENDIAN_UINT32(p) bswap32(*reinterpret_cast<const uint32*>(p))
       #else
          #define LZHAM_READ_BIG_ENDIAN_UINT32(p) utils::swap32(*reinterpret_cast<const uint32*>(p))
       #endif

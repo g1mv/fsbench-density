@@ -31,7 +31,7 @@ set(USE_LZ4               1)
 set(USE_LZF               1)
 set(USE_LZFX              0) # inefficient
 set(USE_LZG               0) # inefficient
-set(USE_LZHAM             0) # known to cause problems on some platforms
+set(USE_LZHAM             1) # known to cause problems on some platforms
 set(USE_LZMAT             1)
 set(USE_LZO               1)
 set(USE_LZP_DS            0) # inefficient
@@ -152,6 +152,7 @@ ELSE (CMAKE_HOST_APPLE)
 ENDIF(CMAKE_HOST_APPLE)
 set(GXX_FLAGS ${GCC_FLAGS})
 set(GCC_FLAGS_C99 "-std=c99")
+set(GXX_FLAGS_CPP11 "-std=c++11")
 set(MSVC_FLAGS "/W4")
 
 #--------------#
@@ -334,12 +335,12 @@ IF(USE_LZHAM)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/lzham/lzhamcomp)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/lzham/lzhamdecomp) 
     set(LZHAM_SRC 
-        codecs/lzham/lzhamcomp/lzham_lzbase.cpp codecs/lzham/lzhamcomp/lzham_lzcomp.cpp codecs/lzham/lzhamcomp/lzham_lzcomp_internal.cpp 
-        codecs/lzham/lzhamcomp/lzham_lzcomp_state.cpp codecs/lzham/lzhamcomp/lzham_match_accel.cpp codecs/lzham/lzhamcomp/lzham_pthreads_threading.cpp 
-        codecs/lzham/lzhamdecomp/lzham_assert.cpp codecs/lzham/lzhamdecomp/lzham_checksum.cpp codecs/lzham/lzhamdecomp/lzham_huffman_codes.cpp 
-        codecs/lzham/lzhamdecomp/lzham_lzdecomp.cpp codecs/lzham/lzhamdecomp/lzham_lzdecompbase.cpp codecs/lzham/lzhamdecomp/lzham_mem.cpp 
-        codecs/lzham/lzhamdecomp/lzham_platform.cpp codecs/lzham/lzhamdecomp/lzham_polar_codes.cpp codecs/lzham/lzhamdecomp/lzham_prefix_coding.cpp 
-        codecs/lzham/lzhamdecomp/lzham_symbol_codec.cpp codecs/lzham/lzhamdecomp/lzham_timer.cpp codecs/lzham/lzhamdecomp/lzham_vector.cpp 
+        codecs/lzham/lzhamcomp/lzham_lzbase.cpp codecs/lzham/lzhamcomp/lzham_lzcomp.cpp codecs/lzham/lzhamcomp/lzham_lzcomp_internal.cpp
+        codecs/lzham/lzhamcomp/lzham_lzcomp_state.cpp codecs/lzham/lzhamcomp/lzham_match_accel.cpp
+        codecs/lzham/lzhamdecomp/lzham_assert.cpp codecs/lzham/lzhamdecomp/lzham_checksum.cpp codecs/lzham/lzhamdecomp/lzham_huffman_codes.cpp
+        codecs/lzham/lzhamdecomp/lzham_lzdecomp.cpp codecs/lzham/lzhamdecomp/lzham_lzdecompbase.cpp codecs/lzham/lzhamdecomp/lzham_mem.cpp
+        codecs/lzham/lzhamdecomp/lzham_platform.cpp codecs/lzham/lzhamdecomp/lzham_prefix_coding.cpp
+        codecs/lzham/lzhamdecomp/lzham_symbol_codec.cpp codecs/lzham/lzhamdecomp/lzham_timer.cpp codecs/lzham/lzhamdecomp/lzham_vector.cpp
         codecs/lzham/lzhamlib/lzham_lib.cpp)
 
     add_definitions(-DFSBENCH_USE_LZHAM)
@@ -730,15 +731,16 @@ IF(USE_ZSTD)
 ENDIF(USE_ZSTD)
 
 set (SRC_C99 ${DENSITY_SRC})
+set (SRC_CPP11 ${LZHAM_SRC})
 set(SRC ${MAIN_SRC}
         ${SRC_C99}
+        ${SRC_CPP11}
         ${7z_SRC}
         ${BCL_SRC}
         ${BROTLI_SRC}
         ${BZ2_SRC}
         ${CRYPTOPP_SRC}
         ${ECRYPT_SRC}
-        ${LZHAM_SRC}
         ${LZO_SRC}
         ${NRV_SRC}
         ${ZLIB_SRC}
@@ -752,10 +754,11 @@ set(SRC ${MAIN_SRC}
 #----------------#
 
 set(C99_FLAGS)
+set(CPP11_FLAGS)
 
 IF(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
     set_source_files_properties(${MAIN_SRC} PROPERTIES COMPILE_FLAGS "-Wall -Wextra")
-    set(CXX_FLAGS ${GXX_FLAGS})
+    set(CXX_FLAGS "${GXX_FLAGS}")
     set(EXE_LINKER_FLAGS ${EXE_LINKER_FLAGS} ${GCC_LINKFLAGS})
 ENDIF(CMAKE_COMPILER_IS_GNUCXX OR ${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
 
@@ -779,7 +782,8 @@ set(CMAKE_CXX_FLAGS        "${CMAKE_CXX_FLAGS}        ${CXX_FLAGS}")
 set(CMAKE_C_FLAGS          "${CMAKE_C_FLAGS}          ${C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXE_LINKER_FLAGS}")
 
-set_property(SOURCE ${SRC_C99} PROPERTY COMPILE_FLAGS ${C99_FLAGS})
+set_property(SOURCE ${SRC_C99}   PROPERTY COMPILE_FLAGS ${C99_FLAGS})
+set_property(SOURCE ${SRC_CPP11} PROPERTY COMPILE_FLAGS ${CPP11_FLAGS})
 
 add_executable (fsbench ${SRC})
 IF (CMAKE_HOST_APPLE)
