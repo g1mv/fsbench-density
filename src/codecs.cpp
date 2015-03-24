@@ -261,7 +261,8 @@ Codec * codecs[] =
 #endif
 #ifdef FSBENCH_USE_DENSITY
               new Codec("density::chameleon", _DENSITY_VERSION, density_chameleon_compress, density_decompress, no_blowup),
-              new Codec("density::mandala", _DENSITY_VERSION, density_mandala_compress, density_decompress, no_blowup),
+              new Codec("density::cheetah", _DENSITY_VERSION, density_cheetah_compress, density_decompress, no_blowup),
+              new Codec("density::lion", _DENSITY_VERSION, density_lion_compress, density_decompress, no_blowup),
 #endif
 #ifdef FSBENCH_USE_FSE
               new Codec("fse",   _FSE_VERSION,   fse_c,   fse_d,   fse_m),
@@ -546,20 +547,30 @@ static list<CodecWithParams> createParamsList(list<pair<Codec*, const string> > 
 #define MKLIST(name, array) list<CodecWithParams> (name) = createParamsList(list< pair<Codec*,const string> >((array), (array) + sizeof((array)) / sizeof(pair<Codec*,const string>)))
 
 static const pair<Codec*, const string> default_codecs[] =
-    { make_pair(raw_find_codec("density::chameleon"), ""),
-      make_pair(raw_find_codec("density::mandala"), ""),
-      make_pair(raw_find_codec("LZ4"), ""),
-      make_pair(raw_find_codec("LZO"), ""),
-      make_pair(raw_find_codec("QuickLZ"), ""),
-      make_pair(raw_find_codec("Snappy"), ""),
-      make_pair(raw_find_codec("ZSTD"), "") };
+        { make_pair(raw_find_codec("bcl-rle"), ""),
+                make_pair(raw_find_codec("blosc"), ""),
+                make_pair(raw_find_codec("density::chameleon"), ""),
+                make_pair(raw_find_codec("density::cheetah"), ""),
+                make_pair(raw_find_codec("density::lion"), ""),
+                make_pair(raw_find_codec("fastlz"), ""),
+                make_pair(raw_find_codec("LZ4"), ""),
+                make_pair(raw_find_codec("LZF"), "very"),
+                make_pair(raw_find_codec("LZJB"), ""),
+                make_pair(raw_find_codec("LZO"), ""),
+                make_pair(raw_find_codec("QuickLZ"), ""),
+                make_pair(raw_find_codec("RLE64"), ""),
+                make_pair(raw_find_codec("Shrinker"), ""),
+                make_pair(raw_find_codec("Snappy"), ""),
+                make_pair(raw_find_codec("wfLZ"), ""),
+                make_pair(raw_find_codec("ZSTD"), "") };
 MKLIST(DEFAULT_CODECS, default_codecs);
 
 static const pair<Codec*, const string> fast_compressors[] =
     { make_pair(raw_find_codec("bcl-rle"), ""),
       make_pair(raw_find_codec("blosc"), ""),
       make_pair(raw_find_codec("density::chameleon"), ""),
-      make_pair(raw_find_codec("density::mandala"), ""),
+      make_pair(raw_find_codec("density::cheetah"), ""),
+      make_pair(raw_find_codec("density::lion"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
       make_pair(raw_find_codec("lrrle"), ""),
       make_pair(raw_find_codec("LZ4"), ""),
@@ -588,7 +599,8 @@ static const pair<Codec*, const string> all_compressors[] =
       make_pair(raw_find_codec("crush"), ""),
       make_pair(raw_find_codec("cryptopp-deflate"), ""),
       make_pair(raw_find_codec("density::chameleon"), ""),
-      make_pair(raw_find_codec("density::mandala"), ""),
+      make_pair(raw_find_codec("density::cheetah"), ""),
+      make_pair(raw_find_codec("density::lion"), ""),
       make_pair(raw_find_codec("Doboz"), ""),
       make_pair(raw_find_codec("fastlz"), ""),
       make_pair(raw_find_codec("fse"), ""),

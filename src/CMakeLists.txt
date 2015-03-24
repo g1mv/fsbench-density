@@ -74,7 +74,7 @@ set(USE_ZSTD              1)
 
 # This script can feed certain compilers with additional optimisation flags aside from the usual -O2 or so. Other compilers use the defaults.
 # If you don't want the extra flags, set the variable below to 0
-set(OPTIMIZE_COMPILER_FLAGS 0)
+set(OPTIMIZE_COMPILER_FLAGS 1)
 
 # Set it to 1 to enable SSE2 in codecs that support it.
 # Currently it's used only by Yappy and on my machine it hurts speed slightly
@@ -165,8 +165,17 @@ ENDIF(USE_ASM)
 
 IF(OPTIMIZE_COMPILER_FLAGS)
     #gcc optimization
+macro(remove_flag flag)
+  string(REPLACE "${flag}" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+endmacro()
+
+IF (CMAKE_HOST_APPLE)
+    remove_flag("-O3")
+    set(GCC_FLAGS "-Ofast -flto -fomit-frame-pointer")  # To avoid bug LLVM ERROR: Cannot select: intrinsic %llvm.x86.aesni.aesimc
+ELSE (CMAKE_HOST_APPLE)
     set(GCC_FLAGS "${GCC_FLAGS} -fomit-frame-pointer -ffast-math -march=native -mtune=generic")
     set(GCC_LINKFLAGS "${GCC_LINKFLAGS} -s")
+ENDIF(CMAKE_HOST_APPLE)
 
     set(GXX_FLAGS "${GXX_FLAGS} ${GCC_FLAGS}")
 
@@ -295,16 +304,23 @@ IF(USE_DENSITY)
         codecs/density/src/kernel_chameleon_decode.c
         codecs/density/src/kernel_chameleon_dictionary.c
         codecs/density/src/kernel_chameleon_encode.c
-        codecs/density/src/kernel_mandala_decode.c
-        codecs/density/src/kernel_mandala_dictionary.c
-        codecs/density/src/kernel_mandala_encode.c
+        codecs/density/src/kernel_cheetah_decode.c
+        codecs/density/src/kernel_cheetah_dictionary.c
+        codecs/density/src/kernel_cheetah_encode.c
+        codecs/density/src/kernel_lion_decode.c
+        codecs/density/src/kernel_lion_dictionary.c
+        codecs/density/src/kernel_lion_encode.c
         codecs/density/src/main_decode.c
         codecs/density/src/main_encode.c
         codecs/density/src/main_footer.c
         codecs/density/src/main_header.c
         codecs/density/src/memory_location.c
         codecs/density/src/memory_teleport.c
-        codecs/density/src/stream.c)
+        codecs/density/src/buffer.c
+        codecs/density/src/stream.c
+        codecs/density/src/kernel_lion_form_model.c
+        codecs/density/src/spookyhash/src/context.c
+        codecs/density/src/spookyhash/src/spookyhash.c)
     add_definitions(-DFSBENCH_USE_DENSITY)
 ENDIF(USE_DENSITY)
 

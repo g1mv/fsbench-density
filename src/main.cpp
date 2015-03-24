@@ -34,11 +34,15 @@
 
 #include "benchmark.hpp"
 #include "tools.hpp"
-
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <new>
+
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -46,13 +50,11 @@ using namespace std;
 // HELPERS
 ///////////////////////////
 
-static vector<string> pretty_list_of_codecs()
-{
-    vector<string> ret;
-    for (list<Codec*>::const_iterator it = CODECS.begin(); it != CODECS.end(); ++it)
-    {
-        const string & name = (*it)->name;
-        const string & version = (*it)->version;
+static vector <string> pretty_list_of_codecs() {
+    vector <string> ret;
+    for (list<Codec *>::const_iterator it = CODECS.begin(); it != CODECS.end(); ++it) {
+        const string &name = (*it)->name;
+        const string &version = (*it)->version;
         if (name.find('/') == string::npos)
             ret.push_back(name + ' ' + version);
     }
@@ -60,11 +62,17 @@ static vector<string> pretty_list_of_codecs()
     return ret;
 }
 
-static void usage()
-{
-    cerr << PROGNAME " " PROGVERSION "\n\n";
-    cerr << "usage1: " PROGNAME " help codec_name\n";
-    cerr << "usage2: " PROGNAME " [list of codecs][options] input\n\n";
+static void usage() {
+    cerr << PROGNAME
+    " "
+    PROGVERSION
+    "\n\n";
+    cerr << "usage1: "
+    PROGNAME
+    " help codec_name\n";
+    cerr << "usage2: "
+    PROGNAME
+    " [list of codecs][options] input\n\n";
     cerr << "list of codecs: a space-separated list of codecs.\n";
     cerr << "                Each codec is either codec name or a comma separated\n";
     cerr << "                pair: name,params. See examples below.\n";
@@ -85,24 +93,48 @@ static void usage()
     cerr << "  -wX: warmup iterations(default = " << DEFAULT_WARMUP_ITERS << ")\n";
     cerr << endl;
     cerr << "Available codecs:\n";
-    vector<string> codecs_list = pretty_list_of_codecs();
+    vector <string> codecs_list = pretty_list_of_codecs();
     for (vector<string>::iterator it = codecs_list.begin(); it != codecs_list.end(); ++it)
         cerr << "  " << *it << endl;
     cerr << endl;
     cerr << "Examples:\n";
-    cerr << "  " PROGNAME " help lzo\n";
-    cerr << "  " PROGNAME " file.tar\n";
-    cerr << "  " PROGNAME " -t2 file.tar\n";
-    cerr << "  " PROGNAME " LZ4 zlib,1 -t2 file.tar\n";
-    cerr << "  " PROGNAME " fastlz lzf,ultra -t2 -b131072 -m4096 -i10 file.tar\n";
+    cerr << "  "
+    PROGNAME
+    " help lzo\n";
+    cerr << "  "
+    PROGNAME
+    " file.tar\n";
+    cerr << "  "
+    PROGNAME
+    " -t2 file.tar\n";
+    cerr << "  "
+    PROGNAME
+    " LZ4 zlib,1 -t2 file.tar\n";
+    cerr << "  "
+    PROGNAME
+    " fastlz lzf,ultra -t2 -b131072 -m4096 -i10 file.tar\n";
+}
+
+void handler(int sig) {
+    void *array[10];
+    size_t size;
+
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
 }
 
 
 ///////////////////////////
 // MAIN
 ///////////////////////////
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
+    signal(SIGSEGV, handler);
+
     // increase priority to the max to reduce variance
     setHighestPriority();
 
@@ -117,20 +149,17 @@ int main(int argc, char ** argv)
     unsigned iter_time = DEFAULT_ITER_TIME;
     size_t job_size = 262144; // when compressing small blocks, each work item will contain multiple of them, so the size is no smaller than this
 
-    list<CodecWithParams> codecs;
+    list <CodecWithParams> codecs;
 
     //debug code
     /*char*a[] = {"fsbench", "ar", "-w0", "-s1", "-i1", "/usr/home/m/bench/nbbs.tar"};
     argv=a;
     argc=6;*/
 
-    if (argc == 3)
-    {
-        if (!case_insensitive_compare(argv[1], "help"))
-        {
-            Codec * c = find_codec(argv[2]);
-            if (c)
-            {
+    if (argc == 3) {
+        if (!case_insensitive_compare(argv[1], "help")) {
+            Codec *c = find_codec(argv[2]);
+            if (c) {
                 cout << c->help();
                 return 0;
             }
@@ -140,135 +169,113 @@ int main(int argc, char ** argv)
         }
     }
 
-    while (argc > 2)
-    {
-        if (argv[1][0] == '-')
-        {
-            switch (argv[1][1])
-            {
-            case 'b':
-                bsize = atoi(argv[1] + 2);
-                if (bsize <= 0)
-                {
-                    cerr << "block size must be > 0.\n";
+    while (argc > 2) {
+        if (argv[1][0] == '-') {
+            switch (argv[1][1]) {
+                case 'b':
+                    bsize = atoi(argv[1] + 2);
+                    if (bsize <= 0) {
+                        cerr << "block size must be > 0.\n";
+                        return 1;
+                    }
+                    break;
+                case 'c':
+                    csv = true;
+                    break;
+                case 'i':
+                    iterations = atoi(argv[1] + 2);
+                    if (iterations <= 0) {
+                        cerr << "number of iterations must be > 0.\n";
+                        return 1;
+                    }
+                    break;
+                case 'j':
+                    job_size = atoi(argv[1] + 2);
+                    if (job_size <= 0) {
+                        cerr << "job size must be > 0.\n";
+                        return 1;
+                    }
+                    break;
+                case 'm':
+                    ssize = atoi(argv[1] + 2);
+                    if (ssize <= 0) {
+                        cerr << "minimum savings must be > 0.\n";
+                        return 1;
+                    }
+                    break;
+                case 'o':
+                    overhead_iterations = atoi(argv[1] + 2);
+                    if (overhead_iterations == 0) {
+                        cerr << "number of overhead-reduction iterations must be > 0.\n";
+                        return 1;
+                    }
+                    break;
+                case 's':
+                    iter_time = atoi(argv[1] + 2);
+                    break;
+                case 't':
+                    threads = atoi(argv[1] + 2);
+                    if (threads <= 0) {
+                        cerr << "number of threads must be > 0.\n";
+                        return 1;
+                    }
+                    break;
+                case 'v':
+                    verify = true;
+                    break;
+                case 'w':
+                    warmup_iters = atoi(argv[1] + 2);
+                    if (warmup_iters < 0) {
+                        cerr << "warmup_iters of threads must be >= 0.\n";
+                        return 1;
+                    }
+                    break;
+                default:
+                    cerr << "unknown option: '" << argv[1] << "'\n";
                     return 1;
-                }
-            break;
-            case 'c':
-                csv = true;
-            break;
-            case 'i':
-                iterations = atoi(argv[1] + 2);
-                if (iterations <= 0)
-                {
-                    cerr << "number of iterations must be > 0.\n";
-                    return 1;
-                }
-            break;
-            case 'j':
-                job_size = atoi(argv[1] + 2);
-                if (job_size <= 0)
-                {
-                    cerr << "job size must be > 0.\n";
-                    return 1;
-                }
-            break;
-            case 'm':
-                ssize = atoi(argv[1] + 2);
-                if (ssize <= 0)
-                {
-                    cerr << "minimum savings must be > 0.\n";
-                    return 1;
-                }
-            break;
-            case 'o':
-                overhead_iterations = atoi(argv[1] + 2);
-                if (overhead_iterations == 0)
-                {
-                    cerr << "number of overhead-reduction iterations must be > 0.\n";
-                    return 1;
-                }
-            break;
-            case 's':
-                iter_time = atoi(argv[1] + 2);
-            break;
-            case 't':
-                threads = atoi(argv[1] + 2);
-                if (threads <= 0)
-                {
-                    cerr << "number of threads must be > 0.\n";
-                    return 1;
-                }
-            break;
-            case 'v':
-                verify = true;
-            break;
-            case 'w':
-                warmup_iters = atoi(argv[1] + 2);
-                if (warmup_iters < 0)
-                {
-                    cerr << "warmup_iters of threads must be >= 0.\n";
-                    return 1;
-                }
-            break;
-            default:
-                cerr << "unknown option: '" << argv[1] << "'\n";
-                return 1;
             }
         }
-        else
-        {
+        else {
             // it may be "codec" or "codec,params" or "pseudocodec".
             // pseudocodec?
-            if (case_insensitive_compare(argv[1], "all") == 0)
-            {
+            if (case_insensitive_compare(argv[1], "all") == 0) {
                 codecs.insert(codecs.end(), ALL_COMPRESSORS.begin(), ALL_COMPRESSORS.end());
                 codecs.insert(codecs.end(), ALL_CHECKSUMS.begin(), ALL_CHECKSUMS.end());
                 codecs.insert(codecs.end(), ALL_CIPHERS.begin(), ALL_CIPHERS.end());
                 codecs.insert(codecs.end(), ALL_OTHERS.begin(), ALL_OTHERS.end());
             }
-            else if (case_insensitive_compare(argv[1], "default") == 0)
-            {
+            else if (case_insensitive_compare(argv[1], "default") == 0) {
                 codecs.insert(codecs.end(), DEFAULT_CODECS.begin(), DEFAULT_CODECS.end());
             }
-            else if (case_insensitive_compare(argv[1], "fast") == 0)
-            {
+            else if (case_insensitive_compare(argv[1], "fast") == 0) {
                 codecs.insert(codecs.end(), FAST_COMPRESSORS.begin(), FAST_COMPRESSORS.end());
             }
-            else if (case_insensitive_compare(argv[1], "compressors") == 0)
-            {
+            else if (case_insensitive_compare(argv[1], "compressors") == 0) {
                 codecs.insert(codecs.end(), ALL_COMPRESSORS.begin(), ALL_COMPRESSORS.end());
             }
-            else if (case_insensitive_compare(argv[1], "checksums") == 0)
-            {
+            else if (case_insensitive_compare(argv[1], "checksums") == 0) {
                 codecs.insert(codecs.end(), ALL_CHECKSUMS.begin(), ALL_CHECKSUMS.end());
             }
-            else if (case_insensitive_compare(argv[1], "ciphers") == 0)
-            {
+            else if (case_insensitive_compare(argv[1], "ciphers") == 0) {
                 codecs.insert(codecs.end(), ALL_CIPHERS.begin(), ALL_CIPHERS.end());
             }
-            else if (case_insensitive_compare(argv[1], "others") == 0)
-            {
+            else if (case_insensitive_compare(argv[1], "others") == 0) {
                 codecs.insert(codecs.end(), ALL_OTHERS.begin(), ALL_OTHERS.end());
             }
-            else
-            {
+            else {
                 // codec?
                 string codec = argv[1];
                 string params = "";
                 size_t position = codec.find(',');
-                if (position != string::npos)
-                {
+                if (position != string::npos) {
                     params = codec.substr(position + 1);
                     codec = codec.substr(0, position);
                 }
-                Codec * found = find_codec(codec);
-                if (found)
-                {
+                Codec *found = find_codec(codec);
+                if (found) {
                     codecs.push_back(CodecWithParams(*found, params));
                 }
-                else
-                {
+                else {
                     cerr << "Unknown codec: '" << codec << "'.";
                     return 1;
                 }
@@ -278,15 +285,13 @@ int main(int argc, char ** argv)
         argc--;
     }
 
-    if (argc < 2)
-    {
+    if (argc < 2) {
         usage();
         return 1;
     }
 
     ifstream in(argv[1], ios::in | ios::binary);
-    if (in.fail())
-    {
+    if (in.fail()) {
         cerr << "Failed to open the input file.\n";
         return 1;
     }
@@ -294,53 +299,45 @@ int main(int argc, char ** argv)
     if (codecs.empty())
         codecs = DEFAULT_CODECS;
 
-    if (codecs.empty())
-    {
+    if (codecs.empty()) {
         cerr << "No valid codecs specified.\n";
         return 1;
     }
 
-    try
-    {
+    try {
         Tester tester(codecs, &in, bsize, threads);
         tester.test(iterations,
-                    overhead_iterations,
-                    iter_time,
-                    ssize,
-                    verify,
-                    warmup_iters,
-                    csv,
-                    job_size);
+                overhead_iterations,
+                iter_time,
+                ssize,
+                verify,
+                warmup_iters,
+                csv,
+                job_size);
 
     }
-    catch (const Codec::InvalidParams & e)
-    {
+    catch (const Codec::InvalidParams &e) {
         cerr << "Invalid params!\n";
         cerr << e.what() << '\n';
         return 1;
     }
-    catch (const std::bad_alloc)
-    {
+    catch (const std::bad_alloc) {
         cerr << "Out of memory\n";
         return 1;
     }
-    catch (const std::exception & e)
-    {
+    catch (const std::exception &e) {
         cerr << e.what();
         return 1;
     }
-    catch (...)
-    {
+    catch (...) {
         cerr << "Exception caught";
         return 1;
     }
-    if (csv)
-    {
+    if (csv) {
         cout << "Iterations," << iterations << "\n";
         cout << "Overhead iterations," << overhead_iterations << "\n";
     }
-    else
-    {
+    else {
         cout << "done... (" << iterations << "*X*" << overhead_iterations << ") iteration(s)).\n";
     }
     return 0;
