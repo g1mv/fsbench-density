@@ -181,7 +181,7 @@ Codec * find_codec(const std::string & name);
 #define _CRAPWOW_VERSION        "2012-06-07"
 #define _CRUSH_VERSION          "0.0.1"
 #define _CRYPTOPP_VERSION       "5.6.1"
-#define _DENSITY_VERSION        "2015-03-27"
+#define _DENSITY_VERSION        "2015-03-30"
 #define _DOBOZ_VERSION          "2011-03-19"
 #define _ECRYPT_VERSION         "2012-06-10"
 #define _EDON_R_VERSION         "v20"

@@ -234,7 +234,7 @@ size_t density_decompress (char * in, size_t isize, char * out, size_t osize, vo
     // For this reason they sometimes refuse to decompress when they don't see
     // enough lookahead. But the lookahead is not needed here as we know
     // the output size. So we trick them that they have more space than the really do.
-    const size_t padding = DENSITY_MINIMUM_OUT_BUFFER_SIZE;
+    const size_t padding = DENSITY_MINIMUM_OUTPUT_BUFFER_SIZE;
     density_buffer_processing_result result = density_buffer_decompress((uint8_t *) in, isize, (uint8_t*)out, osize + padding, NULL, NULL);
     if(result.state)
         return CODING_ERROR;
