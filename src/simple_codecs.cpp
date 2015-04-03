@@ -229,13 +229,7 @@ size_t density_lion_compress(char * in, size_t isize, char * out, size_t osize, 
 
 size_t density_decompress (char * in, size_t isize, char * out, size_t osize, void *)
 {
-    // Density decoders use rough approximations of the space they need
-    // But they act safe. In order to achieve safety, they act conservatively.
-    // For this reason they sometimes refuse to decompress when they don't see
-    // enough lookahead. But the lookahead is not needed here as we know
-    // the output size. So we trick them that they have more space than the really do.
-    const size_t padding = DENSITY_MINIMUM_OUTPUT_BUFFER_SIZE;
-    density_buffer_processing_result result = density_buffer_decompress((uint8_t *) in, isize, (uint8_t*)out, osize + padding, NULL, NULL);
+    density_buffer_processing_result result = density_buffer_decompress((uint8_t *) in, isize, (uint8_t*)out, osize, NULL, NULL);
     if(result.state)
         return CODING_ERROR;
     return result.bytesWritten;
