@@ -21,6 +21,7 @@
 [~] updated xxhash to r39
 [~] updated LZO to 2.08
 [~] updated LZHAM to 2015-01-31
+[~] updated gipfeli to 2014-06-27
 [~] made CityHash optional as it's superseeded by FarmHash
 [-] removed xxhash256, it's dangerously weak
 [!] fixed integer underflow

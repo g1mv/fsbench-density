@@ -1,24 +1,13 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 #include "entropy_code_builder.h"
 
 #include <string.h>
 
-#include "integral_types.h"
+#include "stubs-internal.h"
 
+namespace util {
+namespace compression {
 namespace gipfeli {
 
 // Builds histogram and finds positions (limits), where to split symbols
@@ -54,8 +43,8 @@ void EntropyCodeBuilder::FindLimits(uint8* symbols) {
 // Builds symbol order and the entropy code using the limits computed
 // by FindLimits method.
 void EntropyCodeBuilder::ProduceSymbolOrder(uint8* symbols,
-                                            int* assign_value,
-                                            int* assign_length) {
+                        int* assign_value,
+                        int* assign_length) {
   int best_index = 0;
   int next_best_index = 0;
   for (int i = 0; i < 256; i++) {
@@ -87,3 +76,5 @@ void EntropyCodeBuilder::ProduceSymbolOrder(uint8* symbols,
 }
 
 }  // namespace gipfeli
+}  // namespace compression
+}  // namespace util

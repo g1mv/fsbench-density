@@ -1,26 +1,15 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 #include "lz77.h"
 
-#include <string.h>
+#include <algorithm>
 
-#include "integral_types.h"
 #include "find_match_length.h"
 #include "enum.h"
+#include "stubs-internal.h"
 
+namespace util {
+namespace compression {
 namespace gipfeli {
 
 namespace {
@@ -45,8 +34,7 @@ inline uint32 Hash(const char* p, int shift) {
 // UNALIGNED_LOAD32(p) ... UNALIGNED_LOAD32(p+1) ... UNALIGNED_LOAD32(p+2)
 // are slower than UNALIGNED_LOAD64(p) followed by shifts and casts to uint32.
 static inline uint32 GetUint32AtOffset(uint64 v, int offset) {
-  bool kIsLittleEndian = true;
-  return v >> (kIsLittleEndian ? 8 * offset : 32 - 8 * offset);
+  return v >> (LittleEndian::IsLittleEndian() ? 8 * offset : 32 - 8 * offset);
 }
 
 }  // namespace
@@ -113,10 +101,10 @@ void EmitCopyForTesting(const uint32 offset,
   *commands_size = pt - commands;
 }
 
-
 // Compresses "input" string to the "content" and "commands" buffers.
 void LZ77::CompressFragment(const char* input,
                             const size_t input_size,
+                            const char* prev_block,
                             char** content,
                             uint32* content_size,
                             uint32** commands,
@@ -167,6 +155,7 @@ void LZ77::CompressFragment(const char* input,
 
       const char* next_ip = ip;
       const char* candidate = NULL;
+      bool in_prev_block = false;
       do {
         ip = next_ip;
         const uint32 hash = next_hash;
@@ -176,10 +165,13 @@ void LZ77::CompressFragment(const char* input,
           goto emit_remainder;
         }
         next_hash = Hash(next_ip, shift);
-        candidate = base_ip + hash_table[hash];
+        size_t offset = hash_table[hash];
+        candidate = base_ip + offset;
         if (candidate >= ip) {
-          // the reference to the previous block
-          candidate -= kBlockSize;
+          candidate = prev_block + offset;
+          in_prev_block = true;
+        } else {
+          in_prev_block = false;
         }
         hash_table[hash] = ip - base_ip;
       } while (UNALIGNED_LOAD32(ip) != UNALIGNED_LOAD32(candidate));
@@ -204,13 +196,33 @@ void LZ77::CompressFragment(const char* input,
         // We have a 4-byte match at ip, and no need to emit any
         // "literal bytes" prior to ip.
         const char* base = ip;
-        int matched = 4 + FindMatchLength(
-            reinterpret_cast<const uint8*>(candidate) + 4,
-            reinterpret_cast<const uint8*>(ip) + 4,
-            reinterpret_cast<const uint8*>(ip_end));
+
+        int matched = 4;
+        if (!in_prev_block || ((prev_block + kBlockSize) == base_ip)
+            || (candidate + 4 >= (prev_block + kBlockSize))) {
+          matched += util::compression::FindMatchLength(
+              reinterpret_cast<const uint8*>(candidate) + 4,
+              reinterpret_cast<const uint8*>(ip) + 4,
+              reinterpret_cast<const uint8*>(ip_end));
+        } else {
+          matched += MultiBlockFindMatchLength(
+              reinterpret_cast<const uint8*>(candidate) + 4,
+              reinterpret_cast<const uint8*>(prev_block + kBlockSize),
+              reinterpret_cast<const uint8*>(base_ip),
+              reinterpret_cast<const uint8*>(ip) + 4,
+              reinterpret_cast<const uint8*>(ip_end));
+        }
+
         ip += matched;
-        int offset = base - candidate;
+        int offset;
+        if (in_prev_block) {
+          offset = base - base_ip + prev_block + kBlockSize - candidate;
+        } else {
+          offset = base - candidate;
+        }
+
         EmitCopy(offset, matched, &commands_current);
+
         // We could immediately start working at ip now, but to improve
         // compression we first update hash_table[Hash(ip - 1, ...)].
         const char* insert_tail = ip - 3;
@@ -229,13 +241,17 @@ void LZ77::CompressFragment(const char* input,
         hash_table[prev_hash] = n++;
 
         uint32 cur_hash = HashBytes(GetUint32AtOffset(input_bytes, 3), shift);
-        candidate = base_ip + hash_table[cur_hash];
+        int candidate_offset = hash_table[cur_hash];
+        candidate = base_ip + candidate_offset;
         if (candidate >= ip) {
-          candidate -= kBlockSize;
+          candidate = prev_block + candidate_offset;
+          in_prev_block = true;
+        } else {
+          in_prev_block = false;
         }
         hash_table[cur_hash] = n;
-      } while (GetUint32AtOffset(input_bytes, 3) ==
-               UNALIGNED_LOAD32(candidate));
+      } while (GetUint32AtOffset(input_bytes, 3)
+               == UNALIGNED_LOAD32(candidate));
 
       next_hash = HashBytes(GetUint32AtOffset(input_bytes, 4), shift);
       ++ip;
@@ -282,3 +298,5 @@ size_t LZ77::MaxCompressedCommandsSize(size_t input_size) {
 }
 
 }  // namespace gipfeli
+}  // namespace compression
+}  // namespace util

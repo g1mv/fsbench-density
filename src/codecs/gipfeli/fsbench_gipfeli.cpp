@@ -5,39 +5,27 @@
 
 namespace FsBenchGipfeli
 {
-using namespace gipfeli;
+using namespace util::compression;
 
 size_t compress(char * in, size_t isize, char * out, size_t, void *)
 {
-    Compressor compressor;
-    Status status = compressor.Init();
-    if(status != kOk)
-        return CODING_ERROR;
-    std::string output_str;
-    status = compressor.Compress(in, isize, &output_str);
-    if(status != kOk)
-        return CODING_ERROR;
-    size_t compressed_size = output_str.size();
-    memcpy(out, output_str.data(), compressed_size);
-    return compressed_size;
+    Compressor *compressor = NewGipfeliCompressor();
+    UncheckedByteArraySink sink(out);
+    ByteArraySource source(in, isize);
+    return compressor->CompressStream(&source, &sink);
 }
-size_t decompress(char * in, size_t isize, char * out, size_t, void *)
+size_t decompress(char * in, size_t isize, char * out, size_t osize, void *)
 {
-    Uncompressor decompressor;
-    Status status = decompressor.Init();
-    if(status != kOk)
+    Compressor *compressor = NewGipfeliCompressor();
+    UncheckedByteArraySink sink(out);
+    ByteArraySource source(in, isize);
+    if (!compressor->UncompressStream(&source, &sink))
         return CODING_ERROR;
-    std::string output_str;
-    status = decompressor.Uncompress(in, isize, &output_str);
-    if(status != kOk)
-        return CODING_ERROR;
-    size_t compressed_size = output_str.size();
-    memcpy(out, output_str.data(), compressed_size);
-    return compressed_size;
+    return osize;
 }
 size_t max_size(size_t input_size)
 {
-    return Compressor::MaxCompressedSize(input_size);
+    return NewGipfeliCompressor()->MaxCompressedLength(input_size);
 }
 
 } // FsBenchGipfeli
