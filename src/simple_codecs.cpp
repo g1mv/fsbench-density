@@ -204,26 +204,12 @@ size_t crush_d(char * in, size_t, char * out, size_t osize, void *)
 extern "C"
 {
 #include "density_api.h"
-#include "kernel_chameleon_decode.h"
-#include "kernel_mandala_decode.h"
 }
 size_t density_compress(char * in, size_t isize, char * out, size_t osize, DENSITY_COMPRESSION_MODE mode) {
-    density_stream* stream = density_stream_create(NULL, NULL);
-    DENSITY_STREAM_STATE res = density_stream_prepare(stream, (uint8_t*)in, isize, (uint8_t*)out, osize);
-    if (res != DENSITY_STREAM_STATE_READY)
+    density_buffer_processing_result result = density_buffer_compress((uint8_t *) in, isize, (uint8_t*)out, osize, mode, DENSITY_BLOCK_TYPE_DEFAULT, NULL, NULL);
+    if(result.state)
         return CODING_ERROR;
-    res = density_stream_compress_init(stream, mode, DENSITY_BLOCK_TYPE_DEFAULT);
-    if (res != DENSITY_STREAM_STATE_READY)
-        return CODING_ERROR;
-    res = density_stream_compress_continue(stream);
-    if (res != DENSITY_STREAM_STATE_STALL_ON_INPUT)
-        return CODING_ERROR;
-    res = density_stream_compress_finish(stream);
-    if (res != DENSITY_STREAM_STATE_READY)
-        return CODING_ERROR;
-    size_t written = density_stream_output_available_for_use(stream);
-    density_stream_destroy(stream);
-    return written;
+    return result.bytesWritten;
 }
 
 size_t density_chameleon_compress(char * in, size_t isize, char * out, size_t osize, void *)
@@ -231,36 +217,22 @@ size_t density_chameleon_compress(char * in, size_t isize, char * out, size_t os
     return density_compress(in, isize, out, osize, DENSITY_COMPRESSION_MODE_CHAMELEON_ALGORITHM);
 }
 
-size_t density_mandala_compress(char * in, size_t isize, char * out, size_t osize, void *)
+size_t density_cheetah_compress(char * in, size_t isize, char * out, size_t osize, void *)
 {
-    return density_compress(in, isize, out, osize, DENSITY_COMPRESSION_MODE_MANDALA_ALGORITHM);
+    return density_compress(in, isize, out, osize, DENSITY_COMPRESSION_MODE_CHEETAH_ALGORITHM);
+}
+
+size_t density_lion_compress(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return density_compress(in, isize, out, osize, DENSITY_COMPRESSION_MODE_LION_ALGORITHM);
 }
 
 size_t density_decompress (char * in, size_t isize, char * out, size_t osize, void *)
 {
-    // Density decoders use rough approximations of the space they need
-    // But they act safe. In order to achieve safety, they act conservatively.
-    // For this reason they sometimes refuse to decompress when they don't see
-    // enough lookahead. But the lookahead is not needed here as we know
-    // the output size. So we trick them that they have more space than the really do.
-    density_stream* stream = density_stream_create(NULL, NULL);
-    const size_t padding = std::max(DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD,
-                                     DENSITY_MANDALA_DECODE_MINIMUM_OUTPUT_LOOKAHEAD);
-    DENSITY_STREAM_STATE res = density_stream_prepare(stream, (uint8_t*)in, isize, (uint8_t*)out, osize + padding);
-    if (res != DENSITY_STREAM_STATE_READY)
+    density_buffer_processing_result result = density_buffer_decompress((uint8_t *) in, isize, (uint8_t*)out, osize, NULL, NULL);
+    if(result.state)
         return CODING_ERROR;
-    res = density_stream_decompress_init(stream, NULL);
-    if (res != DENSITY_STREAM_STATE_READY)
-        return CODING_ERROR;
-    res = density_stream_decompress_continue(stream);
-    if (res != DENSITY_STREAM_STATE_STALL_ON_INPUT)
-        return CODING_ERROR;
-    res = density_stream_decompress_finish(stream);
-    if (res != DENSITY_STREAM_STATE_READY)
-        return CODING_ERROR;
-    size_t written = density_stream_output_available_for_use(stream);
-    density_stream_destroy(stream);
-    return written > 0 ? written : CODING_ERROR;
+    return result.bytesWritten;
 }
 #endif//FSBENCH_USE_DENSITY
 #ifdef FSBENCH_USE_DOBOZ
