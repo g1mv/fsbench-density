@@ -274,8 +274,9 @@ Codec * codecs[] =
               new Codec("Halibut-deflate", _HALIBUT_VERSION, halibut_c, halibut_d, no_blowup),
 #endif
 #ifdef FSBENCH_USE_LZ4
-              new Codec("LZ4 fast 3", _LZ4_VERSION, LZ4_cf, LZ4_d_fast, no_blowup),
-              new Codec("LZ4", _LZ4_VERSION, LZ4_c, LZ4_d_fast, no_blowup),
+              new Codec("LZ4 fast 17", _LZ4_VERSION, LZ4_cf17, LZ4_d_safe, no_blowup),
+              new Codec("LZ4 fast 3", _LZ4_VERSION, LZ4_cf3, LZ4_d_safe, no_blowup),
+              new Codec("LZ4", _LZ4_VERSION, LZ4_c, LZ4_d_safe, no_blowup),
               new Codec("LZ4hc", _LZ4_VERSION, LZ4hc_c, LZ4_d_fast, no_blowup),
               new Codec("LZ4safe", _LZ4_VERSION, 0, LZ4_d_safe, no_blowup),
 #endif
@@ -554,6 +555,7 @@ static const pair<Codec*, const string> default_codecs[] =
                 make_pair(raw_find_codec("density::cheetah"), ""),
                 make_pair(raw_find_codec("density::lion"), ""),
                 make_pair(raw_find_codec("fastlz"), ""),
+                make_pair(raw_find_codec("LZ4 fast 17"), ""),
                 make_pair(raw_find_codec("LZ4 fast 3"), ""),
                 make_pair(raw_find_codec("LZ4"), ""),
                 make_pair(raw_find_codec("LZF"), "very"),

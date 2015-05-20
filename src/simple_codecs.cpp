@@ -513,9 +513,13 @@ size_t LZ4_c(char * in, size_t isize, char * out, size_t osize, void *)
 {
     return LZ4_compress_limitedOutput(in, out, isize, osize);
 }
-size_t LZ4_cf(char * in, size_t isize, char * out, size_t osize, void *)
+size_t LZ4_cf3(char * in, size_t isize, char * out, size_t osize, void *)
 {
     return LZ4_compress_fast(in, out, isize, osize, 3);
+}
+size_t LZ4_cf17(char * in, size_t isize, char * out, size_t osize, void *)
+{
+    return LZ4_compress_fast(in, out, isize, osize, 17);
 }
 size_t LZ4hc_c(char * in, size_t isize, char * out, size_t, void *)
 {
