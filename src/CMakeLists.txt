@@ -23,7 +23,7 @@ set(USE_FARMHASH          1)
 set(USE_FASTCRYPTO        1)
 set(USE_FASTLZ            0) # inefficient
 set(USE_FSE               0) # crashes on scc/clang 3.1; decoding fails on anything with gcc 4.2 on my FreeBSD box
-set(USE_GIPFELI           0) # rarely works...
+set(USE_GIPFELI           0) # I'm getting CRC mismatch errors when running with -v
 set(USE_HALIBUT           0) # inefficient
 set(USE_LODEPNG           0) # inefficient
 set(USE_LRRLE             1)
@@ -526,7 +526,7 @@ IF(USE_FSE)
 ENDIF(USE_FSE)
 IF(USE_GIPFELI)
     include_directories (${FSBENCH_SOURCE_DIR}/codecs/gipfeli)
-    set(OTHER_SRC ${OTHER_SRC} codecs/gipfeli/fsbench_gipfeli.cpp codecs/gipfeli/decompress.cc codecs/gipfeli/entropy.cc codecs/gipfeli/entropy_code_builder.cc codecs/gipfeli/gipfeli.cc codecs/gipfeli/lz77.cc)
+    set(OTHER_SRC ${OTHER_SRC} codecs/gipfeli/fsbench_gipfeli.cpp codecs/gipfeli/decompress.cc codecs/gipfeli/entropy.cc codecs/gipfeli/entropy_code_builder.cc codecs/gipfeli/gipfeli-internal.cc codecs/gipfeli/lz77.cc)
     add_definitions(-DFSBENCH_USE_GIPFELI)
 ENDIF(USE_GIPFELI)
 IF(USE_HALIBUT)

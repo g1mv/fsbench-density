@@ -1,23 +1,10 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
-#include "integral_types.h"
+#ifndef UTIL_COMPRESSION_GIPFELI_INTERNAL_ENUM_H_
+#define UTIL_COMPRESSION_GIPFELI_INTERNAL_ENUM_H_
 
-#ifndef GIPFELI_INTERNAL_ENUM_H_
-#define GIPFELI_INTERNAL_ENUM_H_
-
+namespace util {
+namespace compression {
 namespace gipfeli {
 
 static const uint32 LITERAL = 0;
@@ -44,5 +31,6 @@ inline uint32 CommandCopy(uint32 length, uint32 offset) {
 }
 
 }  // namespace gipfeli
-
-#endif  // GIPFELI_INTERNAL_ENUM_H_
+}  // namespace compression
+}  // namespace util
+#endif  // UTIL_COMPRESSION_GIPFELI_INTERNAL_ENUM_H_

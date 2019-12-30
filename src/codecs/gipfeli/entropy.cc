@@ -1,27 +1,16 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 #include "entropy.h"
 
 #include <string.h>
 #include <string>
 
-#include "integral_types.h"
 #include "entropy_code_builder.h"
 #include "enum.h"
+#include "stubs-internal.h"
 
+namespace util {
+namespace compression {
 namespace gipfeli {
 
 // Gives order of importance for masks (combination of samplers that found
@@ -183,6 +172,8 @@ int Entropy::BuildEntropyCodeBitmask(const int* assign_length,
       if (used_bits == 8) {
         used_bits = 0;
         mask++;
+        if (mask - mask_start >= 48)
+          break;
         *mask = 0;
       }
     }
@@ -237,6 +228,22 @@ static const uint8 kLengthPlus[] = {
   4, 4, 4, 8, 4, 4, 4, 4
 };
 
+namespace testing {
+
+uint8 ExposeKLengthBits(int x) {
+  return kLengthBits[x];
+}
+
+uint8 ExposeKOffsetBits(int x) {
+  return kOffsetBits[x];
+}
+
+uint8 ExposeKBitsType(int x) {
+  return kBitsType[x];
+}
+
+}  // namespace testing
+
 // Format of Compressed commands:
 // LITERALS starts with 00 followed
 //   by _length_ (if _length_<48) which is in the next 6bits.
@@ -253,17 +260,17 @@ void Entropy::CompressCommands(const uint32* __restrict commands,
   uint32 bits = 0;
   StartWriteBits(&bits, &bit_buffer_64, output);
   int cmd = commands[0];
-  for (int i = 0; i < commands_size; ) {
+  for (int i = 0; static_cast<uint32>(i) < commands_size; ) {
     if (!(cmd & COPY)) {
       // Type of command is emit literals => the next value is length.
       const int length = cmd - 1;
-      const int bit_length = Bits::Log2FloorNonZero(length) + 1;
       ++i;
       cmd = commands[i];
       if (PREDICT_TRUE(length < 53)) {
         // output 00length (using 8 bits total)
         WriteBits(8, length, &bits, &bit_buffer_64);
       } else {
+        const int bit_length = Bits::Log2FloorNonZero(length) + 1;
         // else output 47 + bitlength of (length) and then length
         WriteBits(8 + bit_length, ((47 + bit_length) << bit_length) | length,
                   &bits, &bit_buffer_64);
@@ -385,3 +392,5 @@ char* Entropy::Compress(const uint8* __restrict content,
 }
 
 }  // namespace gipfeli
+}  // namespace compression
+}  // namespace util

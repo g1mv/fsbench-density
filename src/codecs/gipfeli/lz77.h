@@ -1,24 +1,14 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// This LZ77 part of Gipfeli has been influenced by and reuses parts of Snappy.
 
-#ifndef GIPFELI_INTERNAL_LZ77_H_
-#define GIPFELI_INTERNAL_LZ77_H_
+#ifndef UTIL_COMPRESSION_GIPFELI_INTERNAL_LZ77_H_
+#define UTIL_COMPRESSION_GIPFELI_INTERNAL_LZ77_H_
 
-#include <stdlib.h>
-#include "integral_types.h"
+#include "stubs-internal.h"
 
+namespace util {
+namespace compression {
 namespace gipfeli {
 
 // This class is used to do compression by using backward references.
@@ -49,6 +39,7 @@ class LZ77 {
   // REQUIRES: "input" is at most "kBlockSize" bytes long.
   void CompressFragment(const char* input,
                         const size_t input_size,
+                        const char* prev_block,
                         char** content,
                         uint32* content_size,
                         uint32** commands,
@@ -70,6 +61,8 @@ class LZ77 {
   uint32* commands_;
   uint16 *hash_table_;
   int table_bits_;
+
+  DISALLOW_COPY_AND_ASSIGN(LZ77);
 };
 
 // Compression code chops up the input into blocks of at most kBlockSize.
@@ -88,5 +81,7 @@ void EmitCopyForTesting(const uint32 offset,
                         uint32* commands_size);
 
 }  // namespace gipfeli
+}  // namespace compression
+}  // namespace util
 
-#endif  // GIPFELI_INTERNAL_LZ77_H_
+#endif  // UTIL_COMPRESSION_GIPFELI_INTERNAL_LZ77_H_

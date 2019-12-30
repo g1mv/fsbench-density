@@ -167,7 +167,7 @@ Density                             | Guillaume Voirin                          
 Doboz                               | Attila T. Áfra                                   | 2011-03-19          | no       | https://bitbucket.org/attila_afra/doboz/downloads
 FastLZ                              | Ariya Hidayat                                    | 0.1.0               | no       | http://fastlz.org
 FSE                                 | Yann Collet                                      | 2014-04-07          | no       | https://github.com/Cyan4973/FiniteStateEntropy
-gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala                 | 2011-10-19          | no       | https://code.google.com/p/gipfeli
+gipfeli                             | Rasto Lenhardt, Jyrki Alakuijala                 | 2014-06-27          | no       | https://github.com/google/gipfeli
 Halibut - deflate                   | Simon Tatham                                     | SVN r9550           | no       | http://www.chiark.greenend.org.uk/~sgtatham/halibut
 lodepng - deflate                   | Lode Vandevenne                                  | 20120729            | no       | http://lodev.org/lodepng
 lrrle                               | m^2                                              | 0                   | yes      |

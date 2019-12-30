@@ -1,104 +1,50 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-//    http://www.apache.org/licenses/LICENSE-2.0
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // util/compression/gipfeli is a fast compression library for the
 // wide gipfeli compression format, designed by Jyrki Alakuijala,
 // and implemented by Rastislav Lenhardt as an intern project.
-// The goal of this project is to eventually replace zippy in its all
-// current uses: most importantly, RPCs, temporary files in mapreduce,
-// but also as bmdiff-gipfeli storage for bigtable and mapreduce output use.
-//
-// Here is a simple example for compressing data:
-//
-// u_c_g::Compressor compressor;
-// u_c_g::Status status = compressor.Init();
-// CHECK(status == u_c_g::kOk) << u_c_g::HumanReadableStatus(status);
-// string compressed_abc;
-// status = compressor.Compress("abc", 3, &compressed_abc);
-// CHECK(status == u_c_g::kOk) << u_c_g::HumanReadableStatus(status);
 
-#ifndef GIPFELI_PUBLIC_GIPFELI_H_
-#define GIPFELI_PUBLIC_GIPFELI_H_
+#ifndef UTIL_COMPRESSION_GIPFELI_PUBLIC_GIPFELI_H_
+#define UTIL_COMPRESSION_GIPFELI_PUBLIC_GIPFELI_H_
 
-#include <stdlib.h>  // for size_t
-#include <string>
+#include "stubs-internal.h"
+#include "compression.h"
 
-namespace gipfeli {
+namespace util {
+namespace compression {
 
-// Error codes from Gipfeli functions.
-enum Status {
-  // Non-error returns >= 0
-  kOk         = 0,
+// Return a new compressor object that implements gipfeli compression.
+// The returned object must be deleted after use. It is not safe for
+// use from multiple threads.
+Compressor* NewGipfeliCompressor();
 
-  // Error returns < 0
-  kInputFail  = -1,
-  kOutputFail = -2,
-  kCorrupted  = -3,
-  kInternal   = -4,
-  kNotInitialised = -5,
-};
+}  // namespace compression
+}  // namespace util
 
-const char *HumanReadableStatus(Status err);
-
-// A compressor for the gipfeli format.
-// All functions return an int status code.
-class Compressor {
- public:
-  Compressor() : impl_(NULL) {}
-  ~Compressor();
-
-  // Initialize a new compressor.
-  Status Init();
-
-  // Compress data until no more can be read. Returns an error code.
-  Status Compress(const char* input, size_t input_length, std::string* output);
-
-  // Compress may expand the data in some situtions,
-  // for example when the input is uncompressible or very small.
-  // This helper returns the maximum size output for a single call to
-  // Compress with nbytes worth of input. The returned value is a
-  // reasonable upper bound, roughly equal to the nbytes + (nbytes >> 8) + 256.
-  static size_t MaxCompressedSize(size_t nbytes);
-
- private:
-  class Impl;
-  Impl* impl_;
-};
-
-class Uncompressor {
- public:
-  Uncompressor() : impl_(NULL) {}
-  ~Uncompressor();
-
-  // Initialize a new uncompressor.
-  Status Init();
-
-  // Uncompress the data, returns a status.
-  Status Uncompress(const char* compressed, size_t compressed_length,
-                    std::string* uncompressed);
-
-  // Stores the size of uncompressed string into "uncompressed_length".
-  // Returns an error code.
-  static Status GetUncompressedLength(const char* compressed,
-                                      size_t compressed_length,
-                                      size_t* uncompressed_length);
- private:
-  class Impl;
-  Impl* impl_;
-};
-
-}  // namespace gipfeli
-
-#endif  // GIPFELI_PUBLIC_GIPFELI_H_
+#endif  // UTIL_COMPRESSION_GIPFELI_PUBLIC_GIPFELI_H_

@@ -1,35 +1,23 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
-#ifndef GIPFELI_INTERNAL_ENTROPY_H_
-#define GIPFELI_INTERNAL_ENTROPY_H_
+#ifndef UTIL_COMPRESSION_GIPFELI_INTERNAL_ENTROPY_H_
+#define UTIL_COMPRESSION_GIPFELI_INTERNAL_ENTROPY_H_
 
 #include <string>
 
-#include "integral_types.h"
+#include "stubs-internal.h"
 
+namespace util {
+namespace compression {
 namespace gipfeli {
 
 // Applies entropy coding compression to the output of LZ77 encoding,
 // i.e. to the literals in "content" and to the emit literals and emit
-// copies commands in "commands". It requires sufficiently large output
-// buffer, where the one of size (10/8) * content.size() + 3 * commands_size +
-// 8 is sufficient.
+// copies commands in "commands". It requires output to be at least
+// MaxCompressedSize().
 //
 // Sample usage:
-//  gipfeli::Entropy e;
+//  util::compression::gipfeli::Entropy e;
 //  uint16 commands[] = {0, 5};
 //  uint32 commands_size = 2;
 //  string content= "abc12";
@@ -47,6 +35,42 @@ class Entropy {
                  const uint32* __restrict commands,
                  const uint32 commands_size,
                  char* __restrict output);
+
+  static int MaxCompressedSize(uint32 content_size, uint32 commands_size) {
+    // copied from lz77.h.
+    static const int kBlockLog = 16;
+
+    // Max number of bits used to encode a length;
+    static const int kLengthLog = 6;
+
+    // Bytes to encode the number of commands in a block.
+    static const int kCommandsLenSize = 2;
+
+    // Max overhead of a literal-encoding table.
+    static const int kMaxLitLenTableSize = 48;
+
+    // Maximum bits to encode a "literal" command.
+    static const int kMaxLitSize = 8 + kBlockLog;
+
+    // Maximum bits to encode a "copy" command.
+    static const int kMaxCopySize = 3 + kLengthLog + kBlockLog;
+
+    // Max bits to encode any command.
+    static const int kMaxCommandSize =
+        kMaxLitSize > kMaxCopySize ? kMaxLitSize : kMaxCopySize;
+
+    // Max bits per byte of content.
+    static const int kMaxContentBits = 10;
+
+    // 64-bits words to encode the commands.
+    const int command_words = (commands_size * kMaxCommandSize + 63) / 64;
+
+    // 64-bit words needed to encode the content.
+    const int content_words = (content_size * kMaxContentBits + 63) / 64;
+
+    return kCommandsLenSize + kMaxLitLenTableSize +
+        (command_words + content_words) * sizeof(uint64);
+  }
 
   // All methods below are not private only to allow easier testing
 
@@ -96,6 +120,8 @@ class Entropy {
   uint32 GetWriteBitsOutputSize() const;
 
  private:
+  // TODO(user) consider merging write_bits_pos_ with bit_buffer_64,
+  // since they point to the same uint64.
   uint64* write_bits_output_;
   uint64* write_bits_pos_;
 
@@ -107,7 +133,7 @@ void Entropy::WriteBits(int length,
                         uint32* __restrict bits,
                         uint64* __restrict bit_buffer_64) {
   int v = 64 - length;
-  if (*bits < v) {
+  if (*bits < static_cast<uint32>(v)) {
     // No split needed.
     *bit_buffer_64 <<= length;
     *bit_buffer_64 |= value;
@@ -126,5 +152,7 @@ void Entropy::WriteBits(int length,
 }
 
 }  // namespace gipfeli
+}  // namespace compression
+}  // namespace util
 
-#endif  // GIPFELI_INTERNAL_ENTROPY_H_
+#endif  // UTIL_COMPRESSION_GIPFELI_INTERNAL_ENTROPY_H_

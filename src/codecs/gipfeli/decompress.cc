@@ -1,97 +1,20 @@
 // Copyright 2011 Google Inc. All Rights Reserved.
-// Authors: Rasto Lenhardt and Jyrki Alakuijala
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
-#include "gipfeli.h"
+#include "gipfeli-internal.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <string>
 
-#include "integral_types.h"
 #include "enum.h"
+#include "lz77.h"
 #include "read_bits.h"
+#include "stream.h"
 
+#include "stubs-internal.h"
+
+namespace util {
+namespace compression {
 namespace gipfeli {
-
-// Copy "len" bytes from "src" to "op", one byte at a time.  Used for
-// handling COPY operations where the input and output regions may
-// overlap.  For example, suppose:
-//    src    == "ab"
-//    op     == src + 2
-//    len    == 20
-// After IncrementalCopy(src, op, len), the result will have
-// eleven copies of "ab"
-//    ababababababababababab
-// Note that this does not match the semantics of either memcpy()
-// or memmove().
-static inline void IncrementalCopy(const char* src, char* op, int len) {
-  do {
-    *op++ = *src++;
-  } while (--len > 0);
-}
-
-// Equivalent to IncrementalCopy except that it can write up to ten extra
-// bytes after the end of the copy, and that it is faster.
-//
-// The main part of this loop is a simple copy of eight bytes at a time until
-// we've copied (at least) the requested amount of bytes.  However, if op and
-// src are less than eight bytes apart (indicating a repeating pattern of
-// length < 8), we first need to expand the pattern in order to get the correct
-// results. For instance, if the buffer looks like this, with the eight-byte
-// <src> and <op> patterns marked as intervals:
-//
-//    abxxxxxxxxxxxx
-//    [------]           src
-//      [------]         op
-//
-// a single eight-byte copy from <src> to <op> will repeat the pattern once,
-// after which we can move <op> two bytes without moving <src>:
-//
-//    ababxxxxxxxxxx
-//    [------]           src
-//        [------]       op
-//
-// and repeat the exercise until the two no longer overlap.
-//
-// This allows us to do very well in the special case of one single byte
-// repeated many times, without taking a big hit for more general cases.
-//
-// The worst case of extra writing past the end of the match occurs when
-// op - src == 1 and len == 1; the last copy will read from byte positions
-// [0..7] and write to [4..11], whereas it was only supposed to write to
-// position 1. Thus, ten excess bytes.
-
-namespace {
-
-const int kMaxIncrementCopyOverflow = 10;
-
-inline void IncrementalCopyFastPath(const char* src, char* op, int len) {
-  while (op - src < 8) {
-    UNALIGNED_STORE64(op, UNALIGNED_LOAD64(src));
-    len -= op - src;
-    op += op - src;
-  }
-  while (len > 0) {
-    UNALIGNED_STORE64(op, UNALIGNED_LOAD64(src));
-    src += 8;
-    op += 8;
-    len -= 8;
-  }
-}
-
-}  // namespace
 
 // This method reads bitmask containing the infromation about which
 // entropy code is used. It builds the conversion tables "convert_6bit"
@@ -114,6 +37,9 @@ char* DecompressMask(const uint32 upper,
     if ((and_value & upper) != 0) {
       for (int j = 0; j < 8; j++) {
         if (((*ip) & (1 << (7 - j))) != 0) {
+          if (PREDICT_FALSE(count >= 96)) {  // Corrupted input
+            return NULL;
+          }
           to_be_converted[count] = 8 * i + j;
           count++;
         }
@@ -123,6 +49,9 @@ char* DecompressMask(const uint32 upper,
     and_value >>= 1;
   }
 
+  if (PREDICT_FALSE(count != 96))  // Corrupted input
+    return NULL;
+
   // Second phase: Split 96 symbols to ones with 6-bit and ones with 8-bit
   // long codes and assign the symbol to every code.
   int count_6bit = 0;
@@ -130,15 +59,25 @@ char* DecompressMask(const uint32 upper,
   for (int i = 0; i < (count + 7) / 8; i++) {
     for (int j = 0; j < 8; j++) if (8 * i + j < count) {
       if (((*ip) & (1 << (7 - j))) != 0) {
+        if (PREDICT_FALSE(count_6bit >= 32)) {  // Corrupted input
+          return NULL;
+        }
         convert_6bit[count_6bit] = to_be_converted[8 * i + j];
         count_6bit++;
       } else {
+        if (PREDICT_FALSE(count_8bit >= 64)) {  // Corrupted input
+          return NULL;
+        }
         convert_8bit[count_8bit] = to_be_converted[8 * i + j];
         count_8bit++;
       }
     }
     ip++;
   }
+
+  if (PREDICT_FALSE((count_6bit != 32) || (count_8bit != 64)))
+    return NULL;
+
   return reinterpret_cast<char*>(ip);
 }
 
@@ -151,115 +90,131 @@ char* DecompressCommands(char* input,
                          uint32 commands_real_size,
                          uint32* commands) {
   ReadBits bits;
-  char* ip = input;
-  bits.Start(ip, input_end);
+  bits.Start(input, input_end);
   uint32 commands_size = 0;
   while (commands_size < commands_real_size) {
-    uint32 value = bits.ReadNBits<3>();
+    uint32 value = bits.Read(3);
     if (value < 2) {
-      value = (value << 5) + bits.ReadNBits<5>();
+      value = (value << 5) + bits.Read(5);
       if (value < 53) {
         commands[commands_size++] = value + 1;
       } else {
         commands[commands_size++] = bits.Read(value - 47) + 1;
       }
     } else {
-      int length = bits.Read(length_length[value]) + length_change[value];
-      int offset = bits.Read(offset_length[value]) + 1;
+      size_t length = bits.Read(length_length[value]) + length_change[value];
+      size_t offset = bits.Read(offset_length[value]) + 1;
       commands[commands_size++] = CommandCopy(length, offset);
     }
   }
   return bits.Stop();
 }
 
-class Uncompressor::Impl {
- public:
-  Impl() : commands_(NULL), commands_size_(0) {}
-
-  ~Impl() {
-    delete[] commands_;
-  }
-
-  uint32* ReallocateCommands(int size) {
-    if (commands_ == NULL || commands_size_ < size) {
-      delete[] commands_;
-      commands_ = new uint32[size];
-      commands_size_ = size;
+bool DecompressCommandsStream(Reader* reader, uint32 commands_real_size,
+                              uint32* commands) {
+  BitStreamReader bits(reader);
+  uint32 commands_size = 0;
+  while (commands_size < commands_real_size) {
+    uint32 value = bits.Read(3);
+    if (value < 2) {
+      value = (value << 5) + bits.Read(5);
+      if (value < 53) {
+        commands[commands_size++] = value + 1;
+      } else {
+        commands[commands_size++] = bits.Read(value - 47) + 1;
+      }
+    } else {
+      size_t length = bits.Read(length_length[value]) + length_change[value];
+      size_t offset = bits.Read(offset_length[value]) + 1;
+      commands[commands_size++] = CommandCopy(length, offset);
     }
-    return commands_;
   }
-
- private:
-  uint32* commands_;
-  int commands_size_;
-};
-
-Status Uncompressor::Init() {
-  delete impl_;
-  impl_ = new Impl();
-  return kOk;
+  return !bits.error();
 }
 
-Uncompressor::~Uncompressor() {
-  delete impl_;
+uint32* Gipfeli::DecompressorState::ReallocateCommands(int size) {
+  if (commands_ == NULL || commands_size_ < size) {
+    delete[] commands_;
+    commands_ = new uint32[size];
+    commands_size_ = size;
+  }
+  return commands_;
 }
 
 // Returns the size of the uncompressed string.
-Status Uncompressor::GetUncompressedLength(const char* compressed,
-                                           size_t compressed_length,
-                                           size_t* uncompressed_length) {
-  int bytes_used = *compressed;
-  if (bytes_used > 4 || compressed_length < 1 + bytes_used) {
-    return kInputFail;
+bool Gipfeli::GetUncompressedLength(const string& compressed,
+                                    size_t* uncompressed_length) {
+  if (compressed.size() == 0) {
+    return false;
   }
+
+  size_t bytes_used = *(compressed.data());
+  if (bytes_used > 4 || (compressed.size() < 1 + bytes_used)) {
+    return false;
+  }
+
   *uncompressed_length = 0;
   for (int i = bytes_used - 1; i >= 0; i--) {
     *uncompressed_length <<= 8;
-    *uncompressed_length |= compressed[i + 1];
+    *uncompressed_length |= static_cast<unsigned char>(compressed[i + 1]);
   }
-  if (*uncompressed_length > 1ULL << 31) {
-    // Uncompressed string can have at most 2 GB.
-    return kCorrupted;
+
+  // Uncompressed string can have at most (2 GB - 1).
+  if (*uncompressed_length >= 1ULL << 31) {
+    return false;
   }
-  return kOk;
+
+  return true;
 }
 
-// Uncompresses the "compressed" data to string "uncompressed". Returns error
-// status if the input is corrupted, otherwise returns kOk.
-Status Uncompressor::Uncompress(const char* compressed,
-                                size_t compressed_length,
-                                std::string* uncompressed) {
-  if (impl_ == NULL) return kNotInitialised;
+bool Gipfeli::Uncompress(const string& input, string* output) {
+  size_t ulength;
+  if (!GetUncompressedLength(input, &ulength)) {
+    return false;
+  }
+  if ((static_cast<uint64>(ulength) ) > output->max_size()) {
+    return false;
+  }
+  STLStringResizeUninitialized(output, ulength);
+  return RawUncompress(input.data(), input.size(),
+                       string_as_array(output), ulength);
+}
+
+bool Gipfeli::RawUncompress(
+    const char* compressed, size_t compressed_length,
+    char* uncompressed, size_t uncompressed_length) {
+  char* ip = const_cast<char*>(compressed);
+  size_t bytes_used = *ip;
+  ip += (1 + bytes_used);
+  size_t ip_size = compressed_length - (bytes_used + 1);
+  return InternalRawUncompress(
+      ip, ip_size, uncompressed, uncompressed_length);
+}
+
+bool Gipfeli::InternalRawUncompress(
+    const char* compressed, size_t compressed_length,
+    char* uncompressed, size_t uncompressed_length) {
   char* ip = const_cast<char*>(compressed);
   char* ip_end = ip + compressed_length;
-  if (compressed_length < 1) {
-    return kInputFail;
-  }
-  int bytes_used = *ip;
-  size_t uncompressed_length = 0;
-  Status status = GetUncompressedLength(compressed, compressed_length,
-                                        &uncompressed_length);
-  if (status != kOk) {
-    return status;
-  }
-  ip += 1 + bytes_used;
-  uncompressed->resize(uncompressed_length);
-
-  char* op = uncompressed->empty() ? NULL : &(*uncompressed)[0];
+  char* op = uncompressed;
   char* op_start = op;
-  char* op_end = op + uncompressed->size();
+  char* op_end = op + uncompressed_length;
+
+  if (decompressor_state_ == NULL)
+    decompressor_state_ = new DecompressorState();
+
   while (ip - compressed < compressed_length) {
     if (PREDICT_FALSE(ip_end - ip < 10)) {
       // 2 bytes for commands size and at least 8 bytes for the first commands.
-      return kInputFail;
+      return false;
     }
     uint32 commands_size = UNALIGNED_LOAD16(ip);
     ip += 2;
 
-    uint32* commands = impl_->ReallocateCommands(commands_size);
+    uint32* commands = decompressor_state_->ReallocateCommands(commands_size);
     ip = DecompressCommands(ip, ip_end, commands_size, commands);
-    if (PREDICT_FALSE(ip > ip_end)) {
-      return kInputFail;
+    if (PREDICT_FALSE(ip + 4 > ip_end)) {
+      return false;
     }
     uint32 upper = 0;
     for (int i = 0; i < 4; i++) {
@@ -276,22 +231,21 @@ Status Uncompressor::Uncompress(const char* compressed,
         if (!CommandIsCopy(commands[i])) {
           if (PREDICT_FALSE(op + commands[i] > op_end) ||
               ip + commands[i] > ip_end ) {
-            if (op + commands[i] > op_end) {
-              return kOutputFail;
-            } else {
-              return kInputFail;
-            }
+            return false;
           }
           memcpy(op, ip, commands[i]);
           ip += commands[i];
           op += commands[i];
         } else {
-          int len = CommandCopyLength(commands[i]);
-          int offset = CommandCopyOffset(commands[i]);
-          int space_left = op_end - op;
-          if (PREDICT_FALSE(op < op_start + offset)) {
-            return kCorrupted;
+          size_t len = CommandCopyLength(commands[i]);
+          size_t offset = CommandCopyOffset(commands[i]);
+          size_t space_left = op_end - op;
+
+          // -1u below prevents infinite loop if offset == 0
+          if (PREDICT_FALSE(op - op_start <= offset - 1u)) {
+            return false;
           }
+
           if (len <= 16 && offset >= 8 && space_left >= 16) {
             // Fast path, used for the majority (70-80%) of dynamic invocations.
             UNALIGNED_STORE64(op, UNALIGNED_LOAD64(op - offset));
@@ -300,7 +254,7 @@ Status Uncompressor::Uncompress(const char* compressed,
             IncrementalCopyFastPath(op - offset, op, len);
           } else {
             if (PREDICT_FALSE(space_left < len)) {
-              return kOutputFail;
+              return false;
             }
             IncrementalCopy(op - offset, op, len);
           }
@@ -310,38 +264,44 @@ Status Uncompressor::Uncompress(const char* compressed,
     } else {
       // Entropy Coding.
       if (ip + Bits::CountOnes(upper) + 12 > ip_end) {
-        return kInputFail;
+        return false;
       }
       ip = DecompressMask(upper, ip, convert_6bit, convert_8bit);
+      if (PREDICT_FALSE(ip == NULL)) {
+        return false;
+      }
       ReadBits bits;
       bits.Start(ip, ip_end);
       if (PREDICT_FALSE(ip_end - ip < 8)) {
-        return kInputFail;
+        return false;
       }
       for (int i = 0; i < commands_size; i++) {
         if (!CommandIsCopy(commands[i])) {
           if (PREDICT_FALSE(op + commands[i] > op_end)) {
-            return kOutputFail;
+            return false;
           }
           for (int j = 0; j < commands[i]; j++) {
-            uint32 val = bits.ReadNBits<6>();
+            uint32 val = bits.Read(6);
             if (PREDICT_TRUE(val < 32)) {
               *op++ = convert_6bit[val];
             } else if (val >= 48) {
-              val = ((val - 48) << 4) + bits.ReadNBits<4>();
+              val = ((val - 48) << 4) + bits.Read(4);
               *op++ = val;
             } else {
-              val = ((val - 32) << 2) + bits.ReadNBits<2>();
+              val = ((val - 32) << 2) + bits.Read(2);
               *op++ = convert_8bit[val];
             }
           }
         } else {
-          int len = CommandCopyLength(commands[i]);
-          int offset = CommandCopyOffset(commands[i]);
-          int space_left = op_end - op;
-          if (PREDICT_FALSE(op < op_start + offset)) {
-            return kCorrupted;
+          size_t len = CommandCopyLength(commands[i]);
+          size_t offset = CommandCopyOffset(commands[i]);
+          size_t space_left = op_end - op;
+
+          // -1u catches offset == 0 case
+          if (PREDICT_FALSE(op - op_start <= offset - 1u)) {
+            return false;
           }
+
           if (len <= 16 && offset >= 8 && space_left >= 16) {
             // Fast path, used for the majority (70-80%) of dynamic invocations.
             UNALIGNED_STORE64(op, UNALIGNED_LOAD64(op - offset));
@@ -350,7 +310,7 @@ Status Uncompressor::Uncompress(const char* compressed,
             IncrementalCopyFastPath(op - offset, op, len);
           } else {
             if (PREDICT_FALSE(space_left < len)) {
-              return kOutputFail;
+              return false;
             }
             IncrementalCopy(op - offset, op, len);
           }
@@ -359,14 +319,178 @@ Status Uncompressor::Uncompress(const char* compressed,
       }
       ip = bits.Stop();
       if (PREDICT_FALSE(ip > ip_end)) {
-        return kCorrupted;
+        return false;
       }
     }
   }
-  if (op != op_end) {
-    return kCorrupted;
+
+  if (PREDICT_FALSE(ip != (compressed + compressed_length)))
+    return false;
+  return (op == op_end);
+}
+
+bool Gipfeli::GetUncompressedLengthStream(
+    Source* source, size_t* result) {
+  Reader reader(source);
+  char scratch[5];
+  const char* ip;
+
+  if ((ip = reader.Read(scratch, 1)) == NULL)
+    return false;
+
+  // First byte is the number of bytes used to encode the length
+  size_t bytes_used = *ip;
+  if (bytes_used > 4) return false;
+
+  if ((ip = reader.Read(scratch, bytes_used)) == NULL)
+    return false;
+
+  // Remaining bytes encode the length
+  *result = 0;
+  for (int i = bytes_used - 1; i >= 0; --i) {
+    *result <<= 8;
+    *result |= static_cast<unsigned char>(*(ip + i));
   }
-  return kOk;
+
+  // Uncompressed string can have at most (2 GB - 1).
+  if (*result >= 1ULL << 31) {
+    return false;
+  }
+
+  return true;
+}
+
+bool Gipfeli::UncompressStream(
+    Source* compressed, Sink* uncompressed) {
+  size_t uncompressed_len;
+  if (!GetUncompressedLengthStream(compressed, &uncompressed_len)) {
+    return false;
+  }
+  return InternalRawUncompressStream(
+      compressed, uncompressed, uncompressed_len);
+}
+
+bool Gipfeli::InternalRawUncompressStream(
+    Source* source, Sink* sink,
+    size_t uncompressed_length) {
+  char scratch[64];
+  const char* buf;
+  char* ip;
+
+  // See if we can get a contigous output buffer
+  char c;
+  size_t output_fragment_size;
+  char* output_fragment = sink->GetAppendBuffer(
+      1, uncompressed_length, &c, 1, &output_fragment_size);
+
+  Writer writer;
+  if (output_fragment_size >= uncompressed_length) {
+    writer.Initialize(sink, output_fragment, uncompressed_length);
+  } else {
+    writer.Initialize(sink, NULL, uncompressed_length);
+  }
+
+  Reader reader(source);
+
+  if (decompressor_state_ == NULL)
+    decompressor_state_ = new DecompressorState();
+
+  while (!reader.Eof()) {
+    uint32 commands_size;
+    if (PREDICT_FALSE(!reader.Read16(&commands_size))) {
+      return writer.OnError();
+    }
+
+    uint32* commands = decompressor_state_->ReallocateCommands(commands_size);
+    if (PREDICT_FALSE(!DecompressCommandsStream(
+            &reader, commands_size, commands))) {
+      return writer.OnError();
+    }
+
+    if (PREDICT_FALSE((buf = reader.Read(scratch, 4)) == NULL)) {
+      return writer.OnError();
+    }
+
+    uint32 upper = 0;
+    for (int i = 0; i < 4; ++i) {
+      uint8 val = (uint8)(buf[i]);
+      upper <<= 8;
+      upper += val;
+    }
+
+    uint8 convert_6bit[32] = { 0 };
+    uint8 convert_8bit[64] = { 0 };
+
+    // We assume Gipfeli compression is one block at a time and each
+    // block starts with a command set. So this is a good point to grow
+    // the block.
+    if (commands_size) {
+      writer.MaybeFinishBlock();
+    }
+
+    if (upper == 0) {
+      // No Entropy Coding.
+      for (int i = 0; i < commands_size; i++) {
+        if (!CommandIsCopy(commands[i])) {
+          if (PREDICT_FALSE(!writer.CheckAvailable(commands[i]))) {
+            return writer.OnError();
+          }
+          if (PREDICT_FALSE(!reader.AppendTo(&writer, commands[i]))) {
+            return writer.OnError();
+          }
+        } else {
+          size_t len = CommandCopyLength(commands[i]);
+          size_t offset = CommandCopyOffset(commands[i]);
+          if (PREDICT_FALSE(!writer.AppendFromSelf(offset, len))) {
+            return writer.OnError();
+          }
+        }
+      }
+    } else {
+      // Entropy Coding.
+      if (PREDICT_FALSE((ip = const_cast<char*>(reader.Read(
+          scratch, Bits::CountOnes(upper) + 12))) == NULL)) {
+        return writer.OnError();
+      }
+      if (DecompressMask(upper, ip, convert_6bit, convert_8bit)
+          == NULL) {
+        return writer.OnError();
+      }
+      BitStreamReader bits(&reader);
+      for (int i = 0; i < commands_size; i++) {
+        if (!CommandIsCopy(commands[i])) {
+          if (PREDICT_FALSE(!writer.CheckAvailable(commands[i]))) {
+            return writer.OnError();
+          }
+          for (int j = 0; j < commands[i]; j++) {
+            uint32 val = bits.Read(6);
+            if (PREDICT_TRUE(val < 32)) {
+              writer.AppendByte(convert_6bit[val]);
+            } else if (val >= 48) {
+              writer.AppendByte(((val - 48) << 4) + bits.Read(4));
+            } else {
+                val = ((val - 32) << 2) + bits.Read(2);
+                writer.AppendByte(convert_8bit[val]);
+            }
+          }
+        } else {
+          size_t len = CommandCopyLength(commands[i]);
+          size_t offset = CommandCopyOffset(commands[i]);
+          if (PREDICT_FALSE(!writer.AppendFromSelf(offset, len))) {
+            return writer.OnError();
+          }
+        }
+      }
+      if (PREDICT_FALSE(bits.error())) {
+        return writer.OnError();
+      }
+    }
+  }
+
+  writer.Flush();
+  return writer.CheckLength();
 }
 
 }  // namespace gipfeli
+}  // namespace compression
+}  // namespace util
